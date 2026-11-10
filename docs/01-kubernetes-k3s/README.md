@@ -177,6 +177,7 @@ Calico `3.32.2`，Prometheus 125/125 targets up。
 | [knative-architecture-and-labs.md](notes/knative-architecture-and-labs.md) | Knative 架构与实验（该组件后续已移除） |
 | [default-ns-pod-provenance.md](notes/default-ns-pod-provenance.md) | default 命名空间 Pod 来源追踪 |
 | [pod-load-balancing-plan-20261003.md](notes/pod-load-balancing-plan-20261003.md) | 工作节点 Pod 负载均衡方案 |
+| [compassio-autoscaling-analysis-20261109.md](notes/compassio-autoscaling-analysis-20261109.md) | HPA vs VPA：按 LLM 等待 P95 扩容，CPU 兜底 |
 | [upgrade-1.29-to-1.35/](notes/upgrade-1.29-to-1.35/) | 9 篇完整升级记录：盘点、方案、总纲、4 条线执行报告 |
 
 升级记录建议按顺序读：
