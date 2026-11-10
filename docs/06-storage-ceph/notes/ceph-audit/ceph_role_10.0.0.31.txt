@@ -1,0 +1,16 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+=== ceph-01 ===
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f@crash.ceph-01.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@grafana.ceph-01.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mds.cephfs.ceph-01.axogyl.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mgr.ceph-01.egryfx.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mon.ceph-01.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@node-exporter.ceph-01.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.0.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.5.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@prometheus.ceph-01.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@rgw.myrgw.ceph-01.roocpp.service 
+--- docker/podman containers ---
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-grafana-ceph-01|quay.io/ceph/ceph-grafana:9.4.7|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-prometheus-ceph-01|quay.io/prometheus/prometheus:v2.43.0|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-01|quay.io/prometheus/node-exporter:v1.5.0|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-rgw-myrgw-ceph-01-roocpp|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-01-axogyl|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-5|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-0|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-01|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-01|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mgr-ceph-01-egryfx|69cbef90eb58|Up 2 days
+--- podman ---
+podman cli n/a

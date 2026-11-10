@@ -1,0 +1,47 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+--OSD LAYOUT--
+--OSD TREE--
+ID  CLASS  WEIGHT   TYPE NAME         STATUS  REWEIGHT  PRI-AFF
+-1         0.17578  root default                               
+-7         0.05859      host ceph-01                           
+ 0    hdd  0.02930          osd.0         up   1.00000  1.00000
+ 5    hdd  0.02930          osd.5         up   1.00000  1.00000
+-3         0.05859      host ceph-02                           
+ 1    hdd  0.02930          osd.1         up   1.00000  1.00000
+ 4    hdd  0.02930          osd.4         up   1.00000  1.00000
+-5         0.05859      host ceph-03                           
+ 2    hdd  0.02930          osd.2         up   1.00000  1.00000
+ 3    hdd  0.02930          osd.3         up   1.00000  1.00000
+--NETS--
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0             UP             10.0.0.31/24 fe80::be24:11ff:fe2b:746f/64 
+eth1             UP             172.16.1.31/16 fe80::be24:11ff:fed2:2b3f/64 
+docker0          DOWN           172.17.0.1/16 
+docker_gwbridge  DOWN           172.18.0.1/16 
+--RBD/POOL--
+--- RAW STORAGE ---
+CLASS     SIZE    AVAIL    USED  RAW USED  %RAW USED
+hdd    180 GiB  161 GiB  19 GiB    19 GiB      10.45
+TOTAL  180 GiB  161 GiB  19 GiB    19 GiB      10.45
+ 
+--- POOLS ---
+POOL                        ID  PGS   STORED  OBJECTS     USED  %USED  MAX AVAIL
+.mgr                         1    1  897 KiB        2  2.6 MiB      0     49 GiB
+cephfs_metadata             13   16   52 KiB       22  243 KiB      0     49 GiB
+cephfs_data                 14   64   10 MiB        3   30 MiB   0.02     49 GiB
+.rgw.root                   34   32  5.7 KiB       20  228 KiB      0     49 GiB
+default.rgw.log             35   32    182 B        2   24 KiB      0     49 GiB
+default.rgw.control         36   32      0 B        8      0 B      0     49 GiB
+default.rgw.meta            37   32      0 B        0      0 B      0     49 GiB
+my-zone.rgw.log             38   32   23 KiB      338  1.9 MiB      0     49 GiB
+my-zone.rgw.control         39   32      0 B        8      0 B      0     49 GiB
+my-zone.rgw.meta            40   32  4.9 KiB       29  276 KiB      0     49 GiB
+my-zone.rgw.buckets.index   41   32  1.8 MiB       55  5.5 MiB      0     49 GiB
+my-zone.rgw.buckets.data    42   32  399 MiB   11.29k  1.3 GiB   0.84     49 GiB
+rbd                         43   32     19 B        2   12 KiB      0     49 GiB
+--CEPH VER--
+ceph version 17.2.8 (f817ceb7f187defb1d021d6328fa833eb8e943b3) quincy (stable)
+--CONF--
+[global]
+	fsid = 594e535e-d82c-11f0-afa7-bc24112b746f
+	mon_host = [v2:10.0.0.31:3300/0,v1:10.0.0.31:6789/0] [v2:10.0.0.41:3300/0,v1:10.0.0.41:6789/0] [v2:10.0.0.51:3300/0,v1:10.0.0.51:6789/0]

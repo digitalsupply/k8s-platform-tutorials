@@ -1,0 +1,207 @@
+# ==============================================================================
+# 企业微信群机器人适配器 (wecom-adapter)
+#
+# 作用: Alertmanager webhook 负载 -> 企业微信群机器人 msg 格式
+#       {"msgtype":"markdown","markdown":{"content":...}}
+#
+# 为什么需要: Alertmanager v0.32.0 的 wechat_configs 只实现了「自建应用」API
+#             (gettoken + message/send 硬编码两跳)，无法调用群机器人 webhook。
+#             而自建应用要求可信域名/接收消息URL + 可信IP白名单 + 可见范围，
+#             本集群没有备案域名且出口是动态 NAT IP，走不通。
+#
+# 位置刻意放在 monitoring 命名空间内部，不经过 n8n —— 否则会重新引入
+# P0-1 的「告警出口依赖被监控对象」的自指缺陷。
+#
+# 由 apply.sh 创建的两个前置对象 (不在本文件里，避免凭据进 git):
+#   ConfigMap wecom-adapter-script  <- adapter/adapter.py
+#   Secret   wecom-adapter         <- key: webhook-url (群机器人 key)
+#
+# 镜像: python:3.12-alpine + 按 digest 固定。适配器只用标准库，
+#       所以不需要构建镜像、不需要镜像仓库，ConfigMap 挂载脚本即可。
+# ==============================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wecom-adapter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: wecom-adapter
+    app.kubernetes.io/component: alerting-adapter
+    app.kubernetes.io/part-of: cluster-alerting
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wecom-adapter
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      metadata:
+      annotations:
+        # wecom-alert-receiver/secret-hash: 由 apply.sh 按 webhook key 的 sha256 写入。
+        # 环境变量只在 Pod 创建时注入，光改 Secret 不会让 Pod 重载，
+        # 必须靠这个注解制造 template 变化来触发滚动更新。
+        wecom-alert-receiver/secret-hash: "PLACEHOLDER"
+      labels:
+        app.kubernetes.io/name: wecom-adapter
+        app.kubernetes.io/component: alerting-adapter
+        app.kubernetes.io/part-of: cluster-alerting
+    spec:
+      # 适配器完全不碰 API Server，不需要 ServiceAccount token
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      # 刻意不写 tolerations: 控制面节点带 NoSchedule taint 是集群级的隔离约定，
+      # 加容忍反而会提高它们的调度得分，把告警通道拉到控制面上去。
+      # 3 个 worker 足够承载 2 个副本。
+      # 尽量跨节点打散；调度不开就退让，不阻塞发布
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: wecom-adapter
+      containers:
+      - name: adapter
+        image: python:3.12-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
+        imagePullPolicy: IfNotPresent
+        command: ["python3", "-u", "/app/adapter.py"]
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: LISTEN_ADDR
+          value: "0.0.0.0:8080"
+        # 群机器人 webhook URL (含 key)，只存在于 Secret
+        - name: WECOM_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: wecom-adapter
+              key: webhook-url
+        # 群机器人限流 20 条/分钟 -> 发送端最小间隔 3 秒
+        - name: WECOM_MIN_INTERVAL
+          value: "3"
+        # 单条消息最多列出的告警条数 (超出部分只给计数)
+        - name: MAX_ALERTS
+          value: "10"
+        # readOnlyRootFilesystem 下不要尝试写 .pyc
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        volumeMounts:
+        - name: script
+          mountPath: /app
+          readOnly: true
+        # 探针一律打 /healthz，它按设计恒返回 200 —— 只反映「进程还能服务」。
+        # webhook key 没配好不算不健康（重启也修不好），这种情况由 /readyz 和
+        # /alerts 的 503 表达，Alertmanager 因此能拿到一句明确的错误，
+        # 而不是 Service 无 endpoints 时的 "connection refused"。
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 3
+          failureThreshold: 20
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 20m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 96Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+      volumes:
+      - name: script
+        configMap:
+          name: wecom-adapter-script
+          defaultMode: 0444
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wecom-adapter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: wecom-adapter
+    app.kubernetes.io/component: alerting-adapter
+    app.kubernetes.io/part-of: cluster-alerting
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: wecom-adapter
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+---
+# 只允许 monitoring 命名空间访问本服务；出网仅放行 HTTPS(企业微信) 与 DNS。
+# ⚠ HTTPS 是放行到 0.0.0.0/0 的 —— NetworkPolicy 的 ipBlock 不做域名解析，
+#   而 qyapi.weixin.qq.com 的 IP 会变，写死 IP 列表只会带来误阻断。
+#   这条策略挡的是「被当成横向跳板/明文外传」，不是精细化的出网白名单。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wecom-adapter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: wecom-adapter
+    app.kubernetes.io/component: alerting-adapter
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: wecom-adapter
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

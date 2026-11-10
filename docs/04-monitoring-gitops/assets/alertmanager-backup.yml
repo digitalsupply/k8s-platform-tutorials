@@ -1,0 +1,42 @@
+# /etc/alertmanager/alertmanager.yml
+global:
+  resolve_timeout: 5m   # 告警自动恢复超时时间
+# QQ 企业邮箱 SMTP（推荐，成功率最高）
+  smtp_smarthost: 'smtp.exmail.qq.com:465'          # QQ 企业邮箱固定
+  smtp_from: 'leihao@scxsysyxx53.wecom.work'                # 发件人，必须是你企业邮箱里的真实地址
+  smtp_auth_username: 'leihao@scxsysyxx53.wecom.work'            # 同上
+  smtp_auth_password: <redacted>
+  smtp_require_tls: no                                  # 465 端口必须 yes
+route:
+  group_by: ['alertname', 'instance']   # 按告警名和实例分组，减少通知风暴
+  group_wait: 30s                       # 组内第一条告警后等待 30s 收集同组告警
+  group_interval: 5m                    # 同组告警间隔 5m 发送一次
+  repeat_interval: 4h                   # 重复告警间隔 4h
+  receiver: 'default-email'           # 默认接收器
+receivers:
+- name: 'default-email'
+  email_configs:
+  - to: '1152101281@qq.com'                 # 多个用逗号分隔
+    send_resolved: true                                   # 故障恢复也发邮件
+    headers:
+      subject: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Prometheus告警'
+      # 可选美化
+    html: |
+      <h2>{{ .CommonLabels.alertname }}</h2>
+      <p>级别：{{ .CommonLabels.severity }}</p>
+      <p>实例：{{ .CommonLabels.instance }}</p>
+      <p>描述：{{ .CommonAnnotations.description }}</p>
+      <hr>
+      {{ range .Alerts }}
+      <b>{{ .Annotations.summary }}</b><br>
+      {{ .Annotations.description }}<br><br>
+      {{ end }}
+      <a href="http://10.0.0.61:9093">点我去 Alertmanager 静默</a> | 
+      <a href="http://10.0.0.61:9090/graph">点我去 Prometheus</a>
+
+inhibit_rules:                          # 抑制规则示例（可选）
+  - source_matchers:
+      - 'alertname = "NodeDown"'
+    target_matchers:
+      - 'alertname =~ ".*"'             # NodeDown 时抑制所有其他告警
+    equal: ['instance']

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: platform-traefik:/Service:traefik/traefik
+    metallb.universe.tf/ip-allocated-from-pool: lb-pool-tailscale
+  creationTimestamp: "2026-09-27T14:04:20Z"
+  labels:
+    app.kubernetes.io/instance: traefik-traefik
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/version: v3.7.17
+    helm.sh/chart: traefik-42.3.1
+  name: traefik
+  namespace: traefik
+  resourceVersion: "58260201"
+  uid: d6df6425-4c6f-4ebd-98c2-1805a144058e
+spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.111.240.160
+  clusterIPs:
+  - 10.111.240.160
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: web
+    nodePort: 30156
+    port: 80
+    protocol: TCP
+    targetPort: web
+  - name: websecure
+    nodePort: 30306
+    port: 443
+    protocol: TCP
+    targetPort: websecure
+  selector:
+    app.kubernetes.io/instance: traefik-traefik
+    app.kubernetes.io/name: traefik
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 10.0.0.252
+      ipMode: VIP

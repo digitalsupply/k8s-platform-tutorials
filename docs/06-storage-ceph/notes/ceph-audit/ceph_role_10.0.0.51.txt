@@ -1,0 +1,13 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+=== ceph-03 ===
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f@alertmanager.ceph-03.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@crash.ceph-03.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mds.cephfs.ceph-03.txfktl.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mon.ceph-03.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@node-exporter.ceph-03.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.2.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.3.service 
+--- docker/podman containers ---
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-alertmanager-ceph-03|quay.io/prometheus/alertmanager:v0.25.0|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-03|quay.io/prometheus/node-exporter:v1.5.0|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-03-txfktl|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-3|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-2|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-03|69cbef90eb58|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-03|69cbef90eb58|Up 2 days
+--- podman ---
+podman cli n/a

@@ -1,0 +1,74 @@
+apiVersion: v1
+items:
+- apiVersion: metallb.io/v1beta1
+  kind: IPAddressPool
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"metallb.io/v1beta1","kind":"IPAddressPool","metadata":{"annotations":{},"name":"lb-pool-eth1","namespace":"metallb-system"},"spec":{"addresses":["172.16.1.220-172.16.1.250"]}}
+    creationTimestamp: "2026-01-17T05:52:43Z"
+    generation: 1
+    name: lb-pool-eth1
+    namespace: metallb-system
+    resourceVersion: "49740"
+    uid: 8e0b8f87-b8c0-4e94-9877-d3d7452304dc
+  spec:
+    addresses:
+    - 172.16.1.220-172.16.1.250
+    autoAssign: true
+    avoidBuggyIPs: false
+- apiVersion: metallb.io/v1beta1
+  kind: IPAddressPool
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"metallb.io/v1beta1","kind":"IPAddressPool","metadata":{"annotations":{},"name":"lb-pool-tailscale","namespace":"metallb-system"},"spec":{"addresses":["10.0.0.252-10.0.0.252"],"autoAssign":true,"avoidBuggyIPs":false}}
+    creationTimestamp: "2026-09-27T13:31:54Z"
+    generation: 2
+    name: lb-pool-tailscale
+    namespace: metallb-system
+    resourceVersion: "8891317"
+    uid: d1d225d4-3ab6-435f-91f0-f1c543f369ac
+  spec:
+    addresses:
+    - 10.0.0.252-10.0.0.253
+    autoAssign: true
+    avoidBuggyIPs: false
+- apiVersion: metallb.io/v1beta1
+  kind: L2Advertisement
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"metallb.io/v1beta1","kind":"L2Advertisement","metadata":{"annotations":{},"name":"l2adv-eth1","namespace":"metallb-system"},"spec":{"interfaces":["eth1"],"ipAddressPools":["lb-pool-eth1"]}}
+    creationTimestamp: "2026-01-17T05:52:43Z"
+    generation: 1
+    name: l2adv-eth1
+    namespace: metallb-system
+    resourceVersion: "49741"
+    uid: d219a45b-25a0-4663-8798-d413f200fbbf
+  spec:
+    interfaces:
+    - eth1
+    ipAddressPools:
+    - lb-pool-eth1
+- apiVersion: metallb.io/v1beta1
+  kind: L2Advertisement
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"metallb.io/v1beta1","kind":"L2Advertisement","metadata":{"annotations":{},"name":"l2adv-tailscale","namespace":"metallb-system"},"spec":{"interfaces":["eth1"],"ipAddressPools":["lb-pool-tailscale"]}}
+    creationTimestamp: "2026-09-27T13:32:25Z"
+    generation: 2
+    name: l2adv-tailscale
+    namespace: metallb-system
+    resourceVersion: "25203714"
+    uid: 4b4a3fa2-0b70-4571-948f-890543cfc99a
+  spec:
+    interfaces:
+    - eth0
+    - eth1
+    ipAddressPools:
+    - lb-pool-tailscale
+kind: List
+metadata:
+  resourceVersion: ""

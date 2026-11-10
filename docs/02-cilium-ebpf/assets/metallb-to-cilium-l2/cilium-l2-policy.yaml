@@ -1,0 +1,36 @@
+# Cilium L2 Announcement Policy - Traefik VIP 10.0.0.252
+#
+# Final state after the conservative MetalLB-speaker replacement:
+#   - MetalLB controller stays in place and keeps doing LB IPAM (it owns
+#     status.loadBalancer.ingress).
+#   - Cilium agent only announces that VIP over L2 on eth0.
+#   - No Cilium LB IPAM: enableLBIPAM=false, defaultLBServiceIPAM=none.
+#   - devices stays "eth0": eth1 is NOT needed because the only LB Service
+#     (Traefik 10.0.0.252) is reached from the 10.0.0.0/24 network via eth0
+#     and the 172.16.1.220-250 pool is unused.
+#
+# Rollout order used:
+#   1. Apply this policy with serviceSelector matching nothing
+#      (e.g. matchLabels: {cilium-l2-enabled: "no-match-yet"}).
+#   2. Remove MetalLB speaker pods (nodeSelector trick, DS kept for rollback).
+#   3. Replace serviceSelector with the Traefik selector below and wait for
+#      lease cilium-l2announce-traefik-traefik to be acquired.
+#   4. Broaden nodeSelector from worker03 to all non-control-plane nodes.
+#      The existing lease stays with worker03 (first come, first served), so
+#      the ARP/MAC seen by clients does not change.
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: traefik-l2
+spec:
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+  interfaces:
+    - ^eth0$
+  loadBalancerIPs: true
+  externalIPs: false
+  serviceSelector:
+    matchLabels:
+      io.kubernetes.service.namespace: traefik

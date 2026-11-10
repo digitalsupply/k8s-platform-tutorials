@@ -1,0 +1,1153 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/restartedAt: "2026-11-08T11:35:57+08:00"
+    creationTimestamp: "2026-11-08T23:19:02Z"
+    generateName: tekton-pipelines-remote-resolvers-76f54db798-
+    generation: 1
+    labels:
+      app: tekton-pipelines-resolvers
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+      app.kubernetes.io/version: v1.6.0
+      pipeline.tekton.dev/release: v1.6.0
+      pod-template-hash: 76f54db798
+      version: v1.6.0
+    name: tekton-pipelines-remote-resolvers-76f54db798-54gv9
+    namespace: tekton-pipelines-resolvers
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: tekton-pipelines-remote-resolvers-76f54db798
+      uid: 57f1c1be-2e37-4bcd-abf0-7a2fc31d1fb5
+    resourceVersion: "57765054"
+    uid: e54486c0-5a42-433d-8c27-83153f8ff96d
+  spec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: NotIn
+              values:
+              - windows
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: resolvers
+                app.kubernetes.io/instance: default
+                app.kubernetes.io/name: resolvers
+                app.kubernetes.io/part-of: tekton-pipelines
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+    containers:
+    - command:
+      - /sbin/tini
+      - --
+      - /ko-app/resolvers
+      env:
+      - name: SYSTEM_NAMESPACE
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: metadata.namespace
+      - name: KUBERNETES_MIN_VERSION
+        value: v1.28.0
+      - name: CONFIG_LOGGING_NAME
+        value: config-logging
+      - name: CONFIG_OBSERVABILITY_NAME
+        value: config-observability
+      - name: CONFIG_FEATURE_FLAGS_NAME
+        value: feature-flags
+      - name: CONFIG_LEADERELECTION_NAME
+        value: config-leader-election-resolvers
+      - name: METRICS_DOMAIN
+        value: tekton.dev/resolution
+      - name: PROBES_PORT
+        value: "8080"
+      - name: TEKTON_HUB_API
+      - name: ARTIFACT_HUB_API
+        value: https://artifacthub.io/
+      image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.6.0@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293
+      imagePullPolicy: IfNotPresent
+      name: controller
+      ports:
+      - containerPort: 9090
+        name: metrics
+        protocol: TCP
+      - containerPort: 8008
+        name: profiling
+        protocol: TCP
+      - containerPort: 8080
+        name: probes
+        protocol: TCP
+      resources:
+        limits:
+          cpu: "1"
+          memory: 4Gi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /tmp
+        name: tmp-clone-volume
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-2p7gn
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: worker01
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: tekton-pipelines-resolvers
+    serviceAccountName: tekton-pipelines-resolvers
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - emptyDir:
+        sizeLimit: 4Gi
+      name: tmp-clone-volume
+    - name: kube-api-access-2p7gn
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-08T23:24:57Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-08T23:24:29Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-08T23:24:57Z"
+      observedGeneration: 1
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-08T23:24:57Z"
+      observedGeneration: 1
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-08T23:24:28Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - allocatedResources:
+        cpu: 100m
+        memory: 100Mi
+      containerID: containerd://42fcc68ce8d1628f5b617c6dd8d30a4d90058e377d3ded1442f157fa4d521246
+      image: sha256:ae17a6155dcf628992718a47f652ec29129418aed971df6bd3f0c9dd7fcb41dd
+      imageID: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293
+      lastState: {}
+      name: controller
+      ready: true
+      resources:
+        limits:
+          cpu: "1"
+          memory: 4Gi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2026-11-08T23:24:57Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 65532
+      volumeMounts:
+      - mountPath: /tmp
+        name: tmp-clone-volume
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-2p7gn
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 10.0.0.122
+    hostIPs:
+    - ip: 10.0.0.122
+    observedGeneration: 1
+    phase: Running
+    podIP: 10.244.3.149
+    podIPs:
+    - ip: 10.244.3.149
+    qosClass: Burstable
+    startTime: "2026-11-08T23:24:29Z"
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"tekton-pipelines-remote-resolvers","app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines","app.kubernetes.io/version":"v1.6.0","pipeline.tekton.dev/release":"v1.6.0","version":"v1.6.0"},"name":"tekton-pipelines-remote-resolvers","namespace":"tekton-pipelines-resolvers"},"spec":{"ports":[{"name":"http-metrics","port":9090,"protocol":"TCP","targetPort":9090},{"name":"http-profiling","port":8008,"targetPort":8008},{"name":"probes","port":8080}],"selector":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines"}}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app: tekton-pipelines-remote-resolvers
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+      app.kubernetes.io/version: v1.6.0
+      pipeline.tekton.dev/release: v1.6.0
+      version: v1.6.0
+    name: tekton-pipelines-remote-resolvers
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265840"
+    uid: fddecadd-1e27-497e-9ab4-1c73c4a7e115
+  spec:
+    clusterIP: 10.104.189.235
+    clusterIPs:
+    - 10.104.189.235
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http-metrics
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: probes
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines","app.kubernetes.io/version":"v1.6.0","pipeline.tekton.dev/release":"v1.6.0","version":"v1.6.0"},"name":"tekton-pipelines-remote-resolvers","namespace":"tekton-pipelines-resolvers"},"spec":{"replicas":1,"selector":{"matchLabels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines"}},"template":{"metadata":{"labels":{"app":"tekton-pipelines-resolvers","app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines","app.kubernetes.io/version":"v1.6.0","pipeline.tekton.dev/release":"v1.6.0","version":"v1.6.0"}},"spec":{"affinity":{"nodeAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":{"nodeSelectorTerms":[{"matchExpressions":[{"key":"kubernetes.io/os","operator":"NotIn","values":["windows"]}]}]}},"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"podAffinityTerm":{"labelSelector":{"matchLabels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/name":"resolvers","app.kubernetes.io/part-of":"tekton-pipelines"}},"topologyKey":"kubernetes.io/hostname"},"weight":100}]}},"containers":[{"args":[],"command":["/sbin/tini","--","/ko-app/resolvers"],"env":[{"name":"SYSTEM_NAMESPACE","valueFrom":{"fieldRef":{"fieldPath":"metadata.namespace"}}},{"name":"KUBERNETES_MIN_VERSION","value":"v1.28.0"},{"name":"CONFIG_LOGGING_NAME","value":"config-logging"},{"name":"CONFIG_OBSERVABILITY_NAME","value":"config-observability"},{"name":"CONFIG_FEATURE_FLAGS_NAME","value":"feature-flags"},{"name":"CONFIG_LEADERELECTION_NAME","value":"config-leader-election-resolvers"},{"name":"METRICS_DOMAIN","value":"tekton.dev/resolution"},{"name":"PROBES_PORT","value":"8080"},{"name":"TEKTON_HUB_API","value":""},{"name":"ARTIFACT_HUB_API","value":"https://artifacthub.io/"}],"image":"ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.6.0@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293","name":"controller","ports":[{"containerPort":9090,"name":"metrics"},{"containerPort":8008,"name":"profiling"},{"containerPort":8080,"name":"probes"}],"resources":{"limits":{"cpu":"1000m","memory":"4Gi"},"requests":{"cpu":"100m","memory":"100Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}},"volumeMounts":[{"mountPath":"/tmp","name":"tmp-clone-volume"}]}],"serviceAccountName":"tekton-pipelines-resolvers","volumes":[{"emptyDir":{"sizeLimit":"4Gi"},"name":"tmp-clone-volume"}]}}}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    generation: 2
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+      app.kubernetes.io/version: v1.6.0
+      pipeline.tekton.dev/release: v1.6.0
+      version: v1.6.0
+    name: tekton-pipelines-remote-resolvers
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "57765058"
+    uid: d01736ad-5543-4150-b92c-451b0209df0f
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: resolvers
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/name: resolvers
+        app.kubernetes.io/part-of: tekton-pipelines
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2026-11-08T11:35:57+08:00"
+        labels:
+          app: tekton-pipelines-resolvers
+          app.kubernetes.io/component: resolvers
+          app.kubernetes.io/instance: default
+          app.kubernetes.io/name: resolvers
+          app.kubernetes.io/part-of: tekton-pipelines
+          app.kubernetes.io/version: v1.6.0
+          pipeline.tekton.dev/release: v1.6.0
+          version: v1.6.0
+      spec:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: NotIn
+                  values:
+                  - windows
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: resolvers
+                    app.kubernetes.io/instance: default
+                    app.kubernetes.io/name: resolvers
+                    app.kubernetes.io/part-of: tekton-pipelines
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - command:
+          - /sbin/tini
+          - --
+          - /ko-app/resolvers
+          env:
+          - name: SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_MIN_VERSION
+            value: v1.28.0
+          - name: CONFIG_LOGGING_NAME
+            value: config-logging
+          - name: CONFIG_OBSERVABILITY_NAME
+            value: config-observability
+          - name: CONFIG_FEATURE_FLAGS_NAME
+            value: feature-flags
+          - name: CONFIG_LEADERELECTION_NAME
+            value: config-leader-election-resolvers
+          - name: METRICS_DOMAIN
+            value: tekton.dev/resolution
+          - name: PROBES_PORT
+            value: "8080"
+          - name: TEKTON_HUB_API
+          - name: ARTIFACT_HUB_API
+            value: https://artifacthub.io/
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.6.0@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293
+          imagePullPolicy: IfNotPresent
+          name: controller
+          ports:
+          - containerPort: 9090
+            name: metrics
+            protocol: TCP
+          - containerPort: 8008
+            name: profiling
+            protocol: TCP
+          - containerPort: 8080
+            name: probes
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-clone-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: tekton-pipelines-resolvers
+        serviceAccountName: tekton-pipelines-resolvers
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir:
+            sizeLimit: 4Gi
+          name: tmp-clone-volume
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-01-28T08:22:14Z"
+      lastUpdateTime: "2026-11-08T03:36:09Z"
+      message: ReplicaSet "tekton-pipelines-remote-resolvers-76f54db798" has successfully
+        progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2026-11-08T23:24:57Z"
+      lastUpdateTime: "2026-11-08T23:24:57Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    generation: 2
+    labels:
+      app: tekton-pipelines-resolvers
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+      app.kubernetes.io/version: v1.6.0
+      pipeline.tekton.dev/release: v1.6.0
+      pod-template-hash: 65c5f8fc5d
+      version: v1.6.0
+    name: tekton-pipelines-remote-resolvers-65c5f8fc5d
+    namespace: tekton-pipelines-resolvers
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tekton-pipelines-remote-resolvers
+      uid: d01736ad-5543-4150-b92c-451b0209df0f
+    resourceVersion: "56874478"
+    uid: 483225d1-e260-49b4-9920-ef444f2856b8
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: resolvers
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/name: resolvers
+        app.kubernetes.io/part-of: tekton-pipelines
+        pod-template-hash: 65c5f8fc5d
+    template:
+      metadata:
+        labels:
+          app: tekton-pipelines-resolvers
+          app.kubernetes.io/component: resolvers
+          app.kubernetes.io/instance: default
+          app.kubernetes.io/name: resolvers
+          app.kubernetes.io/part-of: tekton-pipelines
+          app.kubernetes.io/version: v1.6.0
+          pipeline.tekton.dev/release: v1.6.0
+          pod-template-hash: 65c5f8fc5d
+          version: v1.6.0
+      spec:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: NotIn
+                  values:
+                  - windows
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: resolvers
+                    app.kubernetes.io/instance: default
+                    app.kubernetes.io/name: resolvers
+                    app.kubernetes.io/part-of: tekton-pipelines
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - command:
+          - /sbin/tini
+          - --
+          - /ko-app/resolvers
+          env:
+          - name: SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_MIN_VERSION
+            value: v1.28.0
+          - name: CONFIG_LOGGING_NAME
+            value: config-logging
+          - name: CONFIG_OBSERVABILITY_NAME
+            value: config-observability
+          - name: CONFIG_FEATURE_FLAGS_NAME
+            value: feature-flags
+          - name: CONFIG_LEADERELECTION_NAME
+            value: config-leader-election-resolvers
+          - name: METRICS_DOMAIN
+            value: tekton.dev/resolution
+          - name: PROBES_PORT
+            value: "8080"
+          - name: TEKTON_HUB_API
+          - name: ARTIFACT_HUB_API
+            value: https://artifacthub.io/
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.6.0@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293
+          imagePullPolicy: IfNotPresent
+          name: controller
+          ports:
+          - containerPort: 9090
+            name: metrics
+            protocol: TCP
+          - containerPort: 8008
+            name: profiling
+            protocol: TCP
+          - containerPort: 8080
+            name: probes
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-clone-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: tekton-pipelines-resolvers
+        serviceAccountName: tekton-pipelines-resolvers
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir:
+            sizeLimit: 4Gi
+          name: tmp-clone-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+    terminatingReplicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2026-11-08T03:35:57Z"
+    generation: 1
+    labels:
+      app: tekton-pipelines-resolvers
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/name: resolvers
+      app.kubernetes.io/part-of: tekton-pipelines
+      app.kubernetes.io/version: v1.6.0
+      pipeline.tekton.dev/release: v1.6.0
+      pod-template-hash: 76f54db798
+      version: v1.6.0
+    name: tekton-pipelines-remote-resolvers-76f54db798
+    namespace: tekton-pipelines-resolvers
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tekton-pipelines-remote-resolvers
+      uid: d01736ad-5543-4150-b92c-451b0209df0f
+    resourceVersion: "57765057"
+    uid: 57f1c1be-2e37-4bcd-abf0-7a2fc31d1fb5
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: resolvers
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/name: resolvers
+        app.kubernetes.io/part-of: tekton-pipelines
+        pod-template-hash: 76f54db798
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2026-11-08T11:35:57+08:00"
+        labels:
+          app: tekton-pipelines-resolvers
+          app.kubernetes.io/component: resolvers
+          app.kubernetes.io/instance: default
+          app.kubernetes.io/name: resolvers
+          app.kubernetes.io/part-of: tekton-pipelines
+          app.kubernetes.io/version: v1.6.0
+          pipeline.tekton.dev/release: v1.6.0
+          pod-template-hash: 76f54db798
+          version: v1.6.0
+      spec:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: NotIn
+                  values:
+                  - windows
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: resolvers
+                    app.kubernetes.io/instance: default
+                    app.kubernetes.io/name: resolvers
+                    app.kubernetes.io/part-of: tekton-pipelines
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - command:
+          - /sbin/tini
+          - --
+          - /ko-app/resolvers
+          env:
+          - name: SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_MIN_VERSION
+            value: v1.28.0
+          - name: CONFIG_LOGGING_NAME
+            value: config-logging
+          - name: CONFIG_OBSERVABILITY_NAME
+            value: config-observability
+          - name: CONFIG_FEATURE_FLAGS_NAME
+            value: feature-flags
+          - name: CONFIG_LEADERELECTION_NAME
+            value: config-leader-election-resolvers
+          - name: METRICS_DOMAIN
+            value: tekton.dev/resolution
+          - name: PROBES_PORT
+            value: "8080"
+          - name: TEKTON_HUB_API
+          - name: ARTIFACT_HUB_API
+            value: https://artifacthub.io/
+          image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.6.0@sha256:e77cc55c6e507c393be029335c765c6c34238ee48b49379428da3d01713e9293
+          imagePullPolicy: IfNotPresent
+          name: controller
+          ports:
+          - containerPort: 9090
+            name: metrics
+            protocol: TCP
+          - containerPort: 8008
+            name: profiling
+            protocol: TCP
+          - containerPort: 8080
+            name: probes
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-clone-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: tekton-pipelines-resolvers
+        serviceAccountName: tekton-pipelines-resolvers
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir:
+            sizeLimit: 4Gi
+          name: tmp-clone-volume
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+- apiVersion: v1
+  data:
+    default-kind: task
+    default-service-account: default
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"default-kind":"task","default-service-account":"default"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"bundleresolver-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: bundleresolver-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265821"
+    uid: 7c16d6a5-a208-489c-88a0-66f8eaf59b3b
+- apiVersion: v1
+  data:
+    allowed-namespaces: ""
+    blocked-namespaces: ""
+    default-kind: task
+    default-namespace: ""
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"allowed-namespaces":"","blocked-namespaces":"","default-kind":"task","default-namespace":""},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"cluster-resolver-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: cluster-resolver-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265822"
+    uid: c42b35a1-c290-463c-8d7c-87d83f5953d9
+- apiVersion: v1
+  data:
+    _example: |
+      ################################
+      #                              #
+      #    EXAMPLE CONFIGURATION     #
+      #                              #
+      ################################
+      # This block is not actually functional configuration,
+      # but serves to illustrate the available configuration
+      # options and document them in a way that is accessible
+      # to users that `kubectl edit` this config map.
+      #
+      # These sample configuration options may be copied out of
+      # this example block and unindented to be in the data block
+      # to actually change the configuration.
+      # lease-duration is how long non-leaders will wait to try to acquire the
+      # lock; 15 seconds is the value used by core kubernetes controllers.
+      lease-duration: "60s"
+      # renew-deadline is how long a leader will try to renew the lease before
+      # giving up; 10 seconds is the value used by core kubernetes controllers.
+      renew-deadline: "40s"
+      # retry-period is how long the leader election client waits between tries of
+      # actions; 2 seconds is the value used by core kubernetes controllers.
+      retry-period: "10s"
+      # buckets is the number of buckets used to partition key space of each
+      # Reconciler. If this number is M and the replica number of the controller
+      # is N, the N replicas will compete for the M buckets. The owner of a
+      # bucket will take care of the reconciling for the keys partitioned into
+      # that bucket.
+      buckets: "1"
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"_example":"################################\n#                              #\n#    EXAMPLE CONFIGURATION     #\n#                              #\n################################\n# This block is not actually functional configuration,\n# but serves to illustrate the available configuration\n# options and document them in a way that is accessible\n# to users that `kubectl edit` this config map.\n#\n# These sample configuration options may be copied out of\n# this example block and unindented to be in the data block\n# to actually change the configuration.\n# lease-duration is how long non-leaders will wait to try to acquire the\n# lock; 15 seconds is the value used by core kubernetes controllers.\nlease-duration: \"60s\"\n# renew-deadline is how long a leader will try to renew the lease before\n# giving up; 10 seconds is the value used by core kubernetes controllers.\nrenew-deadline: \"40s\"\n# retry-period is how long the leader election client waits between tries of\n# actions; 2 seconds is the value used by core kubernetes controllers.\nretry-period: \"10s\"\n# buckets is the number of buckets used to partition key space of each\n# Reconciler. If this number is M and the replica number of the controller\n# is N, the N replicas will compete for the M buckets. The owner of a\n# bucket will take care of the reconciling for the keys partitioned into\n# that bucket.\nbuckets: \"1\"\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"config-leader-election-resolvers","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: config-leader-election-resolvers
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265824"
+    uid: 8e22945d-8f58-42c7-b8b7-0a7c196b7daf
+- apiVersion: v1
+  data:
+    loglevel.controller: info
+    loglevel.webhook: info
+    zap-logger-config: |
+      {
+        "level": "info",
+        "development": false,
+        "sampling": {
+          "initial": 100,
+          "thereafter": 100
+        },
+        "outputPaths": ["stdout"],
+        "errorOutputPaths": ["stderr"],
+        "encoding": "json",
+        "encoderConfig": {
+          "timeKey": "timestamp",
+          "levelKey": "severity",
+          "nameKey": "logger",
+          "callerKey": "caller",
+          "messageKey": "message",
+          "stacktraceKey": "stacktrace",
+          "lineEnding": "",
+          "levelEncoder": "",
+          "timeEncoder": "iso8601",
+          "durationEncoder": "",
+          "callerEncoder": ""
+        }
+      }
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"loglevel.controller":"info","loglevel.webhook":"info","zap-logger-config":"{\n  \"level\": \"info\",\n  \"development\": false,\n  \"sampling\": {\n    \"initial\": 100,\n    \"thereafter\": 100\n  },\n  \"outputPaths\": [\"stdout\"],\n  \"errorOutputPaths\": [\"stderr\"],\n  \"encoding\": \"json\",\n  \"encoderConfig\": {\n    \"timeKey\": \"timestamp\",\n    \"levelKey\": \"severity\",\n    \"nameKey\": \"logger\",\n    \"callerKey\": \"caller\",\n    \"messageKey\": \"message\",\n    \"stacktraceKey\": \"stacktrace\",\n    \"lineEnding\": \"\",\n    \"levelEncoder\": \"\",\n    \"timeEncoder\": \"iso8601\",\n    \"durationEncoder\": \"\",\n    \"callerEncoder\": \"\"\n  }\n}\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"config-logging","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: config-logging
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265825"
+    uid: 7c47fd67-875d-410d-a263-e7a6b78cd163
+- apiVersion: v1
+  data:
+    _example: |
+      ################################
+      #                              #
+      #    EXAMPLE CONFIGURATION     #
+      #                              #
+      ################################
+
+      # This block is not actually functional configuration,
+      # but serves to illustrate the available configuration
+      # options and document them in a way that is accessible
+      # to users that `kubectl edit` this config map.
+      #
+      # These sample configuration options may be copied out of
+      # this example block and unindented to be in the data block
+      # to actually change the configuration.
+
+      # metrics.backend-destination field specifies the system metrics destination.
+      # It supports either prometheus (the default) or stackdriver.
+      # Note: Using stackdriver will incur additional charges
+      metrics.backend-destination: prometheus
+
+      # metrics.request-metrics-backend-destination specifies the request metrics
+      # destination. If non-empty, it enables queue proxy to send request metrics.
+      # Currently supported values: prometheus, stackdriver.
+      metrics.request-metrics-backend-destination: prometheus
+
+      # metrics.stackdriver-project-id field specifies the stackdriver project ID. This
+      # field is optional. When running on GCE, application default credentials will be
+      # used if this field is not provided.
+      metrics.stackdriver-project-id: "<your stackdriver project id>"
+
+      # metrics.allow-stackdriver-custom-metrics indicates whether it is allowed to send metrics to
+      # Stackdriver using "global" resource type and custom metric type if the
+      # metrics are not supported by "knative_revision" resource type. Setting this
+      # flag to "true" could cause extra Stackdriver charge.
+      # If metrics.backend-destination is not Stackdriver, this is ignored.
+      metrics.allow-stackdriver-custom-metrics: "false"
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"_example":"################################\n#                              #\n#    EXAMPLE CONFIGURATION     #\n#                              #\n################################\n\n# This block is not actually functional configuration,\n# but serves to illustrate the available configuration\n# options and document them in a way that is accessible\n# to users that `kubectl edit` this config map.\n#\n# These sample configuration options may be copied out of\n# this example block and unindented to be in the data block\n# to actually change the configuration.\n\n# metrics.backend-destination field specifies the system metrics destination.\n# It supports either prometheus (the default) or stackdriver.\n# Note: Using stackdriver will incur additional charges\nmetrics.backend-destination: prometheus\n\n# metrics.request-metrics-backend-destination specifies the request metrics\n# destination. If non-empty, it enables queue proxy to send request metrics.\n# Currently supported values: prometheus, stackdriver.\nmetrics.request-metrics-backend-destination: prometheus\n\n# metrics.stackdriver-project-id field specifies the stackdriver project ID. This\n# field is optional. When running on GCE, application default credentials will be\n# used if this field is not provided.\nmetrics.stackdriver-project-id: \"\u003cyour stackdriver project id\u003e\"\n\n# metrics.allow-stackdriver-custom-metrics indicates whether it is allowed to send metrics to\n# Stackdriver using \"global\" resource type and custom metric type if the\n# metrics are not supported by \"knative_revision\" resource type. Setting this\n# flag to \"true\" could cause extra Stackdriver charge.\n# If metrics.backend-destination is not Stackdriver, this is ignored.\nmetrics.allow-stackdriver-custom-metrics: \"false\"\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"config-observability","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: config-observability
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265826"
+    uid: 1ad8b209-77ee-423d-9009-0994b8321d33
+- apiVersion: v1
+  data:
+    api-token-secret-key: ""
+    api-token-secret-name: ""
+    api-token-secret-namespace: default
+    default-org: ""
+    default-revision: main
+    default-url: https://github.com/tektoncd/catalog.git
+    fetch-timeout: 1m
+    scm-type: github
+    server-url: ""
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"api-token-secret-key":"","api-token-secret-name":"","api-token-secret-namespace":"default","default-org":"","default-revision":"main","default-url":"https://github.com/tektoncd/catalog.git","fetch-timeout":"1m","scm-type":"github","server-url":""},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"git-resolver-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: git-resolver-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265827"
+    uid: 8511450a-a580-4fed-9b50-bf8559acc5cb
+- apiVersion: v1
+  data:
+    fetch-timeout: 1m
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"fetch-timeout":"1m"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"http-resolver-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: http-resolver-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265828"
+    uid: 60cf3279-740f-4be9-87bd-66fe0558e1d0
+- apiVersion: v1
+  data:
+    default-artifact-hub-pipeline-catalog: tekton-catalog-pipelines
+    default-artifact-hub-task-catalog: tekton-catalog-tasks
+    default-kind: task
+    default-tekton-hub-catalog: Tekton
+    default-type: artifact
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"default-artifact-hub-pipeline-catalog":"tekton-catalog-pipelines","default-artifact-hub-task-catalog":"tekton-catalog-tasks","default-kind":"task","default-tekton-hub-catalog":"Tekton","default-type":"artifact"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"hubresolver-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: hubresolver-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265829"
+    uid: 74e7eb5d-4a3e-436d-b854-d4223e27f767
+- apiVersion: v1
+  data:
+    ca.crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIDBTCCAe2gAwIBAgIIAWvzpydun+4wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+      AxMKa3ViZXJuZXRlczAeFw0yNjAxMTYxMjUwMjBaFw0zNjAxMTQxMjU1MjBaMBUx
+      EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+      AoIBAQDDzGrETONGsxxr8+t49queV8757OoAXW+B/781OA+m1DAQ1yO8QvXB5RIN
+      bbYDYnZPBw3YV6KC5vQt8g4O8i0I5w4cB7TDbu5nrS5WFqsvGw0Rle5pirD5RXHx
+      9eYFUKxIsnR2CpXk2hgMM0ypwTeMZ8TeRnqODNzPZdcUJ5visDYwXHY0whMTQOyH
+      1ebdjzEMqQwU++9Gr9xVfJxOXZaxu1jXARNxJmWqoQbiLvRDKkll+pG25vJgyJGx
+      ekEc6/asbn8N9TR3SvdEC3ZpxiC3B+U3k64vP5wuVLIkBp7NwGyFDO7BTNBhoiVf
+      pSlEtqjCO/xxwI9jdzHwC2yg70CVAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+      BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQlQmwclYSJo3ah2ichfwyl5Bzk4TAV
+      BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQCUHD49pjsj
+      GR1oybDIJLQ8q9QBL+ZH8E9tsAIWO01u9BvhAxsVrYHEfWXQq399IZxdUPozih4Q
+      6D/3uLijfYzx2YF2uwYySvJ/f7kYhYJT3uBUBh8sR0tgwsTwWgDg+uULWicyK29u
+      oE63OhC2eYTxjiakDvPNInNAKsa3Td+E2qSC2duYXyh6Oru0RlzM3sWCbUj3sEhQ
+      wsODjLGCmuSTIAMioPpTmdC6vBkKwKUiXA5zHDHX0w+oH1hW5fsqz64n66tjtwkx
+      FiA8kiUUA6x6D57WHv1DhUGl/nNjsr6GwKxQiHu4xzLBSRNJlzUgjP6+j5pST0Y/
+      u4PEERrWbTJc
+      -----END CERTIFICATE-----
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubernetes.io/description: Contains a CA bundle that can be used to verify the
+        kube-apiserver when using internal endpoints such as the internal service
+        IP or kubernetes.default.svc. No other usage is guaranteed across distributions
+        of Kubernetes clusters.
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    name: kube-root-ca.crt
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265815"
+    uid: 3ae8ded8-9e8c-4aaa-9b7d-212a908cd5a3
+- apiVersion: v1
+  data:
+    max-size: "1000"
+    ttl: 5m
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"max-size":"1000","ttl":"5m"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"resolver-cache-config","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: resolver-cache-config
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265830"
+    uid: 4c2d26bf-5afd-46de-94d1-cf3cfe30629f
+- apiVersion: v1
+  data:
+    enable-bundles-resolver: "true"
+    enable-cluster-resolver: "true"
+    enable-git-resolver: "true"
+    enable-hub-resolver: "true"
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"enable-bundles-resolver":"true","enable-cluster-resolver":"true","enable-git-resolver":"true","enable-hub-resolver":"true"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"resolvers-feature-flags","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: resolvers-feature-flags
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265823"
+    uid: 5e8592d1-8707-43e9-977d-8fe395d4cba7
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    name: default
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265814"
+    uid: 88d6f19e-3a97-4924-b91e-995f121a0503
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"ServiceAccount","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"tekton-pipelines-resolvers","namespace":"tekton-pipelines-resolvers"}}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: tekton-pipelines-resolvers
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265818"
+    uid: 47725745-29e6-476f-a82a-473b46d95019
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"Role","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"tekton-pipelines-resolvers-namespace-rbac","namespace":"tekton-pipelines-resolvers"},"rules":[{"apiGroups":[""],"resources":["configmaps","secrets"],"verbs":["get","list","update","watch"]},{"apiGroups":["coordination.k8s.io"],"resources":["leases"],"verbs":["get","list","create","update","delete","patch","watch"]}]}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: tekton-pipelines-resolvers-namespace-rbac
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265817"
+    uid: 5d508257-0592-487c-9ada-a7711d03852a
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - secrets
+    verbs:
+    - get
+    - list
+    - update
+    - watch
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - create
+    - update
+    - delete
+    - patch
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"RoleBinding","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"resolvers","app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"tekton-pipelines-resolvers-namespace-rbac","namespace":"tekton-pipelines-resolvers"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"Role","name":"tekton-pipelines-resolvers-namespace-rbac"},"subjects":[{"kind":"ServiceAccount","name":"tekton-pipelines-resolvers","namespace":"tekton-pipelines-resolvers"}]}
+    creationTimestamp: "2026-01-28T08:22:14Z"
+    labels:
+      app.kubernetes.io/component: resolvers
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/part-of: tekton-pipelines
+    name: tekton-pipelines-resolvers-namespace-rbac
+    namespace: tekton-pipelines-resolvers
+    resourceVersion: "1265820"
+    uid: 6370043e-0d61-4f05-936d-d3238c8ebb83
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: tekton-pipelines-resolvers-namespace-rbac
+  subjects:
+  - kind: ServiceAccount
+    name: tekton-pipelines-resolvers
+    namespace: tekton-pipelines-resolvers
+kind: List
+metadata:
+  resourceVersion: ""

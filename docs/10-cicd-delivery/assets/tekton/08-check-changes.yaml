@@ -1,0 +1,172 @@
+# Compassio CI/CD — 判定这次 push 是否需要重建镜像
+#
+# 为什么放在流水线里,而不是 EventListener 的 CEL 过滤:
+# GitLab 的 push payload 里 commits 最多 20 条(超出由 total_commits_count 体现)。
+# 在 EL 里按 commits 过滤,遇到 commit 数 > 20 的 push / merge 时会**静默不触发**,
+# 表现为"代码推上去了但没部署"。这里改用真实的 git diff(before..after)判断,
+# 依据只有一条:改动是否落在镜像构建上下文(backend/ frontend/)里。
+#
+# 任何一步失败都 fail-open(need-build=true),最坏等价于"没有跳过逻辑"。
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: compassio-check-changes
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  description: >-
+    Decide whether a push touches the image build contexts. Sets
+    results.need-build so build/promote tasks can be skipped with `when`.
+  params:
+    - name: url
+      type: string
+    - name: before
+      type: string
+      description: Previous tip SHA from the webhook (body.before).
+    - name: after
+      type: string
+      description: Pushed commit SHA (body.checkout_sha / body.after).
+    - name: subdirectory
+      type: string
+      default: source
+    # 只有这些路径会影响镜像;其余(docs/, cicd/, deploy/ 等)不构建。
+    - name: build-patterns
+      type: string
+      default: "backend/* frontend/*"
+  results:
+    - name: need-build
+      description: "'true' 需要构建,'false' 本次改动不进镜像。"
+    - name: reason
+      description: 人类可读的判定原因。
+    - name: changed-files
+      description: 本次改动的文件(截断到 1500 字符)。
+  workspaces:
+    - name: source
+  steps:
+    - name: check
+      image: alpine/git:v2.45.2
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: password
+        - name: GIT_URL
+          value: $(params.url)
+        - name: BEFORE
+          value: $(params.before)
+        - name: AFTER
+          value: $(params.after)
+        - name: SUBDIR
+          value: $(params.subdirectory)
+        - name: BUILD_PATTERNS
+          value: $(params.build-patterns)
+      script: |
+        #!/bin/sh
+        set -eu
+
+        NEED="$(results.need-build.path)"
+        REASON="$(results.reason.path)"
+        FILES="$(results.changed-files.path)"
+        # Results travel in the container termination message, which Tekton caps
+        # at 4096 bytes. Cap by *bytes* (not chars, and not per line): a push with
+        # many long Chinese paths previously blew the limit and failed the task.
+        MAX_FILES_BYTES=1200
+        MAX_REASON_CHARS=200
+
+        log() { echo "[check-changes] $*"; }
+
+        finish() {
+          # $1 = true|false, $2 = reason
+          printf '%s' "$1" > "$NEED"
+          printf '%s' "$2" > "$REASON"
+          log "$1: $2"
+          exit 0
+        }
+        build() { finish "true" "$1"; }
+
+        [ -n "$AFTER" ] || build "webhook 未提供 after SHA"
+
+        SRC="$(workspaces.source.path)/$SUBDIR"
+        NO_SCHEME="${GIT_URL#*://}"
+        HOST_PART="${NO_SCHEME%%/*}"
+        PATH_PART="${NO_SCHEME#*/}"
+        AUTH_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@${HOST_PART}/${PATH_PART}"
+
+        # 流水线里 clone 任务已经把 after 检出到工作区;单独跑 TaskRun 时没有,
+        # 这里自己浅克隆一份,方便离线验证判定逻辑。
+        if [ ! -d "$SRC/.git" ]; then
+          log "workspace 里没有仓库,浅克隆 $AFTER"
+          rm -rf "$SRC"
+          git clone --depth 1 --no-single-branch "$AUTH_URL" "$SRC" >/dev/null 2>&1 \
+            || build "克隆失败"
+          git -C "$SRC" fetch --depth 1 origin "$AFTER" >/dev/null 2>&1 || true
+          git -C "$SRC" checkout -q "$AFTER" 2>/dev/null || true
+        fi
+
+        cd "$SRC"
+
+        # 关闭文件名展开:下面的 `for pat in $PATTERNS` 只按空格切分模式。
+        # 否则脚本在仓库目录里运行时,`backend/*` 会被展开成实际子目录
+        # (backend/app、backend/tests …),导致所有模式失配、误判为"无需构建"。
+        set -f
+
+        # 新分支/首次推送:before 全 0,没有可比较的基线 → 构建
+        case "$BEFORE" in
+          "" | 0000000000000000000000000000000000000000)
+            build "无可比较的 before(新分支或首次推送)" ;;
+        esac
+
+        has_commit() { git cat-file -e "$1^{commit}" 2>/dev/null; }
+
+        if ! has_commit "$BEFORE"; then
+          log "本地没有 $BEFORE,尝试按 SHA 拉取"
+          git remote set-url origin "$AUTH_URL" 2>/dev/null || true
+          git fetch --depth 1 origin "$BEFORE" >/dev/null 2>&1 || true
+        fi
+        if ! has_commit "$BEFORE"; then
+          log "按 SHA 拉取失败,尝试 deepen 20"
+          git fetch --deepen=20 origin >/dev/null 2>&1 || true
+        fi
+        if ! has_commit "$BEFORE"; then
+          build "无法解析 before=$BEFORE(可能是 force-push/过深历史)"
+        fi
+
+        CHANGED_LIST="$(git diff --name-only "$BEFORE" "$AFTER" 2>/dev/null || true)"
+        if [ -z "$CHANGED_LIST" ]; then
+          build "diff 为空或失败(before=$BEFORE after=$AFTER)"
+        fi
+
+        printf '%s' "$CHANGED_LIST" | head -c "$MAX_FILES_BYTES" > "$FILES"
+
+        MATCHED=""
+        OTHER=""
+        COUNT=0
+        printf '%s\n' "$CHANGED_LIST" > /tmp/changed.txt
+        while IFS= read -r f; do
+          [ -n "$f" ] || continue
+          COUNT=$((COUNT + 1))
+          HIT="false"
+          for pat in $BUILD_PATTERNS; do
+            # shellcheck disable=SC2254
+            case "$f" in
+              $pat) HIT="true"; break ;;
+            esac
+          done
+          if [ "$HIT" = "true" ]; then
+            MATCHED="$MATCHED $f"
+          else
+            OTHER="$OTHER $f"
+          fi
+        done < /tmp/changed.txt
+
+        if [ -n "$MATCHED" ]; then
+          build "命中构建路径:$(echo "$MATCHED" | cut -c1-"$MAX_REASON_CHARS")"
+        fi
+        finish "false" "无 backend/frontend 改动($COUNT 个文件),跳过构建:$(echo "$OTHER" | cut -c1-"$MAX_REASON_CHARS")"

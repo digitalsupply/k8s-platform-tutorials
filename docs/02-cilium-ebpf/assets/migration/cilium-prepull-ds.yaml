@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cilium-prepull
+  namespace: default
+  labels:
+    app: cilium-prepull
+spec:
+  selector:
+    matchLabels:
+      app: cilium-prepull
+  template:
+    metadata:
+      labels:
+        app: cilium-prepull
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: prepull
+          image: quay.io/calico/node:v3.32.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "sleep 3600"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: host
+          hostPath:
+            path: /

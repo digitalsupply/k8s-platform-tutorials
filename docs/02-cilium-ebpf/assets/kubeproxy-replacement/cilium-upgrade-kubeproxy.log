@@ -1,0 +1,27 @@
+Pulled: quay.io/cilium/charts/cilium:1.20.4
+Digest: sha256:712e1f65bf30533d117d1996ac3ace3efdb2521302d31ee887b1e45806bd6b64
+Release "cilium" has been upgraded. Happy Helming!
+NAME: cilium
+LAST DEPLOYED: Mon Nov  9 07:48:46 2026
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 3
+TEST SUITE: None
+NOTES:
+You have successfully installed Cilium with Hubble Relay and Hubble UI.
+
+WARNINGS:
+- WARNING: TLS is not enabled for the Hubble Relay server (hubble.relay.tls.server.enabled=false).
+  This means Hubble Relay communications may not be encrypted. For more information about the security
+  implications and suggested controls, please see: https://docs.cilium.io/en/stable/security/threat-model/#hubble-data-attacker
+
+Your release version is 1.20.4.
+
+For any further help, visit https://docs.cilium.io/en/v1.20/gettinghelp
+daemon set "cilium" successfully rolled out
+KubeProxyReplacement:    False   
+CNI Chaining:            none
+Cilium:                  Ok   1.20.4 (v1.20.4-beb276d2)
+Routing:                 Network: Native   Host: Legacy
+Masquerading:            IPTables [IPv4: Enabled, IPv6: Disabled]
+Controller Status:       49/49 healthy

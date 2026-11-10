@@ -1,0 +1,5 @@
+daemonset.apps "kube-proxy" deleted from kube-system namespace
+configmap "kube-proxy" deleted from kube-system namespace
+servicemonitor.monitoring.coreos.com "prometheus-kube-proxy" deleted from monitoring namespace
+No resources found in kube-system namespace.
+Error from server (NotFound): daemonsets.apps "kube-proxy" not found

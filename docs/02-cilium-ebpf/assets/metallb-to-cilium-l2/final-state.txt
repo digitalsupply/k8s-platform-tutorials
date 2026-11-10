@@ -1,0 +1,46 @@
+=== FINAL STATE ===
+--- nodes ---
+NAME       STATUS   ROLES           AGE    VERSION
+m01        Ready    control-plane   296d   v1.35.9
+master01   Ready    control-plane   296d   v1.35.9
+master02   Ready    control-plane   296d   v1.35.9
+worker01   Ready    <none>          296d   v1.35.9
+worker02   Ready    <none>          296d   v1.35.9
+worker03   Ready    <none>          296d   v1.35.9
+--- non-running pods ---
+monitoring   prometheus-prometheus-prometheus-0   0/2   Init:0/1   0     7m14s
+--- metallb ---
+NAME                     DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR                                               AGE
+daemonset.apps/speaker   0         0         0       0            0           kubernetes.io/os=linux,metallb.io/announcer-disabled=true   295d
+
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/controller   1/1     1            1           295d
+
+NAME                              READY   STATUS    RESTARTS   AGE
+pod/controller-684cd67747-qzrtw   1/1     Running   0          3h3m
+--- l2 policy ---
+spec:
+  externalIPs: false
+  interfaces:
+  - ^eth0$
+  loadBalancerIPs: true
+  nodeSelector:
+    matchExpressions:
+    - key: node-role.kubernetes.io/control-plane
+      operator: DoesNotExist
+  serviceSelector:
+    matchLabels:
+      io.kubernetes.service.namespace: traefik
+--- lease ---
+NAME                                HOLDER     AGE
+cilium-l2announce-traefik-traefik   worker03   2m18s
+--- svc ---
+NAME      TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE   SELECTOR
+traefik   LoadBalancer   10.111.240.160   10.0.0.252    80:30156/TCP,443:30306/TCP   42d   app.kubernetes.io/instance=traefik-traefik,app.kubernetes.io/name=traefik
+--- tests ---
+http_vip=200
+https_vip=200
+nodeport=200
+--- speaker DS state ---
+{"kubernetes.io/os":"linux","metallb.io/announcer-disabled":"true"}
+desired=0 current=0

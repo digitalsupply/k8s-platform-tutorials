@@ -1,0 +1,247 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"annotations":{"lgmt.io/baseline":"2026-09-29 集群实测","lgmt.io/purpose":"tempo3 3.0.3 告警规则"},"labels":{"release":"prometheus"},"name":"tempo3-alerts","namespace":"monitoring"},"spec":{"groups":[{"interval":"30s","name":"tempo3.availability","rules":[{"alert":"Tempo3PodNotReady","annotations":{"description":"tempo3 Pod {{ $labels.pod }} 已 5 分钟未 Ready。","summary":"tempo3 Pod 未就绪 {{ $labels.pod }}"},"expr":"max by (pod) (kube_pod_status_ready{namespace=\"logging\",condition=\"true\",pod=~\"tempo3-.+\"} == 0)\n","for":"5m","labels":{"component":"tempo3","severity":"warning"}},{"alert":"Tempo3PodCrashLooping","annotations":{"description":"tempo3 Pod {{ $labels.pod }} 15 分钟内重启 {{ $value }} 次。","summary":"tempo3 Pod 反复重启 {{ $labels.pod }}"},"expr":"increase(kube_pod_container_status_restarts_total{namespace=\"logging\",pod=~\"tempo3-.+\"}[15m]) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3TargetDown","annotations":{"description":"tempo3 Pod {{ $labels.pod }} 的 /metrics 抓取连续 5 分钟失败。","summary":"tempo3 指标抓取失败 {{ $labels.pod }}"},"expr":"up{namespace=\"logging\",pod=~\"tempo3-.+\"} == 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3MetricsMissing","annotations":{"description":"Prometheus 中已 10 分钟无任何 tempo3 序列，采集侧可能整体失效。","summary":"tempo3 指标整体消失"},"expr":"absent(up{namespace=\"logging\",pod=~\"tempo3-.+\"})\n","for":"10m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3LiveStoreReplicationLag","annotations":{"description":"live-store {{ $labels.pod }} catch-up 耗时 {{ $value }}s，可能落后于写入。","summary":"tempo3 live-store 追平耗时过长 {{ $labels.pod }}"},"expr":"max by (pod) (tempo_live_store_catch_up_duration_seconds{namespace=\"logging\",pod=~\"tempo3-live-store-.*\"}) \u003e 60\n","for":"5m","labels":{"component":"tempo3","severity":"warning"}}]},{"interval":"30s","name":"tempo3.intake","rules":[{"alert":"Tempo3SpanRefused","annotations":{"description":"每秒拒绝 {{ $value }} 个 span，检查租户配置/过载。","summary":"tempo3 distributor 拒绝 span {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_receiver_refused_spans{namespace=\"logging\",pod=~\"tempo3-distributor-.*\"}[5m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3IntakeStalled","annotations":{"description":"Collector 10 分钟内持续收到 span，而 tempo3 distributor 接收速率为 0，摄入链路已断。","summary":"写入侧有流量但 tempo3 未收到任何 span"},"expr":"(sum(rate(otelcol_receiver_accepted_spans_total{job=~\"otel-collector.*\"}[10m])) \u003e 0.01)\nand\n(sum(rate(tempo_receiver_accepted_spans{namespace=\"logging\",pod=~\"tempo3-distributor-.*\"}[10m])) == 0)\n","for":"10m","labels":{"component":"tempo3","severity":"critical"}}]},{"interval":"30s","name":"tempo3.query","rules":[{"alert":"Tempo3QueryErrorRateHigh","annotations":{"description":"查询类请求 5xx 占比 {{ $value | humanizePercentage }}。","summary":"tempo3 查询 5xx 比例过高"},"expr":"(\n  sum(rate(tempo_request_duration_seconds_count{namespace=\"logging\",pod=~\"tempo3-query-frontend-.*\",route=~\"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range\",status_code=~\"5..\"}[5m]))\n  /\n  clamp_min(sum(rate(tempo_request_duration_seconds_count{namespace=\"logging\",pod=~\"tempo3-query-frontend-.*\",route=~\"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range\"}[5m])), 0.001)\n) \u003e 0.05\nand\nsum(rate(tempo_request_duration_seconds_count{namespace=\"logging\",pod=~\"tempo3-query-frontend-.*\",route=~\"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range\"}[5m])) \u003e 0.01\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3LiveStoreClientsLost","annotations":{"description":"querier {{ $labels.pod }} 当前只看到 {{ $value }} 个 live-store，查询将返回不完整结果。","summary":"tempo3 querier 可见 live-store 不足 3"},"expr":"min(tempo_querier_livestore_clients{namespace=\"logging\",pod=~\"tempo3-querier-.*\"}) \u003c 3\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3QueryLatencyHigh","annotations":{"description":"查询 P95 = {{ $value }}s。","summary":"tempo3 查询 P95 延迟过高"},"expr":"histogram_quantile(0.95, sum by (le) (rate(tempo_request_duration_seconds_bucket{namespace=\"logging\",pod=~\"tempo3-query-frontend-.*\",route=~\"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range\"}[5m]))) \u003e 10\n","for":"10m","labels":{"component":"tempo3","severity":"warning"}}]},{"interval":"30s","name":"tempo3.storage","rules":[{"alert":"Tempo3BlockFlushFailing","annotations":{"description":"block-builder {{ $labels.pod }} 写 S3 错误率 {{ $value }}/s，block 无法持久化。","summary":"tempo3 block 落 S3 持续失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_ingest_storage_reader_read_errors_total{namespace=\"logging\",pod=~\"tempo3-block-builder-.*\"}[5m])) \u003e 0.1\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3StorageBackendConnectFailing","annotations":{"description":"block-builder {{ $labels.pod }} S3 连接错误率 {{ $value }}/s。","summary":"tempo3 连接 S3 后端失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_ingest_storage_reader_connect_errors_total{namespace=\"logging\",pod=~\"tempo3-block-builder-.*\"}[5m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3LiveStoreCompletionFailing","annotations":{"description":"live-store {{ $labels.pod }} completion 失败率 {{ $value }}/s。","summary":"tempo3 live-store 块完成失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_live_store_failed_completions_total{namespace=\"logging\",pod=~\"tempo3-live-store-.*\"}[10m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3LiveStoreFlushFailing","annotations":{"description":"live-store {{ $labels.pod }} 本地 flush 失败率 {{ $value }}/s。","summary":"tempo3 live-store 本地 flush 失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_live_store_local_failed_flushes_total{namespace=\"logging\",pod=~\"tempo3-live-store-.*\"}[10m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"warning"}},{"alert":"Tempo3BackendSchedulerFlushFailing","annotations":{"description":"work cache flush 失败率 {{ $value }}/s，调度状态可能丢失。","summary":"tempo3 backend-scheduler flush 失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(tempo_backend_scheduler_work_flushes_failed_total{namespace=\"logging\",pod=~\"tempo3-backend-scheduler-.*\"}[10m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3IngestKafkaLagHigh","annotations":{"description":"分区滞后 {{ $value }} 条消息。","summary":"tempo3 Kafka 摄入滞后 {{ $labels.pod }}"},"expr":"max by (pod) (tempo_ingest_group_partition_lag{namespace=\"logging\",pod=~\"tempo3-live-store-.*\"}) \u003e 10000\n","for":"10m","labels":{"component":"tempo3","severity":"warning"}},{"alert":"Tempo3LiveStoreCompleteQueueBacklog","annotations":{"description":"队列长度 {{ $value }}，块完成速度落后。","summary":"tempo3 live-store 完成队列积压 {{ $labels.pod }}"},"expr":"max by (pod) (tempo_live_store_complete_queue_length{namespace=\"logging\",pod=~\"tempo3-live-store-.*\"}) \u003e 1000\n","for":"10m","labels":{"component":"tempo3","severity":"warning"}}]},{"interval":"30s","name":"tempo3.pipeline","rules":[{"alert":"Tempo3CollectorExportFailing","annotations":{"description":"otlp_grpc/tempo exporter 失败率 {{ $value }}/s，链路可能被重试堆积。","summary":"Collector 向 tempo3 导出 span 失败 {{ $labels.pod }}"},"expr":"sum by (pod) (rate(otelcol_exporter_send_failed_spans_total{job=~\"otel-collector.*\",exporter=~\"otlp_grpc/tempo\"}[5m])) \u003e 0\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}},{"alert":"Tempo3CollectorExportQueueBacklog","annotations":{"description":"队列长度 {{ $value }}。","summary":"Collector 导出队列积压 {{ $labels.pod }}"},"expr":"max by (pod) (otelcol_exporter_queue_size{job=~\"otel-collector.*\",exporter=~\"otlp_grpc/tempo\"}) \u003e 1000\n","for":"10m","labels":{"component":"tempo3","severity":"warning"}},{"alert":"Tempo3SpanDeliveryDivergence","annotations":{"description":"两侧速率背离，怀疑 ack 链路半断导致数据实际丢失或重复。","summary":"Collector 报已发送但 tempo3 未收到 span"},"expr":"(\n  sum(rate(otelcol_exporter_sent_spans_total{job=~\"otel-collector.*\",exporter=~\"otlp_grpc/tempo\"}[15m])) \u003e 0.01\n  and\n  sum(rate(tempo_distributor_spans_received_total{namespace=\"logging\",pod=~\"tempo3-distributor-.*\"}[15m])) == 0\n)\n","for":"5m","labels":{"component":"tempo3","severity":"critical"}}]}]}}
+    lgmt.io/baseline: 2026-09-29 集群实测
+    lgmt.io/purpose: tempo3 3.0.3 告警规则
+    prometheus-operator-validated: "true"
+  creationTimestamp: "2026-09-29T02:39:10Z"
+  generation: 1
+  labels:
+    release: prometheus
+  name: tempo3-alerts
+  namespace: monitoring
+  resourceVersion: "11679656"
+  uid: 15dcec53-f8ef-4c0e-84c2-0361efc35342
+spec:
+  groups:
+  - interval: 30s
+    name: tempo3.availability
+    rules:
+    - alert: Tempo3PodNotReady
+      annotations:
+        description: tempo3 Pod {{ $labels.pod }} 已 5 分钟未 Ready。
+        summary: tempo3 Pod 未就绪 {{ $labels.pod }}
+      expr: |
+        max by (pod) (kube_pod_status_ready{namespace="logging",condition="true",pod=~"tempo3-.+"} == 0)
+      for: 5m
+      labels:
+        component: tempo3
+        severity: warning
+    - alert: Tempo3PodCrashLooping
+      annotations:
+        description: tempo3 Pod {{ $labels.pod }} 15 分钟内重启 {{ $value }} 次。
+        summary: tempo3 Pod 反复重启 {{ $labels.pod }}
+      expr: |
+        increase(kube_pod_container_status_restarts_total{namespace="logging",pod=~"tempo3-.+"}[15m]) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3TargetDown
+      annotations:
+        description: tempo3 Pod {{ $labels.pod }} 的 /metrics 抓取连续 5 分钟失败。
+        summary: tempo3 指标抓取失败 {{ $labels.pod }}
+      expr: |
+        up{namespace="logging",pod=~"tempo3-.+"} == 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3MetricsMissing
+      annotations:
+        description: Prometheus 中已 10 分钟无任何 tempo3 序列，采集侧可能整体失效。
+        summary: tempo3 指标整体消失
+      expr: |
+        absent(up{namespace="logging",pod=~"tempo3-.+"})
+      for: 10m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3LiveStoreReplicationLag
+      annotations:
+        description: live-store {{ $labels.pod }} catch-up 耗时 {{ $value }}s，可能落后于写入。
+        summary: tempo3 live-store 追平耗时过长 {{ $labels.pod }}
+      expr: |
+        max by (pod) (tempo_live_store_catch_up_duration_seconds{namespace="logging",pod=~"tempo3-live-store-.*"}) > 60
+      for: 5m
+      labels:
+        component: tempo3
+        severity: warning
+  - interval: 30s
+    name: tempo3.intake
+    rules:
+    - alert: Tempo3SpanRefused
+      annotations:
+        description: 每秒拒绝 {{ $value }} 个 span，检查租户配置/过载。
+        summary: tempo3 distributor 拒绝 span {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_receiver_refused_spans{namespace="logging",pod=~"tempo3-distributor-.*"}[5m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3IntakeStalled
+      annotations:
+        description: Collector 10 分钟内持续收到 span，而 tempo3 distributor 接收速率为 0，摄入链路已断。
+        summary: 写入侧有流量但 tempo3 未收到任何 span
+      expr: |
+        (sum(rate(otelcol_receiver_accepted_spans_total{job=~"otel-collector.*"}[10m])) > 0.01)
+        and
+        (sum(rate(tempo_receiver_accepted_spans{namespace="logging",pod=~"tempo3-distributor-.*"}[10m])) == 0)
+      for: 10m
+      labels:
+        component: tempo3
+        severity: critical
+  - interval: 30s
+    name: tempo3.query
+    rules:
+    - alert: Tempo3QueryErrorRateHigh
+      annotations:
+        description: 查询类请求 5xx 占比 {{ $value | humanizePercentage }}。
+        summary: tempo3 查询 5xx 比例过高
+      expr: |
+        (
+          sum(rate(tempo_request_duration_seconds_count{namespace="logging",pod=~"tempo3-query-frontend-.*",route=~"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range",status_code=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(tempo_request_duration_seconds_count{namespace="logging",pod=~"tempo3-query-frontend-.*",route=~"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range"}[5m])), 0.001)
+        ) > 0.05
+        and
+        sum(rate(tempo_request_duration_seconds_count{namespace="logging",pod=~"tempo3-query-frontend-.*",route=~"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range"}[5m])) > 0.01
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3LiveStoreClientsLost
+      annotations:
+        description: querier {{ $labels.pod }} 当前只看到 {{ $value }} 个 live-store，查询将返回不完整结果。
+        summary: tempo3 querier 可见 live-store 不足 3
+      expr: |
+        min(tempo_querier_livestore_clients{namespace="logging",pod=~"tempo3-querier-.*"}) < 3
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3QueryLatencyHigh
+      annotations:
+        description: 查询 P95 = {{ $value }}s。
+        summary: tempo3 查询 P95 延迟过高
+      expr: |
+        histogram_quantile(0.95, sum by (le) (rate(tempo_request_duration_seconds_bucket{namespace="logging",pod=~"tempo3-query-frontend-.*",route=~"api_search|api_traces_traceid|api_search_tags|api_v2_search_tags|api_metrics_query_range"}[5m]))) > 10
+      for: 10m
+      labels:
+        component: tempo3
+        severity: warning
+  - interval: 30s
+    name: tempo3.storage
+    rules:
+    - alert: Tempo3BlockFlushFailing
+      annotations:
+        description: block-builder {{ $labels.pod }} 写 S3 错误率 {{ $value }}/s，block
+          无法持久化。
+        summary: tempo3 block 落 S3 持续失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_ingest_storage_reader_read_errors_total{namespace="logging",pod=~"tempo3-block-builder-.*"}[5m])) > 0.1
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3StorageBackendConnectFailing
+      annotations:
+        description: block-builder {{ $labels.pod }} S3 连接错误率 {{ $value }}/s。
+        summary: tempo3 连接 S3 后端失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_ingest_storage_reader_connect_errors_total{namespace="logging",pod=~"tempo3-block-builder-.*"}[5m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3LiveStoreCompletionFailing
+      annotations:
+        description: live-store {{ $labels.pod }} completion 失败率 {{ $value }}/s。
+        summary: tempo3 live-store 块完成失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_live_store_failed_completions_total{namespace="logging",pod=~"tempo3-live-store-.*"}[10m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3LiveStoreFlushFailing
+      annotations:
+        description: live-store {{ $labels.pod }} 本地 flush 失败率 {{ $value }}/s。
+        summary: tempo3 live-store 本地 flush 失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_live_store_local_failed_flushes_total{namespace="logging",pod=~"tempo3-live-store-.*"}[10m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: warning
+    - alert: Tempo3BackendSchedulerFlushFailing
+      annotations:
+        description: work cache flush 失败率 {{ $value }}/s，调度状态可能丢失。
+        summary: tempo3 backend-scheduler flush 失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(tempo_backend_scheduler_work_flushes_failed_total{namespace="logging",pod=~"tempo3-backend-scheduler-.*"}[10m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3IngestKafkaLagHigh
+      annotations:
+        description: 分区滞后 {{ $value }} 条消息。
+        summary: tempo3 Kafka 摄入滞后 {{ $labels.pod }}
+      expr: |
+        max by (pod) (tempo_ingest_group_partition_lag{namespace="logging",pod=~"tempo3-live-store-.*"}) > 10000
+      for: 10m
+      labels:
+        component: tempo3
+        severity: warning
+    - alert: Tempo3LiveStoreCompleteQueueBacklog
+      annotations:
+        description: 队列长度 {{ $value }}，块完成速度落后。
+        summary: tempo3 live-store 完成队列积压 {{ $labels.pod }}
+      expr: |
+        max by (pod) (tempo_live_store_complete_queue_length{namespace="logging",pod=~"tempo3-live-store-.*"}) > 1000
+      for: 10m
+      labels:
+        component: tempo3
+        severity: warning
+  - interval: 30s
+    name: tempo3.pipeline
+    rules:
+    - alert: Tempo3CollectorExportFailing
+      annotations:
+        description: otlp_grpc/tempo exporter 失败率 {{ $value }}/s，链路可能被重试堆积。
+        summary: Collector 向 tempo3 导出 span 失败 {{ $labels.pod }}
+      expr: |
+        sum by (pod) (rate(otelcol_exporter_send_failed_spans_total{job=~"otel-collector.*",exporter=~"otlp_grpc/tempo"}[5m])) > 0
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical
+    - alert: Tempo3CollectorExportQueueBacklog
+      annotations:
+        description: 队列长度 {{ $value }}。
+        summary: Collector 导出队列积压 {{ $labels.pod }}
+      expr: |
+        max by (pod) (otelcol_exporter_queue_size{job=~"otel-collector.*",exporter=~"otlp_grpc/tempo"}) > 1000
+      for: 10m
+      labels:
+        component: tempo3
+        severity: warning
+    - alert: Tempo3SpanDeliveryDivergence
+      annotations:
+        description: 两侧速率背离，怀疑 ack 链路半断导致数据实际丢失或重复。
+        summary: Collector 报已发送但 tempo3 未收到 span
+      expr: |
+        (
+          sum(rate(otelcol_exporter_sent_spans_total{job=~"otel-collector.*",exporter=~"otlp_grpc/tempo"}[15m])) > 0.01
+          and
+          sum(rate(tempo_distributor_spans_received_total{namespace="logging",pod=~"tempo3-distributor-.*"}[15m])) == 0
+        )
+      for: 5m
+      labels:
+        component: tempo3
+        severity: critical

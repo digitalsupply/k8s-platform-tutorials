@@ -1,0 +1,773 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-06T00:51:22Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-13f428e3-02ba-4af7-90d3-a28285a67c02
+    resourceVersion: "4285560"
+    uid: 6ffd9dd8-ea79-4d95-a634-39e7bad032e4
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: data-loki-write-0
+      namespace: logging
+      resourceVersion: "4285412"
+      uid: 13f428e3-02ba-4af7-90d3-a28285a67c02
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-4c5d4189-783a-4dec-b263-989d96e20cfb
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1775433640487-7917-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-4c5d4189-783a-4dec-b263-989d96e20cfb
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-04-06T00:51:22Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-11-09T01:01:51Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-271e64b9-9e9b-46d9-9901-487a5927734c
+    resourceVersion: "57844884"
+    uid: 2356ef12-b30b-4728-ba62-1f5b0686339f
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 100Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: prometheus-db-ceph-prometheus-prometheus-prometheus-0
+      namespace: monitoring
+      resourceVersion: "57844859"
+      uid: 271e64b9-9e9b-46d9-9901-487a5927734c
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-e07faa22-d0f3-4275-8d1b-37040ced8ef7
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1794181834753-4382-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-e07faa22-d0f3-4275-8d1b-37040ced8ef7
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-09T01:01:51Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-10-27T13:50:58Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60
+    resourceVersion: "47858140"
+    uid: 5cddad53-2721-403a-88a0-9b931dca230b
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 30Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: deeptutor-data
+      namespace: deeptutor
+      resourceVersion: "47858070"
+      uid: 303f4698-f55c-4e88-92bb-1a5e683a1a60
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-e99018f7-6eca-40bb-bc3a-0ec9faafc0c6
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1791210699740-6309-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-e99018f7-6eca-40bb-bc3a-0ec9faafc0c6
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-10-27T13:50:58Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-05-09T11:30:54Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-312f456c-85da-4c85-b6a4-3aa2a682900a
+    resourceVersion: "6497921"
+    uid: 35a487a5-a088-4853-a8e4-0cc228994108
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: pg16-ceph-3
+      namespace: cnpg-system
+      resourceVersion: "6497874"
+      uid: 312f456c-85da-4c85-b6a4-3aa2a682900a
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-0a6cc9fb-1001-41bd-bf9c-f8f206b8c13e
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1778318899404-4984-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-0a6cc9fb-1001-41bd-bf9c-f8f206b8c13e
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-05-09T11:30:54Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-26T04:51:13Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-5dc9836b-d585-4bdf-87c5-5bbe632031e9
+    resourceVersion: "5358738"
+    uid: 0af67c2a-cb75-4af3-b8de-50ec810abb74
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: data-loki-backend-0
+      namespace: logging
+      resourceVersion: "5358597"
+      uid: 5dc9836b-d585-4bdf-87c5-5bbe632031e9
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-ec12c118-43a2-49a6-8e43-3490a1f15c1d
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1777160788646-5937-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-ec12c118-43a2-49a6-8e43-3490a1f15c1d
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-04-26T04:51:13Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-05-09T11:30:54Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-6b229b52-650d-4edc-aa53-dbf57b90b044
+    resourceVersion: "6497922"
+    uid: a0386203-f723-45d7-b2f0-5af8c282edc7
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 5Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: pg16-ceph-3-wal
+      namespace: cnpg-system
+      resourceVersion: "6497875"
+      uid: 6b229b52-650d-4edc-aa53-dbf57b90b044
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-32e04190-c172-47fe-b116-1ebe1cfafddf
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1778318899404-4984-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-32e04190-c172-47fe-b116-1ebe1cfafddf
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-05-09T11:30:54Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-11-09T00:56:13Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-6d3e4030-94a0-435b-b382-a6158e8caefd
+    resourceVersion: "57840457"
+    uid: 1f1ff8a6-527e-4890-8119-764c254c7347
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 20Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: alertmanager-db-ceph-alertmanager-prometheus-alertmanager-0
+      namespace: monitoring
+      resourceVersion: "57840217"
+      uid: 6d3e4030-94a0-435b-b382-a6158e8caefd
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-3b7c6f25-b13b-402c-8b36-2ec985ec081f
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1794181834753-4382-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-3b7c6f25-b13b-402c-8b36-2ec985ec081f
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-09T00:56:13Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-09-29T03:29:53Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-7787aabb-c5e9-4e2e-acad-51ac7ac1deaa
+    resourceVersion: "11743393"
+    uid: 13ff4c24-df52-4451-b058-4c44aebadc67
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 5Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: pg16-ceph-4-wal
+      namespace: cnpg-system
+      resourceVersion: "11743327"
+      uid: 7787aabb-c5e9-4e2e-acad-51ac7ac1deaa
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-ab4583f2-fc88-4331-86e3-145ad51056c0
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1790489245653-5726-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-ab4583f2-fc88-4331-86e3-145ad51056c0
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-09-29T03:29:53Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T11:57:56Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-89160268-67a4-43d0-8922-6c4f3701f556
+    resourceVersion: "3743636"
+    uid: cea3d22e-65f7-40b5-88ef-b3f0609b9277
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 5Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: n8n-pvc
+      namespace: n8n
+      resourceVersion: "3743579"
+      uid: 89160268-67a4-43d0-8922-6c4f3701f556
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-33413b60-80d2-4508-a5ec-45a6604dffe0
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1775201737617-6329-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-33413b60-80d2-4508-a5ec-45a6604dffe0
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-04-03T11:57:56Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-11-09T00:54:29Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-aebfac42-a961-4b21-9440-b175989ba2dc
+    resourceVersion: "57838704"
+    uid: a87e3b8b-0e8a-4541-a733-ac6c7060a9b1
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: prometheus-grafana-ceph
+      namespace: monitoring
+      resourceVersion: "57838684"
+      uid: aebfac42-a961-4b21-9440-b175989ba2dc
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-f34d561a-bbd3-4ba9-bc2e-ac07f2d0caed
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1794181834753-4382-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-f34d561a-bbd3-4ba9-bc2e-ac07f2d0caed
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-09T00:54:29Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-10-27T13:50:58Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-b0b33b5d-3d00-4726-aa5f-4694f16036c7
+    resourceVersion: "47858144"
+    uid: 051ab374-30ea-4ce8-ab20-51ba27007024
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 2Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: redis-data
+      namespace: deeptutor
+      resourceVersion: "47858071"
+      uid: b0b33b5d-3d00-4726-aa5f-4694f16036c7
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-5d351d6f-62d8-487d-9246-0dcb5790fc20
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1791210699740-6309-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-5d351d6f-62d8-487d-9246-0dcb5790fc20
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-10-27T13:50:58Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-10-13T08:09:24Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-b2c92062-62d7-4363-92c6-abfe4cf0c2af
+    resourceVersion: "36709561"
+    uid: 749ecc04-5cda-45a0-8d62-c9e5dda47fcf
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: open-webui-data
+      namespace: open-webui
+      resourceVersion: "36709510"
+      uid: b2c92062-62d7-4363-92c6-abfe4cf0c2af
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-1658274c-a609-42ef-9f34-a251221963f5
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1791210699740-6309-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-1658274c-a609-42ef-9f34-a251221963f5
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-10-13T08:09:24Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: example.com/nfs
+    creationTimestamp: "2026-11-05T14:13:57Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    name: pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+    resourceVersion: "54739950"
+    uid: f5613f18-ee3c-4be1-acd8-3e99bb691bb4
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 1Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: china-study-free-reports
+      namespace: china-study-free
+      resourceVersion: "54739943"
+      uid: b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+    nfs:
+      path: /data/nfs/china-study-free-china-study-free-reports-pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+      server: 10.0.0.1
+    persistentVolumeReclaimPolicy: Delete
+    storageClassName: nfs-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-05T14:13:57Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: example.com/nfs
+    creationTimestamp: "2026-11-06T11:49:40Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    name: pvc-ca401649-424e-436a-9253-31375c373f07
+    resourceVersion: "55444081"
+    uid: 119292f4-595e-4176-86f9-8d51d0ab03c4
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 8Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: china-study-free-assets
+      namespace: china-study-free
+      resourceVersion: "55444076"
+      uid: ca401649-424e-436a-9253-31375c373f07
+    nfs:
+      path: /data/nfs/china-study-free-china-study-free-assets-pvc-ca401649-424e-436a-9253-31375c373f07
+      server: 10.0.0.1
+    persistentVolumeReclaimPolicy: Delete
+    storageClassName: nfs-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-06T11:49:40Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: example.com/nfs
+    creationTimestamp: "2026-10-14T03:14:33Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    name: pvc-d2b40fc6-926f-4c51-baeb-8372a36cd890
+    resourceVersion: "37337610"
+    uid: ed514db1-f96c-42b8-81fa-9b36d03c67f0
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 2Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: frpc-build-ctx
+      namespace: cicd
+      resourceVersion: "37337604"
+      uid: d2b40fc6-926f-4c51-baeb-8372a36cd890
+    nfs:
+      path: /data/nfs/cicd-frpc-build-ctx-pvc-d2b40fc6-926f-4c51-baeb-8372a36cd890
+      server: 10.0.0.1
+    persistentVolumeReclaimPolicy: Delete
+    storageClassName: nfs-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-10-14T03:14:33Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-09-29T03:29:53Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-d6c725e4-41a5-4092-b143-19271639db6b
+    resourceVersion: "11743394"
+    uid: 91567318-353c-4f26-b24b-b23fab3ba606
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: pg16-ceph-4
+      namespace: cnpg-system
+      resourceVersion: "11743320"
+      uid: d6c725e4-41a5-4092-b143-19271639db6b
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-dda57ca2-a484-4489-8ef8-8098a91a5d9c
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1790489245653-5726-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-dda57ca2-a484-4489-8ef8-8098a91a5d9c
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-09-29T03:29:53Z"
+    phase: Bound
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      pv.kubernetes.io/provisioned-by: rbd.csi.ceph.com
+      volume.kubernetes.io/provisioner-deletion-secret-name: csi-rbd-secret
+      volume.kubernetes.io/provisioner-deletion-secret-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-06-06T09:05:53Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    - external-attacher/rbd-csi-ceph-com
+    name: pvc-e6337758-28f8-49e1-9672-5b4e751c118f
+    resourceVersion: "7341181"
+    uid: 486b360d-f6a1-461a-ac36-ff5477a1637f
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 20Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: data-my-cluster-single-pool-0
+      namespace: kafka
+      resourceVersion: "7341105"
+      uid: e6337758-28f8-49e1-9672-5b4e751c118f
+    csi:
+      driver: rbd.csi.ceph.com
+      fsType: ext4
+      nodeStageSecretRef:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      volumeAttributes:
+        clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+        imageFeatures: layering
+        imageName: csi-vol-cdfecb4f-0acb-442b-a845-fa28cd25f2eb
+        journalPool: k8s-rbd
+        pool: k8s-rbd
+        storage.kubernetes.io/csiProvisionerIdentity: 1780731399920-8218-rbd.csi.ceph.com
+      volumeHandle: 0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-cdfecb4f-0acb-442b-a845-fa28cd25f2eb
+    mountOptions:
+    - discard
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: ceph-rbd-sc
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-06-06T09:05:53Z"
+    phase: Bound
+kind: List
+metadata:
+  resourceVersion: ""

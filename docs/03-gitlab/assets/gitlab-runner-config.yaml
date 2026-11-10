@@ -1,0 +1,30 @@
+apiVersion: v1
+data:
+  runners.toml: |
+    [[runners]]
+      name = "openwebui-k8s-runner"
+      id = 1
+      executor = "kubernetes"
+      token = "<redacted-runner-token>"
+      url = "http://192.168.67.201"
+      [runners.kubernetes]
+        namespace = "gitlab-runner"
+        executor_namespace = "gitlab-runner"
+        image_pull_secrets = ["harbor-auth"]
+        helper_image = "192.168.67.202:8443/openwebui/gitlab-runner-helper:x86_64-v17.8.3"
+        helper_image_pull_policy = "IfNotPresent"
+      [runners.kubernetes.pod_template]
+        namespace = "gitlab-runner"
+        image_pull_secrets = ["harbor-auth"]
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"runners.toml":"[[runners]]\n  name = \"openwebui-k8s-runner\"\n  id = 1\n  executor = \"kubernetes\"\n  token = \"<redacted-runner-token>\"\n  url = \"http://192.168.67.201\"\n  [runners.kubernetes]\n    namespace = \"gitlab-runner\"\n    executor_namespace = \"gitlab-runner\"\n    image_pull_secrets = [\"harbor-auth\"]\n    helper_image = \"192.168.67.202:8443/openwebui/gitlab-runner-helper:x86_64-v17.8.3\"\n    helper_image_pull_policy = \"IfNotPresent\"\n  [runners.kubernetes.pod_template]\n    namespace = \"gitlab-runner\"\n    image_pull_secrets = [\"harbor-auth\"]\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"openwebui-cicd"},"name":"gitlab-runner-config","namespace":"gitlab-runner"}}
+  creationTimestamp: "2026-10-13T08:31:20Z"
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+  name: gitlab-runner-config
+  namespace: gitlab-runner
+  resourceVersion: "36726775"
+  uid: d0656caa-2a70-44c4-94b1-47435fd74b55

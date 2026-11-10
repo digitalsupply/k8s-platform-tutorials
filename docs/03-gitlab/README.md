@@ -103,6 +103,42 @@ sudo python3 scripts/check_ports.py \
 只读收集：`ss` 监听、iptables、nftables、HTTP 探测、`gitlab-ctl status`。
 不会修改任何规则。
 
+## 补充：GitLab 在交付链路中的位置（当前环境）
+
+GitLab 服务本身不在 K8s 里，而是跑在宿主机 `192.168.67.201`（GitLab CE 19.4.2，Omnibus）。
+集群里只有 **GitLab Runner** 和 Tekton，分工如下：
+
+```text
+开发者 git push
+      │
+      ▼
+GitLab 192.168.67.201（代码仓 + Webhook）
+      │  webhook
+      ▼
+Traefik 10.0.0.252 → Tekton EventListener（ns=cicd）
+      │
+      ▼
+Tekton Pipeline → BuildKit → Harbor 192.168.67.202:8443
+      │                          │
+      │                          └─ 镜像 tag = commit SHA
+      ▼
+GitOps 仓（overlays/prod）→ ArgoCD → K8s 滚动发布
+```
+
+- GitLab Runner 使用 **Kubernetes executor**，运行在 `gitlab-runner` 命名空间；
+- runner 的 `runners.toml` 存在 ConfigMap `gitlab-runner-config` 中，token 已脱敏；
+- Helm Hub 镜像通过 `harbor-auth` imagePullSecret 拉取；
+- 完整的 push→构建→GitOps→上线链路、BuildKit 排障、webhook 中断恢复，见
+  [10-cicd-delivery](../10-cicd-delivery/README.md)。
+
+## 配套资产
+
+| 资产 | 说明 |
+|---|---|
+| [scripts/check_ports.py](scripts/check_ports.py) | 只读检查端口监听、iptables/nftables、HTTP 探测、GitLab 服务状态 |
+| [assets/gitlab-runner-deployment.yaml](assets/gitlab-runner-deployment.yaml) | 当前 GitLab Runner Deployment（已脱敏） |
+| [assets/gitlab-runner-config.yaml](assets/gitlab-runner-config.yaml) | 当前 runner `runners.toml` ConfigMap（token 已脱敏） |
+
 ## 文档列表
 
 | 文档 | 内容 |

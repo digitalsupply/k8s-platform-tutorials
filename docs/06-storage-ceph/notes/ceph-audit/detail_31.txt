@@ -1,0 +1,48 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+=== ENABLED NON-CEPH UNITS ===
+  auditd.service                                                              loaded active running Security Auditing Service
+  chronyd.service                                                             loaded active running NTP client/server
+  containerd.service                                                          loaded active running containerd container runtime
+  crond.service                                                               loaded active running Command Scheduler
+  dbus-broker.service                                                         loaded active running D-Bus System Message Bus
+  docker.service                                                              loaded active running Docker Application Container Engine
+  getty@tty1.service                                                          loaded active running Getty on tty1
+  irqbalance.service                                                          loaded active running irqbalance daemon
+  NetworkManager.service                                                      loaded active running Network Manager
+  nginx.service                                                               loaded active running The nginx HTTP and reverse proxy server
+  qemu-guest-agent.service                                                    loaded active running QEMU Guest Agent
+  rsyslog.service                                                             loaded active running System Logging Service
+  sshd.service                                                                loaded active running OpenSSH server daemon
+  systemd-journald.service                                                    loaded active running Journal Service
+  systemd-logind.service                                                      loaded active running User Login Management
+  systemd-udevd.service                                                       loaded active running Rule-based Manager for Device Events and Files
+  user@0.service                                                              loaded active running User Manager for UID 0
+  zabbix-agent2.service                                                       loaded active running Zabbix Agent 2
+=== NGINX SERVER NAMES / ROOT ===
+fastcgi_param  SERVER_NAME        $server_name;
+#    listen       443 ssl;
+listen 443 ssl;
+#        listen       [::]:443 ssl http2;
+#        listen       443 ssl http2;
+listen       [::]:80;
+listen       80;
+listen 80;
+#    listen       8000;
+#    listen       somename:8080;
+#        root   html;
+#    root           html;
+root   html;
+#        root         /usr/share/nginx/html;
+root         /usr/share/nginx/html;
+scgi_param  SERVER_NAME        $server_name;
+#        server_name  _;
+server_name  _;
+#    server_name  localhost;
+server_name  localhost;
+server_name *.rgw.lab.com;
+#    server_name  somename  alias  another.alias;
+uwsgi_param  SERVER_NAME        $server_name;
+=== CRON ===
+0hourly
+=== NGINX VER ===
+nginx version: nginx/1.20.1

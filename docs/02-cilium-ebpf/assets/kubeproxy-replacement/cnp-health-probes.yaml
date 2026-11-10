@@ -1,0 +1,43 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-kubelet-health-probes
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: wecom-adapter
+  ingress:
+    - fromEntities:
+        - host
+      fromCIDR:
+        - 10.244.0.0/16
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-kubelet-health-probes
+  namespace: tekton-pipelines
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - host
+      fromCIDR:
+        - 10.244.0.0/16
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8443"
+              protocol: TCP
+            - port: "9090"
+              protocol: TCP
+            - port: "8008"
+              protocol: TCP
+            - port: "9097"
+              protocol: TCP

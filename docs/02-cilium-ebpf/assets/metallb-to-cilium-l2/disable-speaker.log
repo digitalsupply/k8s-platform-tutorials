@@ -1,0 +1,3 @@
+daemonset.apps/speaker patched
+NAME                          READY   STATUS    RESTARTS   AGE    IP             NODE       NOMINATED NODE   READINESS GATES
+controller-684cd67747-qzrtw   1/1     Running   0          179m   10.244.3.244   worker01   <none>           <none>

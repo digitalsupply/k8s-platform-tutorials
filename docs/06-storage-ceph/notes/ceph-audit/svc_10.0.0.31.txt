@@ -1,0 +1,32 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+#####HOST##### ceph-01
+=====ENABLED_SERVICES=====
+auditd.service|active|32010240
+chronyd.service|active|1253376
+cloud-config.service|active|0
+cloud-final.service|active|0
+cloud-init-local.service|active|0
+cloud-init.service|active|0
+crond.service|active|1146880
+dbus-broker.service|active|1388544
+docker.service|active|288071680
+getty@.service|inactive|0
+irqbalance.service|active|757760
+kdump.service|active|0
+lvm2-monitor.service|active|0
+microcode.service|inactive|0
+NetworkManager-dispatcher.service|inactive|0
+NetworkManager-wait-online.service|active|0
+NetworkManager.service|active|8941568
+nginx.service|active|2666496
+nis-domainname.service|active|0
+qemu-guest-agent.service|active|3440640
+rbdmap.service|active|0
+rsyslog.service|active|124465152
+selinux-autorelabel-mark.service|inactive|0
+sshd.service|active|10870784
+sssd.service|inactive|0
+systemd-boot-update.service|active|0
+systemd-network-generator.service|active|0
+systemd-pstore.service|inactive|0
+zabbix-agent2.service|active|69664768

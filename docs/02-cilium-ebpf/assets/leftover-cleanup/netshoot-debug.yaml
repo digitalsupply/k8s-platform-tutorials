@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "3"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"netshoot-debug","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"netshoot-debug"}},"template":{"metadata":{"labels":{"app":"netshoot-debug"}},"spec":{"containers":[{"command":["/bin/bash","-c","sleep infinity"],"image":"nicolaka/netshoot","name":"netshoot","resources":{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}}]}}}}
+  creationTimestamp: "2026-05-07T10:49:46Z"
+  generation: 3
+  name: netshoot-debug
+  namespace: default
+  resourceVersion: "57766436"
+  uid: 40d04f1a-2cc3-4790-b777-7104654f2138
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: netshoot-debug
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-11-08T22:32:20+08:00"
+      labels:
+        app: netshoot-debug
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - sleep infinity
+        image: nicolaka/netshoot
+        imagePullPolicy: Always
+        name: netshoot
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-05-07T10:49:46Z"
+    lastUpdateTime: "2026-11-08T14:33:08Z"
+    message: ReplicaSet "netshoot-debug-79b4c764d6" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2026-11-08T23:25:59Z"
+    lastUpdateTime: "2026-11-08T23:25:59Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0
+  updatedReplicas: 1

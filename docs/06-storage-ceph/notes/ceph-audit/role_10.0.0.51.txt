@@ -1,0 +1,4 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+HOST=ceph-03 IP=10.0.0.51,172.16.1.51,172.17.0.1,
+OS=Rocky Linux 9.6 (Blue Onyx) KERNEL=5.14.0-570.58.1.el9_6.x86_64
+UPTIME=up 4 days, 19 hours, 15 minutes

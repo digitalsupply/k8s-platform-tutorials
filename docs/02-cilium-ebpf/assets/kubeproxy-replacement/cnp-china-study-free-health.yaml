@@ -1,0 +1,18 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-kubelet-health-probes
+  namespace: china-study-free
+spec:
+  endpointSelector:
+    matchLabels:
+      app: china-study-free
+  ingress:
+    - fromEntities:
+        - host
+      fromCIDR:
+        - 10.244.3.0/24
+      toPorts:
+        - ports:
+            - port: "8787"
+              protocol: TCP

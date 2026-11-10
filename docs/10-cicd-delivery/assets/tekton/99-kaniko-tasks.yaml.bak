@@ -1,0 +1,144 @@
+# Compassio CI/CD — Tekton Task: build & push (kaniko, Harbor 8443 self-signed)
+# 与集群现有 build-and-push 同模式，cache-repo 参数化到 compassio 项目
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: compassio-build-push
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  description: Build an image with Kaniko and push to Harbor project compassio
+  params:
+    - name: image
+      type: string
+      description: Fully-qualified destination image (registry/project/name:tag)
+    - name: context
+      type: string
+      default: ""
+      description: Sub-path of the workspace holding the build context
+    - name: dockerfile
+      type: string
+      default: Dockerfile
+    - name: cache-repo
+      type: string
+      default: 192.168.67.202:8443/compassio/cache
+  steps:
+    - name: build
+      image: 192.168.67.202:8443/openwebui/kaniko:v1.23.2
+      workingDir: $(workspaces.source.path)/$(params.context)
+      env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      securityContext:
+        runAsUser: 0
+      args:
+        - --dockerfile=$(workspaces.source.path)/$(params.context)/$(params.dockerfile)
+        - --context=$(workspaces.source.path)/$(params.context)
+        - --destination=$(params.image)
+        - --insecure
+        - --skip-tls-verify
+        - --insecure-pull
+        - --cache=true
+        - --cache-repo=$(params.cache-repo)
+        - --single-snapshot
+        - --verbosity=info
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+  volumes:
+    - name: docker-config
+      secret:
+        secretName: harbor-auth
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+  workspaces:
+    - name: source
+---
+# Task: update BOTH image tags in the compassio GitOps repo (backend + frontend),
+# commit & push — Argo CD auto-sync then rolls them out.
+# Reuses the existing `gitlab-auth` secret (username/password are the same PAT);
+# the GitOps repo URL is a parameter, not baked into the secret.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: compassio-update-gitops
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  description: Update backend/frontend newTag in compassio-gitops and push
+  params:
+    - name: image-tag
+      type: string
+    - name: gitops-url
+      type: string
+      default: http://192.168.67.201/digitalsupply/compassio-gitops.git
+    - name: kustomize-path
+      type: string
+      default: overlays/prod/kustomization.yaml
+    - name: gitops-subdir
+      type: string
+      default: gitops
+  steps:
+    - name: patch-and-commit
+      image: alpine/git:v2.45.2
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: password
+        - name: GITOPS_URL
+          value: $(params.gitops-url)
+        - name: IMAGE_TAG
+          value: $(params.image-tag)
+        - name: KUSTOMIZE_PATH
+          value: $(params.kustomize-path)
+        - name: GITOPS_SUBDIR
+          value: $(params.gitops-subdir)
+      script: |
+        #!/bin/sh
+        set -eu
+        cd "$(workspaces.source.path)"
+        DIR="${GITOPS_SUBDIR}"
+
+        NO_SCHEME="${GITOPS_URL#*://}"
+        HOST_PART="${NO_SCHEME%%/*}"
+        PATH_PART="${NO_SCHEME#*/}"
+        AUTH_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@${HOST_PART}/${PATH_PART}"
+
+        if [ ! -d "$DIR" ]; then
+          git clone "$AUTH_URL" "$DIR"
+        else
+          cd "$DIR"
+          git remote set-url origin "$AUTH_URL"
+          git pull --ff-only origin main
+        fi
+
+        cd "$DIR"
+        git config user.name  "compassio-cicd-bot"
+        git config user.email "compassio-cicd-bot@users.noreply.local"
+
+        # Rewrite every newTag under the images: transformers block (backend + frontend)
+        sed -i "s#^\( *newTag:\).*#\1 ${IMAGE_TAG}#" "$KUSTOMIZE_PATH"
+
+        if git diff --quiet -- "$KUSTOMIZE_PATH"; then
+          echo "No change needed: tags already ${IMAGE_TAG}"
+          exit 0
+        fi
+        echo "--- diff ---"
+        git --no-pager diff -- "$KUSTOMIZE_PATH"
+        git add "$KUSTOMIZE_PATH"
+        git commit -m "ci(compassio): promote image tag ${IMAGE_TAG}"
+        git push origin HEAD:main
+        echo "GitOps repo updated to tag ${IMAGE_TAG}; Argo CD will auto-sync."
+  workspaces:
+    - name: source

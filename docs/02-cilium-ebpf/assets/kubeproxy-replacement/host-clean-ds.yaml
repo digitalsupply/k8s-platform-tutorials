@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: host-clean
+  namespace: default
+  labels:
+    app: host-clean
+spec:
+  selector:
+    matchLabels:
+      app: host-clean
+  template:
+    metadata:
+      labels:
+        app: host-clean
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: clean
+          image: quay.io/calico/node:v3.32.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "sleep 1800"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host
+              mountPath: /host
+      volumes:
+        - name: host
+          hostPath:
+            path: /

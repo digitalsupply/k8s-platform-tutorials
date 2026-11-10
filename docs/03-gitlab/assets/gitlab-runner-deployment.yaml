@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "7"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"gitlab-runner","app.kubernetes.io/part-of":"openwebui-cicd"},"name":"gitlab-runner","namespace":"gitlab-runner"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"gitlab-runner"}},"template":{"metadata":{"labels":{"app":"gitlab-runner"}},"spec":{"containers":[{"args":["run"],"env":[{"name":"CONFIG_DIR","value":"/etc/gitlab-runner"},{"name":"KUBERNETES_SERVICE_HOST","value":"kubernetes.default.svc"}],"image":"192.168.67.202:8443/openwebui/gitlab-runner:alpine-v17.8.3","imagePullPolicy":"IfNotPresent","name":"runner","resources":{"limits":{"cpu":"1","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"readOnlyRootFilesystem":false},"volumeMounts":[{"mountPath":"/etc/gitlab-runner","name":"config"}]}],"serviceAccountName":"gitlab-runner","volumes":[{"configMap":{"items":[{"key":"runners.toml","path":"config.toml"}],"name":"gitlab-runner-config"},"name":"config"}]}}}}
+  creationTimestamp: "2026-10-13T08:31:20Z"
+  generation: 7
+  labels:
+    app: gitlab-runner
+    app.kubernetes.io/part-of: openwebui-cicd
+  name: gitlab-runner
+  namespace: gitlab-runner
+  resourceVersion: "58408496"
+  uid: 74aec47b-57d0-4edb-9f85-d589089a04d1
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: gitlab-runner
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-11-08T11:39:01+08:00"
+      labels:
+        app: gitlab-runner
+    spec:
+      containers:
+      - args:
+        - run
+        env:
+        - name: CONFIG_DIR
+          value: /etc/gitlab-runner
+        - name: KUBERNETES_SERVICE_HOST
+          value: kubernetes.default.svc
+        image: 192.168.67.202:8443/openwebui/gitlab-runner:alpine-v17.8.3
+        imagePullPolicy: IfNotPresent
+        name: runner
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/gitlab-runner
+          name: config
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: gitlab-runner
+      serviceAccountName: gitlab-runner
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: runners.toml
+            path: config.toml
+          name: gitlab-runner-config
+        name: config
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-10-13T08:31:20Z"
+    lastUpdateTime: "2026-11-08T03:39:03Z"
+    message: ReplicaSet "gitlab-runner-c6576c544" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2026-11-09T12:23:59Z"
+    lastUpdateTime: "2026-11-09T12:23:59Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 7
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0
+  updatedReplicas: 1

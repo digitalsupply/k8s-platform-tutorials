@@ -1,0 +1,461 @@
+apiVersion: v1
+items:
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","metadata":{"annotations":{},"name":"argocd","namespace":"argocd"},"spec":{"entryPoints":["websecure"],"routes":[{"kind":"Rule","match":"Host(`argocd.devops.com`)","middlewares":[{"name":"argocd-forwarded-headers"}],"services":[{"name":"argocd-server","port":80,"scheme":"http"}]}],"tls":{"secretName":"argocd-tls"}}}
+    creationTimestamp: "2026-09-28T00:57:08Z"
+    generation: 1
+    name: argocd
+    namespace: argocd
+    resourceVersion: "9736508"
+    uid: e4f5a501-c46e-4ff3-99a8-4866b3b55bcc
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`argocd.devops.com`)
+      middlewares:
+      - name: argocd-forwarded-headers
+      services:
+      - name: argocd-server
+        port: 80
+        scheme: http
+    tls:
+      secretName: argocd-tls
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","metadata":{"annotations":{},"name":"argocd-http-redirect","namespace":"argocd"},"spec":{"entryPoints":["web"],"routes":[{"kind":"Rule","match":"Host(`argocd.devops.com`)","middlewares":[{"name":"redirect-to-https"}],"services":[{"name":"argocd-server","port":80,"scheme":"http"}]}],"tls":{"secretName":"argocd-tls"}}}
+    creationTimestamp: "2026-09-28T00:56:38Z"
+    generation: 1
+    name: argocd-http-redirect
+    namespace: argocd
+    resourceVersion: "9735868"
+    uid: 7166ee34-4a84-4d55-a52d-4ba64b1e654e
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`argocd.devops.com`)
+      middlewares:
+      - name: redirect-to-https
+      services:
+      - name: argocd-server
+        port: 80
+        scheme: http
+    tls:
+      secretName: argocd-tls
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:kube-system/hubble
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 4
+    name: hubble
+    namespace: kube-system
+    resourceVersion: "59318246"
+    uid: 24d00aa6-7517-4a40-b369-48c1ae7d06ba
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`hubble.xyz`)
+      services:
+      - name: oauth2-proxy-hubble
+        namespace: oauth2-proxy
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:kube-system/hubble-http-redirect
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 1
+    name: hubble-http-redirect
+    namespace: kube-system
+    resourceVersion: "59100818"
+    uid: 94c20bee-f0f6-4b6b-8524-6136c4cffa97
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`hubble.xyz`)
+      middlewares:
+      - name: hubble-https-redirect
+      services:
+      - name: hubble-ui
+        port: 80
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:logging/alloy
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 2
+    name: alloy
+    namespace: logging
+    resourceVersion: "59318242"
+    uid: 0bce4499-2509-4013-ba8f-6173eee98681
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`alloy.xyz`)
+      services:
+      - name: oauth2-proxy-alloy
+        namespace: oauth2-proxy
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:logging/alloy-http-redirect
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 1
+    name: alloy-http-redirect
+    namespace: logging
+    resourceVersion: "59100811"
+    uid: 3382d039-44e3-40ed-b4d3-8db465fe3e4d
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`alloy.xyz`)
+      middlewares:
+      - name: alloy-https-redirect
+      services:
+      - name: alloy
+        port: 12345
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-grafana:traefik.io/IngressRoute:monitoring/grafana
+    creationTimestamp: "2026-09-28T00:57:08Z"
+    generation: 2
+    name: grafana
+    namespace: monitoring
+    resourceVersion: "58530733"
+    uid: 320b01ef-f3c1-422c-8e9c-9fb9033bd20a
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`grafana.example.local`) || Host(`grafana.k8s.local`)
+      services:
+      - name: prometheus-grafana
+        port: 80
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-grafana:traefik.io/IngressRoute:monitoring/grafana-http-redirect
+    creationTimestamp: "2026-10-06T13:57:44Z"
+    generation: 2
+    name: grafana-http-redirect
+    namespace: monitoring
+    resourceVersion: "58530734"
+    uid: c078e01a-a64c-4061-a732-1c75ce3ad7bd
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`grafana.example.local`) || Host(`grafana.k8s.local`)
+      middlewares:
+      - name: redirect-to-https
+      services:
+      - name: prometheus-grafana
+        port: 80
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","metadata":{"annotations":{},"name":"prometheus","namespace":"monitoring"},"spec":{"entryPoints":["websecure"],"routes":[{"kind":"Rule","match":"Host(`prometheus.k8s.local`)","services":[{"name":"prometheus-operated","port":9090}]}],"tls":{"certResolver":"default"}}}
+    creationTimestamp: "2026-01-22T13:23:20Z"
+    generation: 6
+    name: prometheus
+    namespace: monitoring
+    resourceVersion: "25203713"
+    uid: 85fe37d3-2671-4168-89fa-9d924df817de
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`prom.example.local`) || Host(`prometheus.k8s.local`)
+      services:
+      - name: prometheus-operated
+        port: 9090
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","metadata":{"annotations":{},"name":"prometheus-http-redirect","namespace":"monitoring"},"spec":{"entryPoints":["web"],"routes":[{"kind":"Rule","match":"Host(`prom.example.local`)","middlewares":[{"name":"redirect-to-https"}],"services":[{"name":"prometheus-operated","port":9090}]}]}}
+    creationTimestamp: "2026-10-06T13:59:02Z"
+    generation: 1
+    name: prometheus-http-redirect
+    namespace: monitoring
+    resourceVersion: "25140770"
+    uid: 7755b569-9367-4f4e-8b08-9b2ce56b17b1
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`prom.example.local`)
+      middlewares:
+      - name: redirect-to-https
+      services:
+      - name: prometheus-operated
+        port: 9090
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-sso-oauth2-proxy:traefik.io/IngressRoute:oauth2-proxy/oauth2-alloy
+    creationTimestamp: "2026-11-10T07:20:22Z"
+    generation: 1
+    name: oauth2-alloy
+    namespace: oauth2-proxy
+    resourceVersion: "59310896"
+    uid: 115b6513-5e50-48e1-b58b-9c0ddbdd291b
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`alloy.xyz`) && PathPrefix(`/oauth2/`)
+      services:
+      - name: oauth2-proxy-alloy
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-sso-oauth2-proxy:traefik.io/IngressRoute:oauth2-proxy/oauth2-hubble
+    creationTimestamp: "2026-11-10T07:20:22Z"
+    generation: 1
+    name: oauth2-hubble
+    namespace: oauth2-proxy
+    resourceVersion: "59310924"
+    uid: b5e59b00-4adc-41d4-badb-648cb224e65e
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`hubble.xyz`) && PathPrefix(`/oauth2/`)
+      services:
+      - name: oauth2-proxy-hubble
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-sso-oauth2-proxy:traefik.io/IngressRoute:oauth2-proxy/oauth2-tekton
+    creationTimestamp: "2026-11-10T07:20:22Z"
+    generation: 1
+    name: oauth2-tekton
+    namespace: oauth2-proxy
+    resourceVersion: "59310920"
+    uid: 8002c3f8-19e2-41d8-9e4b-0f80d49ac164
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`tekton.xyz`) && PathPrefix(`/oauth2/`)
+      services:
+      - name: oauth2-proxy-tekton
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-sso-oauth2-proxy:traefik.io/IngressRoute:oauth2-proxy/oauth2-traefik
+    creationTimestamp: "2026-11-10T07:20:22Z"
+    generation: 1
+    name: oauth2-traefik
+    namespace: oauth2-proxy
+    resourceVersion: "59310940"
+    uid: d734ea24-ef27-48a4-afa6-dc0efe377c9e
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`) && PathPrefix(`/oauth2/`)
+      services:
+      - name: oauth2-proxy-traefik
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:tekton-pipelines/tekton-dashboard
+    creationTimestamp: "2026-11-07T13:19:07Z"
+    generation: 3
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+    resourceVersion: "59318257"
+    uid: 7f09f151-6894-4ee6-a2fb-265d8755a64d
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`tekton.xyz`)
+      services:
+      - name: oauth2-proxy-tekton
+        namespace: oauth2-proxy
+        port: 4180
+    tls:
+      secretName: tekton-dashboard-tls
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:tekton-pipelines/tekton-dashboard-http
+    creationTimestamp: "2026-11-07T13:19:07Z"
+    generation: 1
+    name: tekton-dashboard-http
+    namespace: tekton-pipelines
+    resourceVersion: "59318256"
+    uid: 3de783c8-941f-4543-9cfe-f4a643c5c619
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`tekton.xyz`)
+      middlewares:
+      - name: tekton-dashboard-https
+      services:
+      - name: tekton-dashboard
+        port: 9097
+        scheme: http
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-traefik:traefik.io/IngressRoute:traefik/traefik-dashboard
+      meta.helm.sh/release-name: traefik
+      meta.helm.sh/release-namespace: traefik
+    creationTimestamp: "2026-01-17T07:33:07Z"
+    generation: 6
+    labels:
+      app.kubernetes.io/instance: traefik-traefik
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: traefik
+      app.kubernetes.io/version: v3.7.17
+      helm.sh/chart: traefik-42.3.1
+    name: traefik-dashboard
+    namespace: traefik
+    resourceVersion: "58260216"
+    uid: 440aed51-e222-4f40-9a2b-1cda35bfba51
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+      middlewares:
+      - name: traefik-dashboard-auth
+      services:
+      - kind: TraefikService
+        name: api@internal
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:traefik/traefik-xyz
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 2
+    name: traefik-xyz
+    namespace: traefik
+    resourceVersion: "59318262"
+    uid: 449f95db-9f76-43f4-8b3d-59f8a30b2f1b
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`)
+      services:
+      - name: oauth2-proxy-traefik
+        namespace: oauth2-proxy
+        port: 4180
+    tls: {}
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:traefik/traefik-xyz-http-redirect
+    creationTimestamp: "2026-11-10T02:54:41Z"
+    generation: 2
+    name: traefik-xyz-http-redirect
+    namespace: traefik
+    resourceVersion: "59318261"
+    uid: ccde8c58-4ed3-479c-a746-af4843d1085c
+  spec:
+    entryPoints:
+    - web
+    routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`)
+      middlewares:
+      - name: traefik-https-redirect
+      services:
+      - name: traefik
+        port: 80
+- apiVersion: traefik.io/v1alpha1
+  kind: IngressRoute
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ui:traefik.io/IngressRoute:traefik/traefik-xyz-root
+    creationTimestamp: "2026-11-10T07:44:17Z"
+    generation: 1
+    name: traefik-xyz-root
+    namespace: traefik
+    resourceVersion: "59330646"
+    uid: 0cf2951d-f2c2-4f18-8f1e-c14f6fac5453
+  spec:
+    entryPoints:
+    - websecure
+    routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`) && Path(`/`)
+      middlewares:
+      - name: traefik-root-redirect
+      services:
+      - name: oauth2-proxy-traefik
+        namespace: oauth2-proxy
+        port: 4180
+    tls: {}
+kind: List
+metadata:
+  resourceVersion: ""

@@ -1,0 +1,154 @@
+---
+# 滚动重启 containerd + kubelet
+#
+# 目的：修复 kubelet 与 containerd 状态不同步
+#       （kubelet 日志: "Missing actuated resource record"）
+#
+# ★ 为什么必须滚动而不是同时：
+#   containerd 重启会杀掉该节点所有容器。
+#   同时重启 6 节点 = 全集群 142 个 Pod 同时中断。
+#   滚动执行（serial: 1）+ drain =每次只影响 1 个节点。
+#
+# 用法：
+#   SSHPASS='xxx' ansible-playbook -i /root/ansible-k8s-inventory.ini \
+#     -e ansible_password='xxx' restart-containerd.yml --check
+#
+- name: 滚动重启 containerd + kubelet（修复状态不同步）
+  hosts: k8s_all
+  # ★ 核心：一次只处理一个节点
+  serial: 1
+  # 单台失败不中断整体
+  any_errors_fatal: false
+  become: false                # inventory 里已是 root
+
+  vars:
+    wait_ready_seconds: 120
+    drain_timeout: 120s
+    settle_seconds: 45
+
+  tasks:
+    # ---------- 1. 前置检查 ----------
+    - name: 记录重启前状态
+      ansible.builtin.shell: |
+        echo "NODE={{ inventory_hostname }}"
+        echo "  containerd: $(systemctl is-active containerd) (启动于 $(systemctl show containerd -p ActiveEnterTimestamp --value))"
+        echo "  kubelet:    $(systemctl is-active kubelet) (启动于 $(systemctl show kubelet -p ActiveEnterTimestamp --value))"
+        echo "  容器数:     $(crictl ps -q 2>/dev/null | wc -l)"
+      register: before_state
+      changed_when: false
+
+    - name: 显示重启前状态
+      ansible.builtin.debug:
+        msg: "{{ before_state.stdout_lines }}"
+
+    # ---------- 2. 摘流量 ----------
+    - name: cordon {{ inventory_hostname }}
+      ansible.builtin.command:
+        cmd: "kubectl cordon {{ inventory_hostname }}"
+      delegate_to: 127.0.0.1
+      register: cordon_res
+      changed_when: "'cordoned' in cordon_res.stdout"
+      failed_when: false
+
+    - name: drain {{ inventory_hostname }}（忽略 DaemonSet）
+      ansible.builtin.command:
+        cmd: >-
+          kubectl drain {{ inventory_hostname }}
+          --ignore-daemonsets --delete-emptydir-data
+          --force --timeout={{ drain_timeout }}
+      delegate_to: 127.0.0.1
+      register: drain_res
+      changed_when: "'drained' in drain_res.stdout"
+      failed_when: false
+
+    - name: 显示 drain 结果
+      ansible.builtin.debug:
+        msg: "drain: {{ drain_res.stdout_lines[-2:] | default(['(跳过)']) }}"
+
+    # ---------- 3. ★核心：先 containerd，再 kubelet ----------
+    - name: 停止 kubelet（避免 containerd 重启时 kubelet 反复重连）
+      ansible.builtin.systemd_service:
+        name: kubelet
+        state: stopped
+
+    - name: 重启 containerd
+      ansible.builtin.systemd_service:
+        name: containerd
+        state: restarted
+
+    - name: 等待 containerd 就绪
+      ansible.builtin.wait_for:
+        path: /run/containerd/containerd.sock
+        state: present
+        timeout: 60
+
+    - name: 启动 kubelet
+      ansible.builtin.systemd_service:
+        name: kubelet
+        state: started
+
+    - name: 等待 CRI 就绪
+      ansible.builtin.command:
+        cmd: crictl version
+      register: cri_check
+      retries: 6
+      delay: 10
+      until: cri_check.rc == 0
+      changed_when: false
+
+    # ---------- 4. 验证 ----------
+    - name: 记录重启后状态
+      ansible.builtin.shell: |
+        echo "NODE={{ inventory_hostname }}"
+        echo "  containerd: $(systemctl is-active containerd)"
+        echo "  kubelet:    $(systemctl is-active kubelet)"
+        echo "  容器数:     $(crictl ps -q 2>/dev/null | wc -l)"
+        echo "  MissingActuated(近1min): $(journalctl -u kubelet --since '1 min ago' --no-pager 2>/dev/null | grep -c 'Missing actuated resource')"
+        echo "  Nameserver(近1min):      $(journalctl -u kubelet --since '1 min ago' --no-pager 2>/dev/null | grep -c 'Nameserver limits exceeded')"
+      register: after_state
+      changed_when: false
+
+    - name: 显示重启后状态
+      ansible.builtin.debug:
+        msg: "{{ after_state.stdout_lines }}"
+
+    # ---------- 5. 恢复调度 ----------
+    - name: 等待节点 Ready
+      ansible.builtin.command:
+        cmd: >-
+          kubectl wait --for=condition=Ready node/{{ inventory_hostname }}
+          --timeout={{ wait_ready_seconds }}s
+      delegate_to: 127.0.0.1
+      register: ready_res
+      retries: 3
+      delay: 20
+      until: ready_res.rc == 0
+      failed_when: false
+
+    - name: uncordon {{ inventory_hostname }}
+      ansible.builtin.command:
+        cmd: "kubectl uncordon {{ inventory_hostname }}"
+      delegate_to: 127.0.0.1
+      register: uncordon_res
+      changed_when: "'uncordoned' in uncordon_res.stdout"
+      failed_when: false
+
+    - name: 等待 Pod 重新调度稳定
+      ansible.builtin.pause:
+        seconds: "{{ settle_seconds }}"
+
+    # ---------- 6. 安全网 ----------
+    - name: 确保节点最终是 Ready 且未 cordoned
+      ansible.builtin.command:
+        cmd: "kubectl get node {{ inventory_hostname }} -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status} {.spec.unschedulable}'"
+      delegate_to: 127.0.0.1
+      register: final_check
+      changed_when: false
+      failed_when: "'true' in final_check.stdout or 'Unknown' in final_check.stdout"
+
+    - name: 结果汇总
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} 完成 —
+          Ready={{ final_check.stdout.split()[0] | default('?') }}
+          schedulable={{ 'false' in (final_check.stdout | default('')) }}

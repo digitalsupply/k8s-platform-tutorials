@@ -1,0 +1,120 @@
+# Compassio CI/CD — Pipeline: clone → build backend → build frontend → promote gitops
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: compassio-cicd
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  description: "Compassio CI/CD: clone from GitLab, build backend+frontend images, push to Harbor, promote tags in GitOps repo (Argo CD auto-syncs)."
+  params:
+    - name: git-url
+      type: string
+      default: http://192.168.67.201/digitalsupply/compassio.git
+    - name: git-revision
+      type: string
+      default: main
+    # webhook 的 body.before:用于判断本次 push 是否改了镜像构建上下文。
+    # 缺省为空 → check-changes 会 fail-open(照常构建)。
+    - name: git-before
+      type: string
+      default: ''
+    - name: image-repository-backend
+      type: string
+      default: 192.168.67.202:8443/compassio/backend
+    - name: image-repository-frontend
+      type: string
+      default: 192.168.67.202:8443/compassio/frontend
+    - name: image-tag
+      type: string
+      description: Tag to build and promote (commit SHA or uid)
+  tasks:
+    - name: clone
+      taskRef:
+        name: git-clone
+        kind: Task
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: check-changes
+      description: 只改文档/CI 清单时不构建,避免无意义的镜像与滚动重启
+      taskRef:
+        name: compassio-check-changes
+        kind: Task
+      runAfter: [clone]
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: before
+          value: $(params.git-before)
+        - name: after
+          value: $(params.git-revision)
+        - name: subdirectory
+          value: source
+        - name: build-patterns
+          value: "backend/* frontend/*"
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: build-push-backend
+      taskRef:
+        name: compassio-build-push
+        kind: Task
+      when:
+        - input: $(tasks.check-changes.results.need-build)
+          operator: in
+          values: ["true"]
+      runAfter: [clone]
+      params:
+        - name: image
+          value: $(params.image-repository-backend):$(params.image-tag)
+        - name: context
+          value: source/backend
+        - name: dockerfile
+          value: Dockerfile
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: build-push-frontend
+      taskRef:
+        name: compassio-build-push
+        kind: Task
+      when:
+        - input: $(tasks.check-changes.results.need-build)
+          operator: in
+          values: ["true"]
+      runAfter: [clone]
+      params:
+        - name: image
+          value: $(params.image-repository-frontend):$(params.image-tag)
+        - name: context
+          value: source/frontend
+        - name: dockerfile
+          value: Dockerfile
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: promote-gitops
+      taskRef:
+        name: compassio-update-gitops
+        kind: Task
+      # 构建被跳过时同步跳过 promote:否则会把同一个 tag 再写一遍 gitops
+      when:
+        - input: $(tasks.check-changes.results.need-build)
+          operator: in
+          values: ["true"]
+      runAfter: [build-push-backend, build-push-frontend]
+      params:
+        - name: image-tag
+          value: $(params.image-tag)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+  workspaces:
+    - name: shared-workspace

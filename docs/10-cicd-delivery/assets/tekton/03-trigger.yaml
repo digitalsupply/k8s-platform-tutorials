@@ -1,0 +1,72 @@
+# Compassio CI/CD — TriggerBinding/Template (GitLab push webhook)
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: compassio-binding
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  params:
+    - name: gitrevision
+      value: $(body.checkout_sha)
+    # 上一次的 tip,用于判断本次 push 是否改了 backend/ frontend/
+    - name: gitbefore
+      value: $(body.before)
+    - name: gitrepositoryurl
+      value: $(body.repository.git_http_url)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: compassio-template
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  params:
+    - name: gitrevision
+      default: main
+    - name: gitbefore
+      default: ''
+    - name: gitrepositoryurl
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: compassio-triggered-
+        namespace: cicd
+        labels:
+          app.kubernetes.io/part-of: compassio-cicd
+          compassio.cicd/commit: $(tt.params.gitrevision)
+      spec:
+        params:
+          - name: git-url
+            value: $(tt.params.gitrepositoryurl)
+          - name: git-revision
+            value: $(tt.params.gitrevision)
+          - name: git-before
+            value: $(tt.params.gitbefore)
+          - name: image-tag
+            value: $(tt.params.gitrevision)
+        pipelineRef:
+          name: compassio-cicd
+        taskRunTemplate:
+          serviceAccountName: pipeline
+          podTemplate:
+            nodeSelector:
+              kubernetes.io/hostname: worker03
+            tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+            imagePullSecrets:
+              - name: harbor-auth
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 256Mi
+                storageClassName: nfs-sc

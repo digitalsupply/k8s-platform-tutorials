@@ -1,0 +1,24 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+#####HOST##### ceph-01
+=====MEM=====
+               total        used        free      shared  buff/cache   available
+Mem:            5665        3891         197         107        1971        1773
+=====KDUMP_RESERVED=====
+crashkernel=1G-4G:192M,4G-64G:256M,64G-:512M
+enabled
+=====NFS_KERNEL=====
+0
+  dmesg无nfsd
+=====DOCKER_STATS=====
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mgr-ceph-01-egryfx|729.1MiB / 5.532GiB|12.87%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-5|660.7MiB / 5.532GiB|11.66%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-0|642.8MiB / 5.532GiB|11.35%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-01|405.3MiB / 5.532GiB|7.15%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-rgw-myrgw-ceph-01-roocpp|277.9MiB / 5.532GiB|4.90%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-grafana-ceph-01|113.1MiB / 5.532GiB|2.00%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-prometheus-ceph-01|107.9MiB / 5.532GiB|1.91%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-01-axogyl|28.34MiB / 5.532GiB|0.50%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-01|20.13MiB / 5.532GiB|0.36%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-01|10.45MiB / 5.532GiB|0.18%
+=====DOCKER_SUM=====
+  容器合计: 52.9%

@@ -1,0 +1,52 @@
+USER-SUPPLIED VALUES:
+autoDirectNodeRoutes: true
+bpf:
+  hostLegacyRouting: false
+  masquerade: true
+cluster:
+  name: home
+defaultLBServiceIPAM: none
+devices: eth0
+enableLBIPAM: false
+hubble:
+  enabled: true
+  metrics:
+    enabled:
+    - drop
+    - tcp
+    - flow
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: prometheus
+      trustCRDsExist: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+ipam:
+  mode: kubernetes
+ipv4NativeRoutingCIDR: 10.244.0.0/16
+k8s:
+  requireIPv4PodCIDR: true
+k8sServiceHost: 10.0.0.168
+k8sServicePort: 6443
+kubeProxyReplacement: "true"
+l7Proxy: false
+operator:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: prometheus
+      trustCRDsExist: true
+  replicas: 2
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: prometheus
+    trustCRDsExist: true
+routingMode: native

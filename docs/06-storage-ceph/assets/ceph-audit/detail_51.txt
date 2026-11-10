@@ -1,0 +1,79 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+=== NON-CEPH UNITS ===
+  auditd.service                                                              loaded active running Security Auditing Service
+  chronyd.service                                                             loaded active running NTP client/server
+  containerd.service                                                          loaded active running containerd container runtime
+  crond.service                                                               loaded active running Command Scheduler
+  dbus-broker.service                                                         loaded active running D-Bus System Message Bus
+  docker.service                                                              loaded active running Docker Application Container Engine
+  getty@tty1.service                                                          loaded active running Getty on tty1
+  irqbalance.service                                                          loaded active running irqbalance daemon
+  NetworkManager.service                                                      loaded active running Network Manager
+  qemu-guest-agent.service                                                    loaded active running QEMU Guest Agent
+  redis-sentinel.service                                                      loaded active running Redis Sentinel
+  redis.service                                                               loaded active running Redis persistent key-value database
+  rsyslog.service                                                             loaded active running System Logging Service
+  sshd.service                                                                loaded active running OpenSSH server daemon
+  systemd-journald.service                                                    loaded active running Journal Service
+  systemd-logind.service                                                      loaded active running User Login Management
+  systemd-udevd.service                                                       loaded active running Rule-based Manager for Device Events and Files
+  user@0.service                                                              loaded active running User Manager for UID 0
+  zookeeper.service                                                           loaded active running Apache Zookeeper server
+=== ZOOKEEPER CONF ===
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/usr/local/zookeeper/data
+dataLogDir=/usr/local/zookeeper/logs
+clientPort=2181
+server.1=10.0.0.51:2888:3888
+server.2=10.0.0.7:2888:3888
+server.3=10.0.0.8:2888:3888
+superDigest=super:gG7s8t3oDEtIqF6DM9LlI/R+9Ss=
+4lw.commands.whitelist=*
+=== REDIS CONF (key lines) ===
+bind 0.0.0.0
+protected-mode no
+port 6379
+dir "/var/lib/redis"
+appendonly yes
+requirepass "<redacted-password>"
+=== redis sentinel conf ===
+-rw-r--r-- 1 redis redis 844 Nov  6  2025 /etc/redis/sentinel.conf
+port 26379
+daemonize no
+pidfile "/var/run/redis-sentinel.pid"
+logfile "/var/log/redis/sentinel.log"
+dir "/tmp"
+sentinel monitor mymaster 10.0.0.7 6379 2
+acllog-max-len 128
+sentinel deny-scripts-reconfig yes
+sentinel resolve-hostnames no
+sentinel announce-hostnames no
+sentinel auth-pass mymaster <redacted-password>
+protected-mode no
+supervised systemd
+user default on nopass sanitize-payload ~* &* +@all
+sentinel myid b3725e575f30bee8585c42980404f6aa0c650b23
+sentinel config-epoch mymaster 3
+sentinel leader-epoch mymaster 1
+sentinel current-epoch 3
+sentinel known-replica mymaster 10.0.0.51 6379
+sentinel known-replica mymaster 10.0.0.8 6379
+=== ZK unit ===
+# /etc/systemd/system/zookeeper.service
+[Unit]
+Description=Apache Zookeeper server
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/zookeeper/bin/zkServer.sh start
+ExecStop=/usr/local/zookeeper/bin/zkServer.sh stop
+ExecReload=/usr/local/zookeeper/bin/zkServer.sh restart
+User=root
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,2 @@
+---VIP with no announcer (expect fail/timeout after ARP cache expiry)---
+code=200 time=0.005173

@@ -1,0 +1,21 @@
+  cluster:
+    id:     594e535e-d82c-11f0-afa7-bc24112b746f
+    health: HEALTH_OK
+ 
+  services:
+    mon: 3 daemons, quorum ceph-02,ceph-03,ceph-01 (age 5d)
+    mgr: ceph-02.wzbtbx(active, since 5d), standbys: ceph-01.egryfx
+    mds: 1/1 daemons up, 2 standby
+    osd: 6 osds: 6 up (since 5d), 6 in (since 10M)
+    rgw: 2 daemons active (2 hosts, 1 zones)
+ 
+  data:
+    volumes: 1/1 healthy
+    pools:   15 pools, 465 pgs
+    objects: 18.65k objects, 27 GiB
+    usage:   81 GiB used, 99 GiB / 180 GiB avail
+    pgs:     465 active+clean
+ 
+  io:
+    client:   13 KiB/s rd, 300 KiB/s wr, 13 op/s rd, 20 op/s wr
+ 

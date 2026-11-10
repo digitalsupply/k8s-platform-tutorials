@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: host-inspect
+  namespace: default
+  labels:
+    app: host-inspect
+spec:
+  selector:
+    matchLabels:
+      app: host-inspect
+  template:
+    metadata:
+      labels:
+        app: host-inspect
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: inspect
+          image: quay.io/calico/node:v3.32.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "sleep 1800"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host
+              mountPath: /host
+      volumes:
+        - name: host
+          hostPath:
+            path: /

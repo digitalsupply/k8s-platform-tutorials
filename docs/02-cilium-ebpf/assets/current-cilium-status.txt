@@ -1,0 +1,75 @@
+KVStore:                Disabled   
+Kubernetes:             Ok         1.35 (v1.35.9) [linux/amd64]
+Kubernetes APIs:        ["cilium/v2::CiliumCIDRGroup", "cilium/v2::CiliumClusterwideNetworkPolicy", "cilium/v2::CiliumEndpoint", "cilium/v2::CiliumNetworkPolicy", "cilium/v2::CiliumNode", "core/v1::Pods", "networking.k8s.io/v1::NetworkPolicy"]
+KubeProxyReplacement:   True   [eth0   10.0.0.124 fe80::be24:11ff:feb2:3691 (Direct Routing)]
+Host firewall:          Disabled
+SRv6:                   Disabled
+CNI Chaining:           none
+CNI Config file:        successfully wrote CNI configuration file to /host/etc/cni/net.d/05-cilium.conflist
+Cilium:                 Ok   1.20.4 (v1.20.4-beb276d2)
+NodeMonitor:            Listening for events on 4 CPUs with 64x4096 of shared memory
+Cilium health daemon:   Ok   
+IPAM:                   IPv4: 46/254 allocated from 10.244.5.0/24, 
+Allocated addresses:
+  10.244.5.111 (tekton-pipelines/tekton-triggers-controller-7596fb4bc9-gnjs8)
+  10.244.5.113 (kube-system/sealed-secrets-controller-5756c5fb54-dq8k5)
+  10.244.5.135 (monitoring/prometheus-operator-6d74f54c4c-n48hl)
+  10.244.5.149 (monitoring/wecom-adapter-7ddcb575f-jthfk)
+  10.244.5.150 (tekton-pipelines/tekton-dashboard-8557d5cc69-7l99x)
+  10.244.5.151 (logging/tempo3-block-builder-1)
+  10.244.5.152 (logging/tempo3-block-builder-0)
+  10.244.5.153 (argocd/argocd-dex-server-57bc974666-96m5x)
+  10.244.5.154 (logging/tempo3-live-store-2)
+  10.244.5.155 (logging/alloy-fcc5c)
+  10.244.5.157 (router)
+  10.244.5.158 (health)
+  10.244.5.162 (cert-manager/cert-manager-cainjector-75c44fd859-xck9m)
+  10.244.5.163 (deeptutor/deeptutor-54f64584b6-n7nt4)
+  10.244.5.18 (monitoring/prometheus-kube-state-metrics-5d768dd8ff-m5phv)
+  10.244.5.180 (cicd/el-compassio-listener-76f64d6b88-dtslh)
+  10.244.5.184 (tekton-pipelines/tekton-operator-proxy-webhook-68d9d74f66-b5nk5)
+  10.244.5.188 (logging/tempo3-live-store-0)
+  10.244.5.189 (logging/loki-results-cache-0)
+  10.244.5.19 (tekton-operator/tekton-operator-webhook-755c9c66f6-67ptw)
+  10.244.5.190 (compassio/compassio-redis-8578484649-x8tkr)
+  10.244.5.195 (tekton-operator/tekton-operator-69b66f5dd6-bw26b)
+  10.244.5.2 (cnpg-system/pg16-ceph-3)
+  10.244.5.204 (tekton-pipelines/tekton-pruner-webhook-595788bf77-v6tkh)
+  10.244.5.205 (kube-system/vpa-vertical-pod-autoscaler-recommender-655b48fb75-h5j4j)
+  10.244.5.219 (cnpg-system/cnpg-controller-manager-7bd6f5fdf6-kl64g)
+  10.244.5.22 (logging/tempo3-querier-5b5696fbb8-ss27w)
+  10.244.5.228 (cert-manager/cert-manager-webhook-6f495d5944-c66kn)
+  10.244.5.23 (tekton-pipelines/tekton-pipelines-remote-resolvers-59b4984bdb-slsnh)
+  10.244.5.230 (china-study-free/china-study-free-5fd6bc8569-4hjvv)
+  10.244.5.24 (kube-system/vpa-vertical-pod-autoscaler-admission-controller-84544cf4cqpvx9)
+  10.244.5.250 (kube-system/metrics-server-5fb4dcc8f4-g2hdj)
+  10.244.5.251 (deeptutor/redis-6d55d4bf49-zrf5p)
+  10.244.5.3 (cnpg-system/barman-cloud-84d7dd687d-x79c5)
+  10.244.5.38 (cicd/el-china-study-free-listener-864d5dcfb6-48xlw)
+  10.244.5.4 (gitlab-runner/gitlab-runner-c6576c544-cqf6c)
+  10.244.5.46 (kafka/strimzi-cluster-operator-f6f85757-t4d4s)
+  10.244.5.47 (logging/tempo3-backend-worker-0)
+  10.244.5.54 (tekton-pipelines/tekton-triggers-webhook-bcd687764-zqxg2)
+  10.244.5.7 (cert-manager/cert-manager-7698f76dd-8nxcz)
+  10.244.5.70 (kafka/my-cluster-single-pool-0)
+  10.244.5.74 (logging/loki-canary-h927j)
+  10.244.5.76 (logging/tempo3-backend-scheduler-0)
+  10.244.5.93 (kube-system/hubble-relay-56f6cc8b8d-tcwf7)
+  10.244.5.94 (nfs-provisioner/nfs-provisioner-7cbfddb5ff-rfxz2)
+  10.244.5.98 (kube-system/vpa-vertical-pod-autoscaler-updater-7986c46b5b-twjxv)
+IPv4 BIG TCP:            Disabled
+IPv6 BIG TCP:            Disabled
+BandwidthManager:        Disabled
+Routing:                 Network: Native   Host: BPF
+Attach Mode:             Legacy TC
+Device Mode:             veth
+Masquerading:            BPF   [eth0]   10.244.0.0/16  [IPv4: Enabled, IPv6: Disabled]
+Controller Status:       234/234 healthy
+Proxy Status:            OK, ip 10.244.5.157, 0 redirects active on ports 10000-20000, Envoy: embedded
+Global Identity Range:   min 256, max 65535
+Hubble:                  Ok              Current/Max Flows: 4095/4095 (100.00%), Flows/s: 198.32   Metrics: Ok
+Encryption:              Disabled        
+Cluster health:          6/6 reachable   (2026-11-10T08:00:44Z)   (Probe interval: 2m33.896961447s)
+Name                     IP              Node                     Endpoints
+Modules Health:          Stopped(0) Degraded(0) OK(208)
+

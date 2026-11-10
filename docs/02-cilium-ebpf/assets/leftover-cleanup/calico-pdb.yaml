@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"policy/v1","kind":"PodDisruptionBudget","metadata":{"labels":{"k8s-app":"calico-kube-controllers"},"name":"calico-kube-controllers","namespace":"kube-system"},"spec":{"maxUnavailable":1,"selector":{"matchLabels":{"k8s-app":"calico-kube-controllers"}}}}
+  creationTimestamp: "2026-01-16T13:00:30Z"
+  generation: 1
+  labels:
+    k8s-app: calico-kube-controllers
+  name: calico-kube-controllers
+  namespace: kube-system
+  resourceVersion: "57762137"
+  uid: 684fd2c6-478e-4264-bff9-1db941536954
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      k8s-app: calico-kube-controllers
+status:
+  conditions:
+  - lastTransitionTime: "2026-11-08T23:12:58Z"
+    message: ""
+    observedGeneration: 1
+    reason: InsufficientPods
+    status: "False"
+    type: DisruptionAllowed
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0
+  observedGeneration: 1

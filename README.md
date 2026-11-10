@@ -1,12 +1,21 @@
 # K8s 平台工程实战教程
 
-这是一套从真实集群排障和 GitOps 改造过程中整理出来的教程，不是纯理论笔记。
-每个分类都保留了**当时的环境、踩过的坑、修复的关键动作，以及背后的概念和原理**。
+这是一套从**真实集群排障与改造**中整理出来的教程，不是纯理论笔记。
 
-> 最后整理：2026-11-10
-> 案例环境：kubeadm Kubernetes v1.35.9，3 control-plane + 3 worker；
-> Cilium 1.20.4；ArgoCD v3.5.3；kube-prometheus-stack 83.7.0；
-> prometheus-operator 0.90.1。
+每个分类都保留四件事：
+
+1. **当时的情况**：改造前是什么状态、为什么要做；
+2. **主要概念与原理**：理解问题需要的背景；
+3. **踩坑点**：现象、根因、错误做法；
+4. **修复关键**：真正解决问题的动作。
+
+以及对应的**文档、YAML、Python/Shell 脚本**，按分类放在一起，能直接对照复现。
+
+> 最后整理：2026-11-10  
+> 案例环境：kubeadm Kubernetes `v1.35.9`，3 control-plane + 3 worker；  
+> Cilium `1.20.4`（KPR + Host BPF + BPF masquerade + native routing）；  
+> ArgoCD `v3.5.3`；kube-prometheus-stack `83.7.0`；prometheus-operator `0.90.1`；  
+> Ceph Reef `18.2.8`（外部 3 节点）；Traefik `v3.7.17`；GitLab CE `19.4.2`。
 
 ---
 
@@ -14,99 +23,142 @@
 
 | 分类 | 内容 | 适合谁 |
 |---|---|---|
-| [01 Kubernetes / k3s](docs/01-kubernetes-k3s/README.md) | k3s 集群进程模型、Pod 启动链路、Pod 与宿主机进程/命名空间/cgroup 的对应关系、Pod/Service 网段 | 想真正“看懂” Pod 是怎么跑起来的人 |
-| [02 Cilium / eBPF](docs/02-cilium-ebpf/README.md) | eBPF 四大核心概念、Cilium BPF LB、ipcache、nodeid、VXLAN、Hubble/tcpdump 路径验证 | 需要排查 Service/NodePort/LB 网络的人 |
-| [03 GitLab](docs/03-gitlab/README.md) | GitLab CE 19.4 安装、8088/80 端口排查、Cilium 遗留规则清理、80→8088 重定向 | 运维 GitLab / 处理端口冲突的人 |
-| [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | PrometheusRule/Alertmanager/WeCom 链路、kube-prometheus-stack 整体纳入 ArgoCD、CRD GitOps、告警白名单 | 做 K8s 可观测性和 GitOps 的人 |
-| [05 Linux](docs/05-linux/README.md) | su/sudo、PAM、setuid、无密码 SSH、root shell 的原理与安全边界 | Linux 基础/权限排查 |
+| [00 集群全景](docs/00-cluster-overview/README.md) | 拓扑、版本、边界、生产化差距、当前实况快照 | 第一次接触这套环境的人 |
+| [01 Kubernetes](docs/01-kubernetes-k3s/README.md) | Pod 进程模型、k3s 概念、1.29→1.35 逐级升级、etcd/Calico/kube-proxy | 想真正看懂 Pod 与升级的人 |
+| [02 Cilium / eBPF](docs/02-cilium-ebpf/README.md) | eBPF 核心概念、Calico→Cilium 全量迁移、KPR、L2 Announcements、Hubble | 排查 Service/NodePort/LB/网络策略的人 |
+| [03 GitLab](docs/03-gitlab/README.md) | GitLab CE 19.4 安装、8088/80 端口、GitLab Runner | 运维 GitLab / 处理端口冲突的人 |
+| [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps | 做 K8s 可观测性与告警治理的人 |
+| [05 Linux](docs/05-linux/README.md) | su/sudo/PAM、在线扩容、内存分析、旧服务下线 | Linux 基础与主机层运维 |
+| [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏 | 管存储、PVC、数据库备份的人 |
+| [07 Networking](docs/07-networking/README.md) | Traefik/IngressRoute、Service/iptables、DNS、隧道、IPIP/VXLAN | 排查入口、DNS、Service 不通的人 |
+| [08 Control Plane HA](docs/08-control-plane-ha/README.md) | kube-vip、API VIP、apiserver 内存、etcd 备份/恢复 | 管控制面高可用的人 |
+| [09 生命周期与生产化](docs/09-incidents-and-readiness/README.md) | Knative/Tekton/宿主机应用下线、清理、生产化审计 | 做组件治理与生产化的人 |
+| [10 CI/CD 交付](docs/10-cicd-delivery/README.md) | GitLab→Tekton→BuildKit→Harbor→ArgoCD、Webhook、BuildKit 排障 | 做 GitOps/CI-CD 的人 |
 
 ---
 
 ## 怎么读
 
-每个分类的 `README.md` 都按同一结构组织：
+1. **先读 00**，建立节点、网络、存储、入口、可观测性的地图；
+2. **再按问题选分类**：Service 不通看 02/07，告警不响看 04，PVC 不回收看 06，控制面抖动看 08；
+3. **每个分类先读 README**，再看 `notes/` 里的原始过程记录；
+4. **需要复现时看 `assets/` / `scripts/`**，但不要直接 apply 到生产，先替换 IP、域名、凭据。
 
-1. **当时的情况**：为什么要做、改造前是什么状态；
-2. **主要概念与原理**：理解问题需要的背景；
-3. **踩坑点**：现象、根因、错误做法；
-4. **修复关键**：真正解决问题的动作；
-5. **文档列表**：该分类下的详细过程记录。
+推荐学习顺序（从概念到工程）：
 
-建议顺序：
-
-- 先读分类 README，建立地图；
-- 再按需读具体文档；
-- 最后看 `04-monitoring-gitops/04-current-state.md`，了解当前集群状态。
+```text
+01 Pod/进程模型
+  → 07 Service/iptables/DNS
+  → 02 Cilium/eBPF
+  → 04 可观测性
+  → 06 存储与备份
+  → 08 控制面 HA
+  → 09 生命周期
+  → 10 CI/CD
+```
 
 ---
 
-## 当前集群状态（节选）
+## 当前集群状态（2026-11-10 快照）
 
-> 完整状态见 [04-monitoring-gitops/04-current-state.md](docs/04-monitoring-gitops/04-current-state.md)
+> 完整快照见 [00-cluster-overview/assets/current-state.md](docs/00-cluster-overview/assets/current-state.md)。
 
 | 项 | 状态 |
 |---|---|
-| ArgoCD 应用 | 31 个；监控相关 5 个全部 `Synced/Healthy` |
-| `platform-monitoring-stack` | Synced / Healthy |
-| `platform-monitoring-crds` | Synced / Healthy，10 个 CRD |
-| `platform-monitoring-rules` | Synced / Healthy，6 个自建规则 |
-| PrometheusRule | 44 个，全部带 `platform.gitops/managed=true` |
-| Prometheus | 68 groups / 251 alerting rules / 0 health 异常 |
-| `ruleSelector` | `release=prometheus` + `platform.gitops/managed=true` |
-| `alertmanagerConfigSelector` | `platform.gitops/managed=true` |
-| CRD 版本 | prometheus-operator 0.90.1 |
-| Alertmanager 通知 | n8n + 企业微信（`continue: true`） |
+| 节点 | 6/6 Ready，`v1.35.9`，containerd `2.3.2` |
+| CNI | Cilium `1.20.4`，6/6 agent Running |
+| Service 数据面 | `KubeProxyReplacement=True`，Host BPF，BPF masquerade，native routing |
+| kube-proxy | 已移除（DaemonSet/CM/ServiceMonitor 均不存在） |
+| 入口 | Traefik `10.0.0.252`，Cilium L2 宣告；MetalLB Speaker 已缩容到 0，Controller 保留 |
+| ArgoCD | 31 个 Application，全部 Synced/Healthy |
+| 监控 | Prometheus/Alertmanager/Grafana 正常；PrometheusRule 41 个；ServiceMonitor 14 个 |
+| 日志 | Loki `3.6.7` + Alloy `v1.20.0` |
+| 追踪 | Tempo `3.0.3`（tempo-distributed） |
+| 存储 | Ceph Reef `18.2.8`，`HEALTH_OK`；17 个 PV 全部 Bound |
+| 备份 | etcd 每小时快照（`etcd-backup/etcd-snapshot`）；CNPG Barman 备份 |
+| 交付 | GitLab Runner + Tekton + BuildKit + Harbor + ArgoCD |
 
-> 集群里还有一个 `platform-sso-oauth2-proxy` 在 Progressing，属于监控改造之外的
-> 独立应用，不影响本文档的监控结论。
+> 数字会变。把 `current-state.md` 当“某个时刻的证据”，而不是永久配置。
 
 ---
 
-## 配套 YAML 和 Python 脚本
-
-教程中的命令和清单已经按分类落到对应目录：
+## 配套 YAML / Python / Shell 索引
 
 | 分类 | 配套资产 |
 |---|---|
-| 01 Kubernetes/k3s | [`scripts/pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py) |
-| 02 Cilium/eBPF | [`scripts/collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md) |
-| 03 GitLab | [`scripts/check_ports.py`](docs/03-gitlab/scripts/check_ports.py) |
-| 04 Monitoring GitOps | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)（4 个 Application、6 个规则、wecom adapter.py、values、10 个 CRD） |
-| 05 Linux | [`scripts/sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py) |
+| 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md) |
+| 01 Kubernetes | [`pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py)、[`upgrade-scripts/`](docs/01-kubernetes-k3s/assets/upgrade-scripts/)、[`ansible/`](docs/01-kubernetes-k3s/assets/ansible/)、[`containerd-config.toml`](docs/01-kubernetes-k3s/assets/containerd-config.toml) |
+| 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
+| 03 GitLab | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/) |
+| 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
+| 05 Linux | [`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
+| 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`assets/`](docs/06-storage-ceph/assets/) |
+| 07 Networking | [`current-ingressroutes.yaml`](docs/07-networking/assets/current-ingressroutes.yaml)、[`current-metallb-config.yaml`](docs/07-networking/assets/current-metallb-config.yaml) |
+| 08 Control Plane | [`kube-vip-ha-daemonset-FIXED.yaml`](docs/08-control-plane-ha/assets/kube-vip-ha-daemonset-FIXED.yaml)、[`planA-switch-worker.sh`](docs/08-control-plane-ha/scripts/planA-switch-worker.sh)、[`etcd-snapshot-cronjob.yaml`](docs/08-control-plane-ha/assets/etcd-snapshot-cronjob.yaml) |
+| 09 生命周期 | [`pre_removal_audit.py`](docs/09-incidents-and-readiness/scripts/pre_removal_audit.py)、[`cleanup_checklist.md`](docs/09-incidents-and-readiness/scripts/cleanup_checklist.md) |
+| 10 CI/CD | [`tekton/`](docs/10-cicd-delivery/assets/tekton/)（Task/Pipeline/Trigger/EventListener/BuildKit） |
 
 说明：
 
-- Python 脚本只依赖标准库和系统命令（`kubectl`/`crictl`/`ss`/`iptables`/`nft`/`curl`）；
-- `pod_inspect.py`、`collect_cilium_bpf.py` 需要能访问集群或节点；
-- `sudo_audit.py`、`check_ports.py` 是只读诊断脚本；
-- 监控 YAML 中的 GitLab/n8n 地址和 SealedSecret 已脱敏，使用前请替换。
-
-## 脱敏与免责声明
-
-- 文档中的 `10.x.x.x`、`192.168.x.x`、`*.k8s.local` 等均为实验环境地址，
-  属于 RFC1918 私有网段，不能从公网访问；请替换成你自己的环境。
-- 所有真实密码、token、webhook URL、私钥都已替换为
-  `<redacted-...>` 或 `example.invalid`。
-- 命令中的命名空间、release 名、镜像版本需要按你的环境调整。
-- 生产环境操作前请先在测试集群验证，尤其是 CRD 升级、PVC 迁移、
-  NetworkPolicy 和 iptables 清理。
+- Python 脚本只依赖标准库和系统命令（`kubectl`/`crictl`/`ss`/`iptables`/`nft`/`ceph`/`rbd`）；
+- `pod_inspect.py`、`collect_cilium_bpf.py`、`cluster_inventory.py` 需要能访问集群；
+- `sudo_audit.py`、`check_ports.py`、`find_orphan_pv.py`、`pre_removal_audit.py` 是**只读**诊断脚本；
+- 升级/迁移/清理脚本是当时环境的产物，**执行前必须改 IP、节点名、版本和凭据**。
 
 ---
 
-## 目录结构
+## 仓库结构
 
 ```text
 k8s-platform-tutorials/
 ├── README.md
 └── docs/
+    ├── 00-cluster-overview/
+    │   ├── README.md              # 分类导读：情况/原理/坑/修复
+    │   ├── notes/                 # 原始过程记录
+    │   ├── assets/                # 快照、备份、导出的 YAML
+    │   └── scripts/               # Python/Shell 工具
     ├── 01-kubernetes-k3s/
     ├── 02-cilium-ebpf/
     ├── 03-gitlab/
     ├── 04-monitoring-gitops/
-    └── 05-linux/
+    ├── 05-linux/
+    ├── 06-storage-ceph/
+    ├── 07-networking/
+    ├── 08-control-plane-ha/
+    ├── 09-incidents-and-readiness/
+    └── 10-cicd-delivery/
 ```
 
-每个分类目录下都有：
+每个分类目录的统一约定：
 
-- `README.md`：分类导读（情况/原理/坑/修复）；
-- 若干篇原始过程记录：命令、输出、时间线、验证。
+- `README.md`：导读（当时情况 / 概念原理 / 踩坑点 / 修复关键 / 文档与资产索引）；
+- `notes/`：当时写的过程记录、审计报告、执行报告（保留原始细节）；
+- `assets/`：YAML、JSON、配置备份、当前状态快照；
+- `scripts/`：Python/Shell 工具，优先只读、可重复执行。
+
+---
+
+## 脱敏与免责声明
+
+- 文档中的 `10.x.x.x`、`192.168.x.x`、`*.k8s.local`、`*.example.local` 等均为实验环境地址，
+  属于 RFC1918 私有网段，不能从公网访问；请替换成你自己的环境。
+- 所有真实密码、token、webhook URL、私钥、GitLab Runner token 都已替换为
+  `<redacted-...>` 或 `example.invalid`。
+- 命令中的命名空间、release 名、镜像版本、节点名需要按你的环境调整。
+- 生产环境操作前请先在测试集群验证，尤其是：
+  - CRD 升级/删除；
+  - CNI 全量切换；
+  - PVC/PV/RBD 清理；
+  - etcd 快照恢复；
+  - NetworkPolicy 与 iptables/nftables 清理；
+  - kube-vip/VIP 故障注入。
+
+---
+
+## 相关仓库
+
+- GitLab：<http://192.168.67.201/digitalsupply/k8s-platform-tutorials>
+- GitHub：<https://github.com/digitalsupply/k8s-platform-tutorials>
+
+> 两边的 `main` 分支保持同一份内容；提交以本地工作区为准。

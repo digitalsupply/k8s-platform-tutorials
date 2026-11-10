@@ -1,0 +1,194 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+##### HOST ceph-03 #####
+root           1       0 Ss   Sun Sep 27 18:47:15 2026  414955  0.0  0.1 14848 /usr/lib/systemd/systemd --switched-root --system --deserialize 31
+root           2       0 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kthreadd]
+root           3       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [pool_workqueue_]
+root           4       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-rcu_g]
+root           5       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-sync_]
+root           6       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-slub_]
+root           7       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-netns]
+root          11       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-mm_pe]
+root          13       2 I    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_tasks_kthre]
+root          14       2 I    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_tasks_rude_]
+root          15       2 I    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_tasks_trace]
+root          16       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/0]
+root          17       2 I    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_preempt]
+root          18       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_exp_par_gp_]
+root          19       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [rcu_exp_gp_kthr]
+root          20       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/0]
+root          21       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/0]
+root          23       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/0]
+root          24       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/1]
+root          25       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/1]
+root          26       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/1]
+root          27       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/1]
+root          29       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/1:0H-events_highpri]
+root          30       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/2]
+root          31       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/2]
+root          32       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/2]
+root          33       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/2]
+root          35       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/2:0H-events_highpri]
+root          36       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/3]
+root          37       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/3]
+root          38       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/3]
+root          39       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/3]
+root          41       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/3:0H-events_highpri]
+root          42       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/4]
+root          43       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/4]
+root          44       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/4]
+root          45       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/4]
+root          47       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/4:0H-events_highpri]
+root          48       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [cpuhp/5]
+root          49       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [idle_inject/5]
+root          50       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [migration/5]
+root          51       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksoftirqd/5]
+root          53       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/5:0H-events_highpri]
+root          59       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kdevtmpfs]
+root          60       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-inet_]
+root          61       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kauditd]
+root          62       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [khungtaskd]
+root          63       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [oom_reaper]
+root          64       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-write]
+root          65       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kcompactd0]
+root          66       2 SN   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [ksmd]
+root          67       2 SN   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [khugepaged]
+root          68       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-crypt]
+root          69       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-kinte]
+root          70       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-kbloc]
+root          71       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [irq/9-acpi]
+root          73       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-tpm_d]
+root          74       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-md]
+root          75       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-md_bi]
+root          76       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-edac-]
+root          77       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [watchdogd]
+root          79       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/3:1H-kblockd]
+root          80       2 S    Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kswapd0]
+root          81       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-kthro]
+root          86       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-acpi_]
+root          87       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-kmpat]
+root          88       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-kalua]
+root          91       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-mld]
+root          92       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/1:1H-kblockd]
+root          93       2 I<   Sun Sep 27 18:47:15 2026  414955  0.0  0.0     0 [kworker/R-ipv6_]
+root         103       2 I<   Sun Sep 27 18:47:16 2026  414954  0.0  0.0     0 [kworker/R-kstrp]
+root         109       2 I<   Sun Sep 27 18:47:16 2026  414954  0.0  0.0     0 [kworker/u25:0]
+root         248       2 I<   Sun Sep 27 18:47:17 2026  414953  0.0  0.0     0 [kworker/5:1H-kblockd]
+root         250       2 I<   Sun Sep 27 18:47:17 2026  414953  0.0  0.0     0 [kworker/2:1H-xfs-log/dm-0]
+root         253       2 I<   Sun Sep 27 18:47:17 2026  414953  0.0  0.0     0 [kworker/4:1H-kblockd]
+root         258       2 I<   Sun Sep 27 18:47:17 2026  414953  0.0  0.0     0 [kworker/0:1H-kblockd]
+root         426       2 S    Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [scsi_eh_0]
+root         427       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-scsi_]
+root         428       2 S    Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [scsi_eh_1]
+root         429       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-scsi_]
+root         433       2 S    Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [scsi_eh_2]
+root         434       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-scsi_]
+root         436       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-ata_s]
+root         441       2 S    Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [scsi_eh_3]
+root         442       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-scsi_]
+root         443       2 S    Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [scsi_eh_4]
+root         444       2 I<   Sun Sep 27 18:47:18 2026  414952  0.0  0.0     0 [kworker/R-scsi_]
+root         615       2 I<   Sun Sep 27 18:47:19 2026  414951  0.0  0.0     0 [kworker/R-kdmfl]
+root         622       2 I<   Sun Sep 27 18:47:19 2026  414951  0.0  0.0     0 [kworker/R-kdmfl]
+root         645       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfsal]
+root         646       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs_m]
+root         647       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-b]
+root         648       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-c]
+root         649       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-r]
+root         650       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-b]
+root         651       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-i]
+root         652       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-l]
+root         653       2 I<   Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [kworker/R-xfs-c]
+root         654       2 S    Sun Sep 27 18:47:20 2026  414950  0.0  0.0     0 [xfsaild/dm-0]
+root         739       1 Ss   Sun Sep 27 18:47:21 2026  414949  0.0  0.4 34940 /usr/lib/systemd/systemd-journald
+root         753       1 Ss   Sun Sep 27 18:47:21 2026  414949  0.0  0.1  9984 /usr/lib/systemd/systemd-udevd
+root         816       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-b]
+root         817       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-c]
+root         818       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-r]
+root         819       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-b]
+root         820       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-i]
+root         821       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-l]
+root         822       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-xfs-c]
+root         823       2 S    Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [xfsaild/sdc1]
+root         850       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-kdmfl]
+root         855       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-ttm]
+root         868       1 S<sl Sun Sep 27 18:47:21 2026  414949  0.0  0.0  6668 /sbin/auditd
+root         870       2 I<   Sun Sep 27 18:47:21 2026  414949  0.0  0.0     0 [kworker/R-kdmfl]
+dbus         899       1 Ss   Sun Sep 27 18:47:21 2026  414949  0.0  0.0  4684 /usr/bin/dbus-broker-launch --scope system --audit
+dbus         903     899 S    Sun Sep 27 18:47:21 2026  414949  0.0  0.0  2772 dbus-broker --log 4 --controller 9 --machine-id 6b2bd21fa24e4c279c9bd505abdb688f --max-bytes 536870912 --max-fds 4096 --max-matches 131072 --audit
+root         909       1 Ssl  Sun Sep 27 18:47:21 2026  414949  0.0  0.0  4352 /usr/sbin/irqbalance
+root         910       1 Ssl  Sun Sep 27 18:47:21 2026  414949  0.0  0.0  6268 /usr/bin/qemu-ga --method=virtio-serial --path=/dev/virtio-ports/org.qemu.guest_agent.0 --allow-rpcs=guest-sync-delimited,guest-sync,guest-ping,guest-get-time,guest-set-time,guest-info,guest-shutdown,guest-fsfreeze-status,guest-fsfreeze-freeze,guest-fsfreeze-freeze-list,guest-fsfreeze-thaw,guest-fstrim,guest-suspend-disk,guest-suspend-ram,guest-suspend-hybrid,guest-network-get-interfaces,guest-get-vcpus,guest-set-vcpus,guest-get-disks,guest-get-fsinfo,guest-set-user-password,guest-get-memory-blocks,guest-set-memory-blocks,guest-get-memory-block-info,guest-get-host-name,guest-get-users,guest-get-timezone,guest-get-osinfo,guest-get-devices,guest-ssh-get-authorized-keys,guest-ssh-add-authorized-keys,guest-ssh-remove-authorized-keys,guest-get-diskstats,guest-get-cpustats -F/etc/qemu-ga/fsfreeze-hook
+root         912       1 Ss   Sun Sep 27 18:47:21 2026  414949  0.0  0.1  9344 /usr/lib/systemd/systemd-logind
+root         943       1 Ssl  Sun Sep 27 18:47:22 2026  414948  0.0  0.2 19072 /usr/sbin/NetworkManager --no-daemon
+root         986       1 Ssl  Sun Sep 27 18:47:23 2026  414947  0.1  1.0 83892 /usr/bin/containerd
+root         987       1 Sl   Sun Sep 27 18:47:23 2026  414947  0.1  2.3 186776 java -Dzookeeper.log.dir=/usr/local/zookeeper/bin/../logs -Dzookeeper.log.file=zookeeper-root-server-ceph-03.log -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError=kill -9 %p -cp /usr/local/zookeeper/bin/../zookeeper-server/target/classes:/usr/local/zookeeper/bin/../build/classes:/usr/local/zookeeper/bin/../zookeeper-server/target/lib/*.jar:/usr/local/zookeeper/bin/../build/lib/*.jar:/usr/local/zookeeper/bin/../lib/zookeeper-prometheus-metrics-3.8.5.jar:/usr/local/zookeeper/bin/../lib/zookeeper-jute-3.8.5.jar:/usr/local/zookeeper/bin/../lib/zookeeper-3.8.5.jar:/usr/local/zookeeper/bin/../lib/snappy-java-1.1.10.5.jar:/usr/local/zookeeper/bin/../lib/slf4j-api-2.0.13.jar:/usr/local/zookeeper/bin/../lib/simpleclient_servlet-0.9.0.jar:/usr/local/zookeeper/bin/../lib/simpleclient_hotspot-0.9.0.jar:/usr/local/zookeeper/bin/../lib/simpleclient_common-0.9.0.jar:/usr/local/zookeeper/bin/../lib/simpleclient-0.9.0.jar:/usr/local/zookeeper/bin/../lib/netty-transport-native-unix-common-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-transport-native-epoll-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-transport-classes-epoll-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-transport-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-resolver-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-handler-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-common-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-codec-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/netty-buffer-4.1.119.Final.jar:/usr/local/zookeeper/bin/../lib/metrics-core-4.1.12.1.jar:/usr/local/zookeeper/bin/../lib/logback-core-1.3.15.jar:/usr/local/zookeeper/bin/../lib/logback-classic-1.3.15.jar:/usr/local/zookeeper/bin/../lib/jline-2.14.6.jar:/usr/local/zookeeper/bin/../lib/jetty-util-ajax-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-util-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-servlet-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-server-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-security-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-io-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/jetty-http-9.4.57.v20241219.jar:/usr/local/zookeeper/bin/../lib/javax.servlet-api-3.1.0.jar:/usr/local/zookeeper/bin/../lib/jackson-databind-2.15.2.jar:/usr/local/zookeeper/bin/../lib/jackson-core-2.15.2.jar:/usr/local/zookeeper/bin/../lib/jackson-annotations-2.15.2.jar:/usr/local/zookeeper/bin/../lib/commons-io-2.17.0.jar:/usr/local/zookeeper/bin/../lib/commons-cli-1.5.0.jar:/usr/local/zookeeper/bin/../lib/audience-annotations-0.12.0.jar:/usr/local/zookeeper/bin/../zookeeper-*.jar:/usr/local/zookeeper/bin/../zookeeper-server/src/main/resources/lib/*.jar:/usr/local/zookeeper/bin/../conf: -Dzookeeper.DigestAuthenticationProvider.superDigest=super:gG7s8t3oDEtIqF6DM9LlI/R+9Ss= -Xmx1000m -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Djava.rmi.server.hostname=10.0.0.51 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=false org.apache.zookeeper.server.quorum.QuorumPeerMain /usr/local/zookeeper/bin/../conf/zoo.cfg
+root        1061       1 Ssl  Sun Sep 27 18:47:23 2026  414947  0.1  1.8 147908 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+redis       1063       1 Ssl  Sun Sep 27 18:47:23 2026  414947  0.3  0.2 18320 /usr/bin/redis-sentinel *:26379 [sentinel]
+redis       1064       1 Ssl  Sun Sep 27 18:47:23 2026  414947  0.1  0.2 15744 /usr/bin/redis-server 0.0.0.0:6379
+root        1065       1 Ssl  Sun Sep 27 18:47:23 2026  414947  0.0  0.2 16272 /usr/sbin/rsyslogd -n
+root        1066       1 Ss   Sun Sep 27 18:47:23 2026  414947  0.0  0.1  9856 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root        1069       1 Ss   Sun Sep 27 18:47:23 2026  414947  0.0  0.0  3584 /usr/sbin/crond -n
+root        1070       1 Ss+  Sun Sep 27 18:47:23 2026  414947  0.0  0.0  1920 /sbin/agetty -o -p -- \u --noclear - linux
+chrony    408207       1 S    Mon Sep 28 16:46:01 2026  335829  0.0  0.0  3512 /usr/sbin/chronyd -F 2
+root      434528       2 I<   Mon Sep 28 18:04:49 2026  331101  0.0  0.0     0 [kworker/R-tls-s]
+root      833963    1066 Ss   Tue Sep 29 15:52:37 2026  252633  0.0  0.1 12160 sshd: root [priv]
+root      833967       1 Ss   Tue Sep 29 15:52:37 2026  252633  0.0  0.1 11904 /usr/lib/systemd/systemd --user
+root      833969  833967 S    Tue Sep 29 15:52:37 2026  252633  0.0  0.0  5864 (sd-pam)
+root      833977  833963 S    Tue Sep 29 15:52:37 2026  252633  0.0  0.0  7708 sshd: root@notty
+root      837164       1 Ss   Tue Sep 29 16:04:48 2026  251902  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mon.ceph-03/unit.run
+root      837190  837164 Sl   Tue Sep 29 16:04:48 2026  251902  0.0  0.4 38356 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --entrypoint /usr/bin/ceph-mon --privileged --group-add=disk --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-03 --pids-limit=0 -e CONTAINER_IMAGE=quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -e NODE_NAME=ceph-03 -e TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=134217728 -v /var/run/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/run/ceph:z -v /var/log/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/log/ceph:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash:/var/lib/ceph/crash:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mon.ceph-03:/var/lib/ceph/mon/ceph-ceph-03:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mon.ceph-03/config:/etc/ceph/ceph.conf:z -v /dev:/dev -v /run/udev:/run/udev quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -n mon.ceph-03 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug  --default-mon-cluster-log-to-file=false --default-mon-cluster-log-to-stderr=true
+root      837208       1 Sl   Tue Sep 29 16:04:48 2026  251902  0.0  0.1 15152 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 54c14714ce39c67d11ee3f4c82d399e371acb64ff133fc2cf7d43f946f58d3ae -address /run/containerd/containerd.sock
+root      837232  837208 Ss   Tue Sep 29 16:04:48 2026  251902  0.0  0.0   768 /sbin/docker-init -- /usr/bin/ceph-mon -n mon.ceph-03 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug  --default-mon-cluster-log-to-file=false --default-mon-cluster-log-to-stderr=true
+167       837244  837232 Sl   Tue Sep 29 16:04:48 2026  251902  1.0  5.3 422588 /usr/bin/ceph-mon -n mon.ceph-03 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug  --default-mon-cluster-log-to-file=false --default-mon-cluster-log-to-stderr=true
+root      842593       1 Ss   Tue Sep 29 16:05:45 2026  251845  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash.ceph-03/unit.run
+root      842619  842593 Sl   Tue Sep 29 16:05:45 2026  251845  0.0  0.4 38604 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --entrypoint /usr/bin/ceph-crash --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-03 --pids-limit=0 -e CONTAINER_IMAGE=quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -e NODE_NAME=ceph-03 -e TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=134217728 -v /var/run/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/run/ceph:z -v /var/log/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/log/ceph:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash:/var/lib/ceph/crash:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash.ceph-03/config:/etc/ceph/ceph.conf:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash.ceph-03/keyring:/etc/ceph/ceph.client.crash.ceph-03.keyring quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -n client.crash.ceph-03
+root      842653       1 Sl   Tue Sep 29 16:05:45 2026  251845  0.0  0.1 15140 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 7b64cc2bfc54f069831f506aa8e7999db4156c548d5547ff3050b0ba895b20a7 -address /run/containerd/containerd.sock
+root      842684  842653 Ss   Tue Sep 29 16:05:45 2026  251845  0.0  0.0   768 /sbin/docker-init -- /usr/bin/ceph-crash -n client.crash.ceph-03
+167       842724  842684 S    Tue Sep 29 16:05:45 2026  251845  0.0  0.1 12544 /usr/bin/python3 -s /usr/bin/ceph-crash -n client.crash.ceph-03
+root      847668       1 Ss   Tue Sep 29 16:07:38 2026  251732  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.2/unit.run
+root      848085  847668 Sl   Tue Sep 29 16:07:40 2026  251730  0.0  0.4 36456 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --entrypoint /usr/bin/ceph-osd --privileged --group-add=disk --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-2 --pids-limit=0 -e CONTAINER_IMAGE=quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -e NODE_NAME=ceph-03 -e TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=134217728 -v /var/run/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/run/ceph:z -v /var/log/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/log/ceph:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash:/var/lib/ceph/crash:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.2:/var/lib/ceph/osd/ceph-2:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.2/config:/etc/ceph/ceph.conf:z -v /dev:/dev -v /run/udev:/run/udev -v /sys:/sys -v /run/lvm:/run/lvm -v /run/lock/lvm:/run/lock/lvm -v /:/rootfs quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -n osd.2 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      848105       1 Sl   Tue Sep 29 16:07:40 2026  251730  0.0  0.1 12864 /usr/bin/containerd-shim-runc-v2 -namespace moby -id aaa023afc6fa1084e2b3dbe0952ea8a81bae0a8691faa478510cfc6977b45030 -address /run/containerd/containerd.sock
+root      848145  848105 Ss   Tue Sep 29 16:07:40 2026  251730  0.0  0.0   768 /sbin/docker-init -- /usr/bin/ceph-osd -n osd.2 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+167       848169  848145 Sl   Tue Sep 29 16:07:40 2026  251730  1.6  8.5 669880 /usr/bin/ceph-osd -n osd.2 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      848901       1 Ss   Tue Sep 29 16:07:45 2026  251725  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.3/unit.run
+root      849246  848901 Sl   Tue Sep 29 16:07:47 2026  251723  0.0  0.4 38056 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --entrypoint /usr/bin/ceph-osd --privileged --group-add=disk --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-3 --pids-limit=0 -e CONTAINER_IMAGE=quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -e NODE_NAME=ceph-03 -e TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=134217728 -v /var/run/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/run/ceph:z -v /var/log/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/log/ceph:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash:/var/lib/ceph/crash:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.3:/var/lib/ceph/osd/ceph-3:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/osd.3/config:/etc/ceph/ceph.conf:z -v /dev:/dev -v /run/udev:/run/udev -v /sys:/sys -v /run/lvm:/run/lvm -v /run/lock/lvm:/run/lock/lvm -v /:/rootfs quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -n osd.3 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      849265       1 Sl   Tue Sep 29 16:07:47 2026  251723  0.0  0.1 12992 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 0ab30cf84c20e371cddd690fec8e5116be11e42fb35d0bf90a0da7782c5d6351 -address /run/containerd/containerd.sock
+root      849290  849265 Ss   Tue Sep 29 16:07:47 2026  251723  0.0  0.0   768 /sbin/docker-init -- /usr/bin/ceph-osd -n osd.3 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+167       849302  849290 Sl   Tue Sep 29 16:07:47 2026  251723  1.5  8.9 703288 /usr/bin/ceph-osd -n osd.3 -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      854722       1 Ss   Tue Sep 29 16:09:34 2026  251616  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mds.cephfs.ceph-03.txfktl/unit.run
+root      854748  854722 Sl   Tue Sep 29 16:09:34 2026  251616  0.0  0.4 35456 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --entrypoint /usr/bin/ceph-mds --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-03-txfktl --pids-limit=0 -e CONTAINER_IMAGE=quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -e NODE_NAME=ceph-03 -e TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=134217728 -v /var/run/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/run/ceph:z -v /var/log/ceph/594e535e-d82c-11f0-afa7-bc24112b746f:/var/log/ceph:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/crash:/var/lib/ceph/crash:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mds.cephfs.ceph-03.txfktl:/var/lib/ceph/mds/ceph-cephfs.ceph-03.txfktl:z -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/mds.cephfs.ceph-03.txfktl/config:/etc/ceph/ceph.conf:z quay.io/ceph/ceph@sha256:69cbef90eb58cf96e572e7497227a2bcb0ec9175bc2247809c0a37857db9b820 -n mds.cephfs.ceph-03.txfktl -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      854785       1 Sl   Tue Sep 29 16:09:34 2026  251616  0.0  0.1 12988 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 61281fa738f65f28cc104552bc10ebd46a3a62a4ef7e56316b4fa3cd11697c03 -address /run/containerd/containerd.sock
+root      854819  854785 Ss   Tue Sep 29 16:09:34 2026  251616  0.0  0.0   768 /sbin/docker-init -- /usr/bin/ceph-mds -n mds.cephfs.ceph-03.txfktl -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+167       854856  854819 Sl   Tue Sep 29 16:09:34 2026  251616  0.0  0.5 43300 /usr/bin/ceph-mds -n mds.cephfs.ceph-03.txfktl -f --setuser ceph --setgroup ceph --default-log-to-file=false --default-log-to-stderr=true --default-log-stderr-prefix=debug 
+root      859907       1 Ss   Tue Sep 29 16:10:45 2026  251545  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/node-exporter.ceph-03/unit.run
+root      859934  859907 Sl   Tue Sep 29 16:10:45 2026  251545  0.0  0.4 36164 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-03 --user 65534 --security-opt label=disable -e CONTAINER_IMAGE=quay.io/prometheus/node-exporter:v1.5.0 -e NODE_NAME=ceph-03 -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/node-exporter.ceph-03/etc/node-exporter:/etc/node-exporter:Z -v /proc:/host/proc:ro -v /sys:/host/sys:ro -v /:/rootfs:ro quay.io/prometheus/node-exporter:v1.5.0 --no-collector.timex --web.listen-address=:9100 --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs
+root      859954       1 Sl   Tue Sep 29 16:10:45 2026  251545  0.0  0.1 14564 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 8e27bbdcce041e5322b0779dcc7038279b07a5ac21d8f59503b8519ccdb071d3 -address /run/containerd/containerd.sock
+nobody    859996  859954 Ss   Tue Sep 29 16:10:45 2026  251545  0.0  0.0   768 /sbin/docker-init -- /bin/node_exporter --no-collector.timex --web.listen-address=:9100 --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs
+nobody    860031  859996 Sl   Tue Sep 29 16:10:45 2026  251545  0.2  0.3 27180 /bin/node_exporter --no-collector.timex --web.listen-address=:9100 --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs
+root      864744       1 Ss   Tue Sep 29 16:11:28 2026  251502  0.0  0.0  3584 /bin/bash /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/alertmanager.ceph-03/unit.run
+root      864771  864744 Sl   Tue Sep 29 16:11:28 2026  251502  0.0  0.4 36292 /usr/bin/docker run --rm --ipc=host --stop-signal=SIGTERM --ulimit nofile=1048576 --net=host --init --name ceph-594e535e-d82c-11f0-afa7-bc24112b746f-alertmanager-ceph-03 --user 65534 -e CONTAINER_IMAGE=quay.io/prometheus/alertmanager:v0.25.0 -e NODE_NAME=ceph-03 -v /var/lib/ceph/594e535e-d82c-11f0-afa7-bc24112b746f/alertmanager.ceph-03/etc/alertmanager:/etc/alertmanager:Z quay.io/prometheus/alertmanager:v0.25.0 --cluster.listen-address=:9094 --web.listen-address=:9093 --cluster.peer=ceph-03:9094 --config.file=/etc/alertmanager/alertmanager.yml
+root      864791       1 Sl   Tue Sep 29 16:11:28 2026  251502  0.0  0.1 14572 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 413178b082d7eb12faf22bca36eccc171b5c3dd47ece66c12f200e05aedf122c -address /run/containerd/containerd.sock
+nobody    864834  864791 Ss   Tue Sep 29 16:11:28 2026  251502  0.0  0.0   768 /sbin/docker-init -- /bin/alertmanager --cluster.listen-address=:9094 --web.listen-address=:9093 --cluster.peer=ceph-03:9094 --config.file=/etc/alertmanager/alertmanager.yml
+nobody    864869  864834 Sl   Tue Sep 29 16:11:28 2026  251502  0.1  0.5 45752 /bin/alertmanager --cluster.listen-address=:9094 --web.listen-address=:9093 --cluster.peer=ceph-03:9094 --config.file=/etc/alertmanager/alertmanager.yml
+root     1867912       2 I    Thu Oct  1 23:26:48 2026   52582  0.0  0.0     0 [kworker/5:2-events]
+root     1929572       2 I<   Fri Oct  2 02:58:37 2026   39873  0.0  0.0     0 [kworker/0:0H]
+root     2081125       2 I    Fri Oct  2 11:14:22 2026   10128  0.0  0.0     0 [kworker/2:3-events]
+root     2086297       2 I    Fri Oct  2 11:39:52 2026    8598  0.0  0.0     0 [kworker/4:0-events]
+root     2098545       2 I    Fri Oct  2 12:10:37 2026    6753  0.0  0.0     0 [kworker/1:0-events]
+root     2104882       2 I    Fri Oct  2 12:41:17 2026    4913  0.0  0.0     0 [kworker/0:1-events]
+root     2105004       2 I    Fri Oct  2 12:41:18 2026    4912  0.0  0.0     0 [kworker/1:1-events]
+root     2112603       2 I    Fri Oct  2 13:05:18 2026    3472  0.0  0.0     0 [kworker/u24:2-writeback]
+root     2113865       2 I    Fri Oct  2 13:10:36 2026    3154  0.0  0.0     0 [kworker/4:2-ata_sff]
+root     2117300       2 I    Fri Oct  2 13:12:03 2026    3067  0.0  0.0     0 [kworker/u24:3-events_unbound]
+root     2118611       2 I    Fri Oct  2 13:18:11 2026    2699  0.0  0.0     0 [kworker/u24:4-events_unbound]
+root     2120160       2 I    Fri Oct  2 13:27:43 2026    2127  0.0  0.0     0 [kworker/3:1-mm_percpu_wq]
+root     2122745       2 I    Fri Oct  2 13:39:00 2026    1450  0.0  0.0     0 [kworker/5:0-ata_sff]
+root     2123571       2 I    Fri Oct  2 13:42:43 2026    1227  0.0  0.0     0 [kworker/u24:0-flush-253:2]
+root     2123746       2 I    Fri Oct  2 13:42:44 2026    1226  0.0  0.0     0 [kworker/4:1-ata_sff]
+root     2126310       2 I    Fri Oct  2 13:42:45 2026    1225  0.0  0.0     0 [kworker/0:2-events]
+root     2126626       2 I    Fri Oct  2 13:44:48 2026    1102  0.0  0.0     0 [kworker/2:0-kdmflush/253:0]
+root     2128274       2 I    Fri Oct  2 13:52:54 2026     616  0.0  0.0     0 [kworker/3:0-events_power_efficient]
+root     2130016       2 I    Fri Oct  2 14:00:57 2026     133  0.0  0.0     0 [kworker/3:2-events]
+root     2130487    1066 Ss   Fri Oct  2 14:03:10 2026       0  0.0  0.1 12160 sshd: root [priv]
+root     2130490 2130487 S    Fri Oct  2 14:03:10 2026       0  0.0  0.0  7436 sshd: root@notty
+root     2130491 2130490 Ss   Fri Oct  2 14:03:10 2026       0  0.0  0.0  3584 bash -c    h=$(hostname)   echo "##### HOST $h #####"   ps -eo user,pid,ppid,stat,lstart,etimes,%cpu,%mem,rss,args --sort=pid --no-headers  
+root     2130515 2130491 R    Fri Oct  2 14:03:10 2026       0  0.0  0.0  7168 ps -eo user,pid,ppid,stat,lstart,etimes,%cpu,%mem,rss,args --sort=pid --no-headers

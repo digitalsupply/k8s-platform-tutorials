@@ -1,0 +1,23 @@
+# Loki Helm values 覆盖：memcached 内存与容器 limit 对齐
+# 用法：helm upgrade loki grafana/loki -n logging -f /root/loki-values-cache-fix.yaml --reuse-values
+# 背景：chart 默认 chunksCache.allocatedMemory=8192 / resultsCache.allocatedMemory=1024，
+#       而容器 limit 只有 1Gi / 512Mi → 缓存填满即 OOMKilled（2026-11-04 已踩两次）。
+# 规则：allocatedMemory ≈ 容器 limit 的 70%，让 memcached 自己 LRU 淘汰而不是被内核杀。
+
+chunksCache:
+  allocatedMemory: 700   # MiB；容器 limit 1Gi
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 512Mi
+
+resultsCache:
+  allocatedMemory: 350   # MiB；容器 limit 512Mi
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi

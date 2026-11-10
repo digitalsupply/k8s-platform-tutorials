@@ -93,5 +93,67 @@ sudo python3 scripts/sudo_audit.py
 | 文档 | 内容 |
 |---|---|
 | [sudo-su-详解.md](sudo-su-详解.md) | su/sudo、PAM、setuid、无密码 SSH、直接进 root 的原理与实验 |
+| [worker-disk-expansion-20261028.md](notes/worker-disk-expansion-20261028.md) | PVE 虚拟盘在线扩容：分区/LVM/ext4 全链路，不停机 |
+| [memory-analysis-m01.md](notes/memory-analysis-m01.md) | m01 节点内存构成、进程 TOP、Pod/容器内存拆解 |
+| [app-removal-record.md](notes/app-removal-record.md) | 宿主机 Zabbix/MariaDB/nginx/php-fpm 下线记录 |
+
+## 补充：主机层运维（磁盘 / 内存 / 旧服务下线）
+
+### 1. 在线扩容不是“加盘再重启”
+
+本集群 worker 的系统盘是 PVE 的 virtio-scsi 虚拟盘，扩容分两层：
+
+```text
+PVE:   qm resize <vmid> scsi0 +10G
+Guest: rescan → growpart → pvresize → lvextend → resize2fs
+```
+
+关键点：
+
+- `qm resize` 对运行中的 virtio-scsi 磁盘生效，**不需要关机**；
+- `growpart` 对已挂载分区安全，会自动搬移 GPT 备份头；
+- LVM 和 ext4 都支持在线扩容；
+- 扩容后要验证 `df -hT /`、`dmesg` 无 I/O 错误、节点 `uptime` 未变。
+
+### 2. 内存分析要看 cgroup，不只看 `free`
+
+节点内存由这些部分组成：
+
+- 内核/页缓存/ slab；
+- kubelet、containerd、Cilium、监控 agent 等系统进程；
+- Pod 的 cgroup 内存（`container_memory_working_set_bytes`）；
+- 未计入 cgroup 的 host 进程。
+
+`memory-analysis-m01.md` 里把 RSS、cgroup、Pod 内存逐层拆开，避免把“页缓存”误判成泄漏。
+
+### 3. 旧服务下线要先证明“没人用”
+
+Zabbix/MariaDB/nginx/php-fpm 下线前做了 4 项确认：
+
+1. 端口/进程是否仍被监控或业务引用；
+2. Prometheus exporter 是否依赖该服务；
+3. 是否有 systemd 依赖/定时任务；
+4. 备份配置和数据，保留回滚路径。
+
+**踩坑**：`mysqld_exporter` 依赖已停止的 MariaDB，直接删服务会让 exporter 持续报错；
+要先改/停 exporter，再删数据库。
+
+## 配套资产
+
+| 资产 | 说明 |
+|---|---|
+| [scripts/grow-lvm.sh](scripts/grow-lvm.sh) | LVM 在线扩容辅助脚本（按实际设备名调整） |
+| [scripts/sudo_audit.py](scripts/sudo_audit.py) | 只读 sudo/SSH 权限审计 |
+| [scripts/change_repo.sh](scripts/change_repo.sh) | Rocky Linux 仓库切换 |
+| [scripts/change_epel.sh](scripts/change_epel.sh) | EPEL 仓库配置 |
+
+```bash
+# 只读审计
+sudo python3 docs/05-linux/scripts/sudo_audit.py
+
+# 扩容前先确认布局（不要直接跑脚本）
+lsblk -f
+vgs; lvs; df -hT /
+```
 
 > 生产环境请遵循组织的权限管理制度；本文只用于原理学习和排障。

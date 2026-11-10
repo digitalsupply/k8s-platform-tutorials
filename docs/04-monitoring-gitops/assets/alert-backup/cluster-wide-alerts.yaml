@@ -1,0 +1,102 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"annotations":{},"labels":{"release":"prometheus"},"name":"cluster-wide-alerts","namespace":"monitoring"},"spec":{"groups":[{"name":"pod.rules","rules":[{"alert":"PodCrashLooping","annotations":{"description":"容器 {{ $labels.container }} 重启速率 {{ $value | humanize }}/min","summary":"Pod 频繁重启: {{ $labels.namespace }}/{{ $labels.pod }}"},"expr":"rate(kube_pod_container_status_restarts_total[15m]) * 60 \u003e 0","for":"5m","labels":{"severity":"warning"}},{"alert":"PodNotReady","annotations":{"summary":"Pod 未就绪: {{ $labels.namespace }}/{{ $labels.pod }}"},"expr":"kube_pod_status_ready{condition=\"true\"} == 0\nand kube_pod_status_phase{phase=~\"Running|Pending\"} == 1\n","for":"5m","labels":{"severity":"warning"}},{"alert":"PodOOMKilled","annotations":{"summary":"OOM Kill: {{ $labels.namespace }}/{{ $labels.pod }}"},"expr":"kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"} == 1","for":"1m","labels":{"severity":"critical"}}]},{"name":"node.rules","rules":[{"alert":"NodeHighCPU","annotations":{"description":"使用率 {{ $value | humanizePercentage }}","summary":"节点 CPU 过高: {{ $labels.node }}"},"expr":"1 - avg by(node) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) \u003e 0.85\n","for":"5m","labels":{"severity":"warning"}},{"alert":"NodeHighMemory","annotations":{"description":"使用率 {{ $value | humanizePercentage }}","summary":"节点内存过高: {{ $labels.instance }}"},"expr":"1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) \u003e 0.85\n","for":"5m","labels":{"severity":"warning"}},{"alert":"NodeDiskPressure","annotations":{"description":"剩余 {{ $value | humanizePercentage }}","summary":"磁盘空间紧张: {{ $labels.instance }} {{ $labels.mountpoint }}"},"expr":"(node_filesystem_avail_bytes{fstype!=\"tmpfs\"} / node_filesystem_size_bytes) \u003c 0.15\n","for":"5m","labels":{"severity":"critical"}}]},{"name":"otel-demo.rules","rules":[{"alert":"OtelDemoHighErrorRate","annotations":{"description":"当前错误率 {{ $value | humanizePercentage }}","summary":"otel-demo 错误率 \u003e 5%"},"expr":"sum(rate(traces_spanmetrics_calls_total{\n  span_kind=\"SPAN_KIND_SERVER\",\n  status_code=\"STATUS_CODE_ERROR\",\n  namespace=\"otel-demo\"\n}[5m]))\n/\nsum(rate(traces_spanmetrics_calls_total{\n  span_kind=\"SPAN_KIND_SERVER\",\n  namespace=\"otel-demo\"\n}[5m])) \u003e 0.05\n","for":"2m","labels":{"namespace":"otel-demo","severity":"warning"}},{"alert":"OtelDemoServiceDown","annotations":{"summary":"服务下线: {{ $labels.job }}"},"expr":"up{namespace=\"otel-demo\"} == 0","for":"1m","labels":{"namespace":"otel-demo","severity":"critical"}}]}]}}
+    prometheus-operator-validated: "true"
+  creationTimestamp: "2026-05-07T13:05:54Z"
+  generation: 1
+  labels:
+    release: prometheus
+  name: cluster-wide-alerts
+  namespace: monitoring
+  resourceVersion: "6380624"
+  uid: 981e7578-9099-4cdf-bbd9-98c3113bad0f
+spec:
+  groups:
+  - name: pod.rules
+    rules:
+    - alert: PodCrashLooping
+      annotations:
+        description: 容器 {{ $labels.container }} 重启速率 {{ $value | humanize }}/min
+        summary: 'Pod 频繁重启: {{ $labels.namespace }}/{{ $labels.pod }}'
+      expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 > 0
+      for: 5m
+      labels:
+        severity: warning
+    - alert: PodNotReady
+      annotations:
+        summary: 'Pod 未就绪: {{ $labels.namespace }}/{{ $labels.pod }}'
+      expr: |
+        kube_pod_status_ready{condition="true"} == 0
+        and kube_pod_status_phase{phase=~"Running|Pending"} == 1
+      for: 5m
+      labels:
+        severity: warning
+    - alert: PodOOMKilled
+      annotations:
+        summary: 'OOM Kill: {{ $labels.namespace }}/{{ $labels.pod }}'
+      expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} ==
+        1
+      for: 1m
+      labels:
+        severity: critical
+  - name: node.rules
+    rules:
+    - alert: NodeHighCPU
+      annotations:
+        description: 使用率 {{ $value | humanizePercentage }}
+        summary: '节点 CPU 过高: {{ $labels.node }}'
+      expr: |
+        1 - avg by(node) (rate(node_cpu_seconds_total{mode="idle"}[5m])) > 0.85
+      for: 5m
+      labels:
+        severity: warning
+    - alert: NodeHighMemory
+      annotations:
+        description: 使用率 {{ $value | humanizePercentage }}
+        summary: '节点内存过高: {{ $labels.instance }}'
+      expr: |
+        1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.85
+      for: 5m
+      labels:
+        severity: warning
+    - alert: NodeDiskPressure
+      annotations:
+        description: 剩余 {{ $value | humanizePercentage }}
+        summary: '磁盘空间紧张: {{ $labels.instance }} {{ $labels.mountpoint }}'
+      expr: |
+        (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes) < 0.15
+      for: 5m
+      labels:
+        severity: critical
+  - name: otel-demo.rules
+    rules:
+    - alert: OtelDemoHighErrorRate
+      annotations:
+        description: 当前错误率 {{ $value | humanizePercentage }}
+        summary: otel-demo 错误率 > 5%
+      expr: |
+        sum(rate(traces_spanmetrics_calls_total{
+          span_kind="SPAN_KIND_SERVER",
+          status_code="STATUS_CODE_ERROR",
+          namespace="otel-demo"
+        }[5m]))
+        /
+        sum(rate(traces_spanmetrics_calls_total{
+          span_kind="SPAN_KIND_SERVER",
+          namespace="otel-demo"
+        }[5m])) > 0.05
+      for: 2m
+      labels:
+        namespace: otel-demo
+        severity: warning
+    - alert: OtelDemoServiceDown
+      annotations:
+        summary: '服务下线: {{ $labels.job }}'
+      expr: up{namespace="otel-demo"} == 0
+      for: 1m
+      labels:
+        namespace: otel-demo
+        severity: critical

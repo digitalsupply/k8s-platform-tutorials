@@ -1,0 +1,21 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+#####HOST##### ceph-03
+=====MEM=====
+               total        used        free      shared  buff/cache   available
+Mem:            7680        2517         577         154        5038        5162
+=====KDUMP_RESERVED=====
+crashkernel=1G-4G:192M,4G-64G:256M,64G-:512M
+enabled
+=====NFS_KERNEL=====
+0
+  dmesg无nfsd
+=====DOCKER_STATS=====
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-2|620.5MiB / 7.501GiB|8.08%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-3|506.2MiB / 7.501GiB|6.59%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-03|385.7MiB / 7.501GiB|5.02%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-alertmanager-ceph-03|30.54MiB / 7.501GiB|0.40%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-03-txfktl|24.23MiB / 7.501GiB|0.32%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-03|19.25MiB / 7.501GiB|0.25%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-03|10.11MiB / 7.501GiB|0.13%
+=====DOCKER_SUM=====
+  容器合计: 20.8%

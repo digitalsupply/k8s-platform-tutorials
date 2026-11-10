@@ -1,0 +1,34 @@
+Warning: Permanently added '10.0.0.51' (ED25519) to the list of known hosts.
+#####HOST##### ceph-03
+=====ENABLED_SERVICES=====
+auditd.service|active|41926656
+chronyd.service|active|1064960
+cloud-config.service|active|81920
+cloud-final.service|active|0
+cloud-init-local.service|active|0
+cloud-init.service|active|0
+crond.service|active|1392640
+dbus-broker.service|active|2437120
+docker.service|active|405966848
+getty@.service|inactive|0
+irqbalance.service|active|1064960
+kdump.service|active|0
+low-memory-monitor.service|inactive|0
+lvm2-monitor.service|active|0
+microcode.service|inactive|0
+NetworkManager-dispatcher.service|inactive|0
+NetworkManager-wait-online.service|active|0
+NetworkManager.service|active|12779520
+nis-domainname.service|active|0
+qemu-guest-agent.service|active|4255744
+redis-sentinel.service|active|11591680
+redis.service|active|34983936
+rsyslog.service|active|100691968
+rtkit-daemon.service|inactive|0
+selinux-autorelabel-mark.service|inactive|0
+sshd.service|active|9240576
+sssd.service|inactive|0
+systemd-boot-update.service|active|0
+systemd-network-generator.service|active|0
+systemd-pstore.service|inactive|0
+upower.service|inactive|0

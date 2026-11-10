@@ -1,0 +1,31 @@
+global:
+  resolve_timeout: 5m
+route:
+  receiver: n8n-webhook
+  group_by:
+  - alertname
+  - namespace
+  - severity
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  routes:
+  - receiver: wecom
+    matchers:
+    - severity =~ "critical|warning"
+    continue: true
+  - receiver: n8n-webhook
+    matchers:
+    - severity =~ "critical|warning"
+receivers:
+- name: n8n-webhook
+  webhook_configs:
+  - send_resolved: true
+    url: http://n8n-svc.n8n.svc.cluster.local:5678/webhook/k8s-alerts
+- name: wecom
+  webhook_configs:
+  - send_resolved: true
+    url: http://wecom-adapter.monitoring.svc.cluster.local:8080/alerts
+inhibit_rules: []
+templates:
+- /etc/alertmanager/config/*.tmpl

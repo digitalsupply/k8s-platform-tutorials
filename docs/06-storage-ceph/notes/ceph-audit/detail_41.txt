@@ -1,0 +1,84 @@
+Warning: Permanently added '10.0.0.41' (ED25519) to the list of known hosts.
+=== NON-CEPH UNITS ===
+  auditd.service                                                              loaded active running Security Auditing Service
+  chronyd.service                                                             loaded active running NTP client/server
+  containerd.service                                                          loaded active running containerd container runtime
+  crond.service                                                               loaded active running Command Scheduler
+  dbus-broker.service                                                         loaded active running D-Bus System Message Bus
+  docker.service                                                              loaded active running Docker Application Container Engine
+  getty@tty1.service                                                          loaded active running Getty on tty1
+  gssproxy.service                                                            loaded active running GSSAPI Proxy Daemon
+  irqbalance.service                                                          loaded active running irqbalance daemon
+  NetworkManager.service                                                      loaded active running Network Manager
+  nfs-idmapd.service                                                          loaded active running NFSv4 ID-name mapping service
+  nfs-mountd.service                                                          loaded active running NFS Mount Daemon
+  nfsdcld.service                                                             loaded active running NFSv4 Client Tracking Daemon
+  php-fpm.service                                                             loaded active running The PHP FastCGI Process Manager
+  pushgateway.service                                                         loaded active running Prometheus Pushgateway
+  qemu-guest-agent.service                                                    loaded active running QEMU Guest Agent
+  rpc-statd.service                                                           loaded active running NFS status monitor for NFSv2/3 locking.
+  rpcbind.service                                                             loaded active running RPC Bind
+  rsyncd.service                                                              loaded active running fast remote file copy program daemon
+  rsyslog.service                                                             loaded active running System Logging Service
+  sshd.service                                                                loaded active running OpenSSH server daemon
+  systemd-journald.service                                                    loaded active running Journal Service
+  systemd-logind.service                                                      loaded active running User Login Management
+  systemd-udevd.service                                                       loaded active running Rule-based Manager for Device Events and Files
+  user@0.service                                                              loaded active running User Manager for UID 0
+  zabbix-agent2.service                                                       loaded active running Zabbix Agent 2
+=== NFS EXPORTS ===
+/playbook-backup/    172.16.1.0/24(rw,sync,all_squash)/playbook-backup
+		172.16.1.0/24(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,all_squash)
+=== RSYNC CONFIG ===
+uid = nobody
+gid = nobody
+use chroot = no
+max connections = 4
+pid file = /var/run/rsyncd.pid
+lock file = /var/run/rsync.lock
+log file = /var/log/rsyncd.log
+[backup]
+    path = /data/backup
+    comment = Backup files
+    read only = no
+    list = yes
+    auth users = backup
+    secrets file = /etc/rsyncd.secrets
+=== PHP-FPM POOL ===
+user = nginx
+group = nginx
+listen = 127.0.0.1:9000
+listen.owner = nginx
+listen.group = nginx
+listen.mode = 0660
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+=== PUSHGATEWAY UNIT ===
+# /etc/systemd/system/pushgateway.service
+[Unit]
+Description=Prometheus Pushgateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pushgateway
+Group=pushgateway
+Type=simple
+Environment="GOMAXPROCS=2"
+ExecStart=/usr/local/pushgateway/pushgateway \
+  --web.listen-address="0.0.0.0:9091" \
+  --web.telemetry-path="/metrics" \
+  --persistence.file="/var/lib/pushgateway/pushgateway.data" \
+  --persistence.interval=5m \
+  --log.level=info \
+  --web.enable-admin-api
+# 如果你暂时不想在 Pushgateway 本身加 basic auth（已经交给 Nginx 了），就不要加下面这行
+# --web.basic-auth.file="/etc/pushgateway/basic-auth.htpasswd"
+=== DOCKER LOG ROTATE / daemon.json ===
+{
+  "storage-driver": "overlay2",
+  "registry-mirrors": [],
+  "insecure-registries": ["10.0.0.41"]
+}

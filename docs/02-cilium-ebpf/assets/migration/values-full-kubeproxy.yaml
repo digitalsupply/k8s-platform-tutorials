@@ -1,0 +1,4 @@
+kubeProxyReplacement: "true"
+bpf:
+  masquerade: true
+  hostLegacyRouting: false

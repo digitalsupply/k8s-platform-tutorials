@@ -1,0 +1,180 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: platform-etcd-backup:batch/CronJob:etcd-backup/etcd-snapshot
+  creationTimestamp: "2026-11-09T07:10:26Z"
+  generation: 3
+  labels:
+    app.kubernetes.io/name: etcd-snapshot
+    app.kubernetes.io/part-of: cluster-backup
+  name: etcd-snapshot
+  namespace: etcd-backup
+  resourceVersion: "59298899"
+  uid: 4843c77e-60b8-4f21-ac9e-cdc56938fe4e
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata: {}
+    spec:
+      activeDeadlineSeconds: 900
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: etcd-snapshot
+        spec:
+          automountServiceAccountToken: false
+          containers:
+          - args:
+            - |
+              set -eu
+              # busybox has no tzdata; POSIX TZ keeps filenames in UTC+8
+              export TZ=CST-8
+              export HOME=/tmp
+              TS="$(date +%Y%m%d-%H%M)"
+              OUT="/backup/hourly/etcd-${TS}.db"
+              mkdir -p /backup/hourly /backup/daily
+
+              /usr/local/bin/etcdctl \
+                --endpoints=https://127.0.0.1:2379 \
+                --cacert=/etc/etcd/ca.crt \
+                --cert=/etc/etcd/healthcheck-client.crt \
+                --key=/etc/etcd/healthcheck-client.key \
+                snapshot save "${OUT}"
+
+              /usr/local/bin/etcdctl --write-out=table snapshot status "${OUT}"
+
+              # durable copy: Ceph RGW (S3)
+              chroot /host /usr/bin/aws --endpoint-url "${S3_ENDPOINT}" \
+                s3 cp "/var/backups/etcd/hourly/etcd-${TS}.db" \
+                "s3://${S3_BUCKET}/hourly/etcd-${TS}.db"
+
+              # keep one snapshot per day
+              if [ "$(date +%H)" = "00" ]; then
+                cp "${OUT}" "/backup/daily/etcd-$(date +%Y%m%d).db"
+                chroot /host /usr/bin/aws --endpoint-url "${S3_ENDPOINT}" \
+                  s3 cp "/var/backups/etcd/daily/etcd-$(date +%Y%m%d).db" \
+                  "s3://${S3_BUCKET}/daily/etcd-$(date +%Y%m%d).db"
+              fi
+
+              # local staging retention (~24 hourly + 7 daily)
+              find /backup/hourly -name 'etcd-*.db' -mmin +1560 -delete
+              find /backup/daily  -name 'etcd-*.db' -mtime +7 -delete
+
+              echo "snapshot + upload ok: ${OUT}"
+            command:
+            - /bin/sh
+            - -c
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_ACCESS_KEY_ID
+                  name: etcd-backup-s3
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_SECRET_ACCESS_KEY
+                  name: etcd-backup-s3
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            - name: AWS_EC2_METADATA_DISABLED
+              value: "true"
+            - name: S3_ENDPOINT
+              value: http://10.0.0.31:7480
+            - name: S3_BUCKET
+              value: etcd-backups
+            image: docker.io/library/busybox:1.37
+            imagePullPolicy: IfNotPresent
+            name: snapshot
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 10m
+                memory: 32Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                - SYS_CHROOT
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /backup
+              name: backup
+            - mountPath: /etc/etcd/ca.crt
+              name: etcd-ca
+              readOnly: true
+            - mountPath: /etc/etcd/healthcheck-client.crt
+              name: etcd-client-cert
+              readOnly: true
+            - mountPath: /etc/etcd/healthcheck-client.key
+              name: etcd-client-key
+              readOnly: true
+            - mountPath: /usr/local/bin/etcdctl
+              name: etcdctl
+              readOnly: true
+            - mountPath: /host
+              name: host-root
+              readOnly: true
+            - mountPath: /host/tmp
+              name: host-tmp
+            - mountPath: /tmp
+              name: tmp
+          dnsPolicy: Default
+          hostNetwork: true
+          nodeSelector:
+            kubernetes.io/hostname: m01
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          securityContext:
+            runAsGroup: 0
+            runAsUser: 0
+          terminationGracePeriodSeconds: 30
+          tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+          volumes:
+          - hostPath:
+              path: /var/backups/etcd
+              type: DirectoryOrCreate
+            name: backup
+          - hostPath:
+              path: /etc/kubernetes/pki/etcd/ca.crt
+              type: File
+            name: etcd-ca
+          - hostPath:
+              path: /etc/kubernetes/pki/etcd/healthcheck-client.crt
+              type: File
+            name: etcd-client-cert
+          - hostPath:
+              path: /etc/kubernetes/pki/etcd/healthcheck-client.key
+              type: File
+            name: etcd-client-key
+          - hostPath:
+              path: /usr/local/bin/etcdctl
+              type: File
+            name: etcdctl
+          - hostPath:
+              path: /
+              type: Directory
+            name: host-root
+          - emptyDir: {}
+            name: host-tmp
+          - emptyDir: {}
+            name: tmp
+  schedule: 5 * * * *
+  successfulJobsHistoryLimit: 3
+  suspend: false
+  timeZone: Asia/Shanghai
+status:
+  lastScheduleTime: "2026-11-10T07:05:00Z"
+  lastSuccessfulTime: "2026-11-10T07:05:14Z"

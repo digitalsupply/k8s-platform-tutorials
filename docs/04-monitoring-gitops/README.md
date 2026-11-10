@@ -1,237 +1,274 @@
-# 04 · Monitoring GitOps：Prometheus / Alertmanager 从手工到 GitOps
+# 04 · Monitoring GitOps：Prometheus / Loki / Tempo / Grafana 全链路
+
+这个目录是整套可观测性栈的“运行手册 + 事故复盘”：
+
+- **Metrics**：Prometheus + Alertmanager + 企业微信/n8n 双出口；
+- **Logs**：Grafana Alloy → Loki → Ceph RGW S3；
+- **Traces**：OTel Collector → Tempo 3 → S3，Grafana 三支柱关联；
+- **GitOps**：kube-prometheus-stack、CRD、PrometheusRule、wecom-adapter 全部纳入 ArgoCD；
+- **告警治理**：规则审计、失效规则、累计重启告警、白名单 selector。
 
 ## 当时的情况
 
-改造前，`monitoring` 命名空间的 kube-prometheus-stack 由 **Helm release** 管理，
-但：
+改造前，`monitoring` 命名空间的 kube-prometheus-stack 由 **Helm release** 管理，但：
 
-- 6 个自建 PrometheusRule 是手工 `kubectl apply` 的，没有 Git 记录；
-- Alertmanager 只有 n8n webhook，企业微信适配器已部署但**没有接入路由**；
-- 企业微信适配器因为 NetworkPolicy/DNS 问题，实际上一直发不出消息；
-- kube-prometheus-stack 本身不在 ArgoCD 管理范围内；
-- CRD 是手工安装/升级的，版本落后于 operator；
-- 手工创建的规则/配置可以被 Prometheus/Alertmanager 直接加载，存在绕过 GitOps 的口子。
-
-改造目标：
-
-1. 规则 GitOps 化；
-2. 修复企业微信告警链路；
-3. wecom-adapter 整体 GitOps 化；
-4. kube-prometheus-stack 整体纳入 ArgoCD；
-5. CRD 也纳入 GitOps；
-6. 用白名单 selector 堵住手工规则/配置的口子。
-
-## 分阶段结果
-
-| 阶段 | 内容 | 关键结果 |
-|---|---|---|
-| 第一期 | 6 个自建规则纳入 ArgoCD；修复 WeCom 链路 | 规则 44 个，企业微信可用 |
-| 第二期 | wecom-adapter GitOps + SealedSecret + 团队 AlertmanagerConfig 规范 | adapter 受 ArgoCD 管理，webhook 加密 |
-| 第三期 | kube-prometheus-stack 整体纳入 ArgoCD | 监控栈 Synced/Healthy |
-| 补充 | CRD GitOps + 告警白名单 | 10 个 CRD 受管，手工规则/配置被忽略 |
+- 6 个自建 PrometheusRule 是手工 `kubectl apply`，没有 Git 记录；
+- Alertmanager 只有 **n8n webhook 一个出口**，而 n8n 本身是被监控对象，构成自指缺陷；
+- 企业微信适配器已部署，但因 NetworkPolicy/DNS 问题一直发不出消息；
+- kube-prometheus-stack 不在 ArgoCD 管理范围，CRD 手工安装，版本落后；
+- 告警规则库 281 条，其中 **27 条引用了不存在的 metric**，永远不会触发；
+- 只有 `rate()` 型 CrashLoop 告警，抓不到“历史重启 100 次但当前稳定”的 Pod；
+- 日志侧刚从 Promtail 迁到 Alloy，**采集了 0 条日志**；
+- Tempo 2.x 与 3.x 共存，3.x 因 S3 凭据错误全部 CrashLoop；
+- Grafana 里 traces 查询为空，日志/指标/追踪三支柱没有真正关联。
 
 ## 主要概念与原理
 
-### 1. Prometheus Operator 与 CRD
+### 1. 三支柱与数据流
 
-kube-prometheus-stack 不是直接创建 Prometheus 进程，而是创建 CR：
-
-- `Prometheus` CR：副本、存储、保留期、`ruleSelector`、`serviceMonitorSelector`；
-- `Alertmanager` CR：副本、存储、路由/接收器配置来源；
-- `PrometheusRule`：告警/记录规则；
-- `ServiceMonitor` / `PodMonitor` / `Probe`：抓取配置；
-- `AlertmanagerConfig`：团队级路由/接收器。
-
-Operator 监听这些 CR，生成 StatefulSet、配置文件和 Secret。
-所以 GitOps 的对象是 **CR**，不是 Operator 生成的 StatefulSet。
-
-### 2. `ruleSelector` 与标签
-
-Prometheus CR 通过 `ruleSelector` 选择 PrometheusRule。
-改造前：
-
-```yaml
-ruleSelector:
-  matchLabels:
-    release: prometheus
+```text
+Metrics:  kubelet/apiservers/exporters ──scrape──► Prometheus ──► Alertmanager ──► WeCom / n8n
+Logs:     /var/log/pods ──Alloy──► Loki ──► Ceph RGW S3
+Traces:   OTel SDK/Collector ──► Tempo distributor ──► Kafka/live-store ──► block-builder ──► S3
+Query:    Grafana ──► Prometheus / Loki / Tempo
 ```
 
-问题：任何命名空间、任何手工规则，只要带这个标签就会被加载。
+### 2. Prometheus Operator 的 CRD
 
-改造后：
+kube-prometheus-stack 不直接创建进程，而是创建 CR：
+
+| CR | 作用 |
+|---|---|
+| `Prometheus` | 副本、存储、保留期、`ruleSelector`、`serviceMonitorSelector` |
+| `Alertmanager` | 副本、存储、路由/接收器来源 |
+| `PrometheusRule` | 告警/记录规则 |
+| `ServiceMonitor` / `PodMonitor` / `Probe` | 抓取配置 |
+| `AlertmanagerConfig` | 团队级路由/接收器 |
+
+Operator 监听这些 CR，生成 StatefulSet、配置文件和 Secret。**GitOps 的对象是 CR，不是 Operator 生成的 StatefulSet。**
+
+### 3. `ruleSelector` 与白名单
+
+Prometheus CR 通过 `ruleSelector` 选择 PrometheusRule。本集群给所有 GitOps 管理的规则打：
 
 ```yaml
-ruleSelector:
-  matchLabels:
-    release: prometheus
-    platform.gitops/managed: "true"
+labels:
+  platform.gitops/managed: "true"
 ```
 
-chart 自带规则通过 `defaultRules.labels` 打标；自建/团队规则通过
-Kustomize patch 打标。
+`ruleSelector` 同时匹配 `release=prometheus` + `platform.gitops/managed=true`，
+这样手工创建的规则即使存在也不会被加载，堵住绕过 GitOps 的口子。
+`alertmanagerConfigSelector` 同理。
 
-### 3. Alertmanager 路由树与 `continue`
+### 4. Alertmanager 路由与抑制
 
-Alertmanager 的 `route` 是一棵树：
+- `route` 决定告警去哪个 receiver；
+- `continue: true` 让同一告警继续匹配后续子路由，实现**双出口**；
+- `inhibit_rules` 用于抑制衍生告警，但条件写错会导致“该报的不报”；
+- `wechat_configs` 只能调企业微信**应用消息 API**，不能直接调群机器人 webhook，所以需要 `wecom-adapter` 做协议转换。
 
-- 根路由有默认 receiver；
-- 子路由按 matcher 匹配；
-- `continue: true` 表示匹配后继续匹配后续兄弟路由；
-- 没有 `continue` 时，第一个匹配的子路由会截断后续路由。
+### 5. Loki 标签与保留
 
-本案例把 n8n 和 wecom 两条基础路由都设为 `continue: true`，
-这样团队 AlertmanagerConfig 追加的路由还能继续匹配。
+Loki 的标签由采集端（Alloy relabel）决定，常见标签：
+`namespace`、`pod`、`container`、`node_name`、`job`、`app`、`instance`、`component`。
 
-### 4. ArgoCD 多源 Application
+保留策略有三层，必须同时改：
 
-kube-prometheus-stack 使用 multi-source：
+1. Loki `limits_config.retention_period` / `compactor`；
+2. S3 对象生命周期（RGW lifecycle）；
+3. Tempo 的 block retention。
 
-1. Git `ref: values`（values 来源）；
-2. Helm chart（固定版本）；
-3. Git 目录（Grafana admin SealedSecret）。
+只改一层会出现“Grafana 查不到但 S3 还在涨”或“S3 删了但索引还在”。
 
-关键点：
+### 6. Tempo 3 的架构
 
-- `ref: values` source **必须放在第一位**，否则会 Git 超时；
-- `helm.skipCrds: true`，CRD 由独立 App 管理；
-- `prune: false`，避免误删 Operator 生成资源。
-
-### 5. SealedSecret
-
-Grafana admin 和 WeCom webhook 都用 SealedSecret 管理。
-SealedSecret 只能用对应集群的 sealed-secrets controller 私钥解密，
-加密内容可以进 Git。
-
-### 6. CRD 与 Operator 版本
-
-CRD 是 API schema，Operator 是控制器。两者版本要匹配。
-本案例 CRD 落后到 0.88.0，Operator 已是 0.90.1，导致
-Alertmanager CR 的 `hostNetwork` 字段不在 schema 里。
+`tempo-distributed` 把 distributor、querier、live-store、block-builder、backend-scheduler/worker、
+query-frontend、metrics-generator 拆成独立组件。trace 先写 live-store/Kafka，再由 block-builder
+落 S3。**S3 凭据、endpoint、bucket 任一错误都会让 block-builder 持续失败。**
 
 ## 踩坑点
 
-### 坑 1：企业微信适配器 DNS 失败
+### 坑 1：Alertmanager 的 `wechat_configs` 发不到群机器人
 
-现象：
+从 Alertmanager v0.32 源码看，`wechat_configs.api_url` 会被拼接 `gettoken` 和 `message/send`，
+只能用于企业微信**应用**。把群机器人 URL 填进去会 404。
 
-```text
-URLError: <urlopen error [Errno -3] Try again>
-```
+**修复**：部署 `wecom-adapter`，Alertmanager 用 webhook 调 adapter，adapter 再调群机器人。
 
-根因：NetworkPolicy 只放行 `ipBlock: 0.0.0.0/0` 的 53/443；
-在 Cilium 下，这不能放行到 kube-dns ClusterIP 的后端 Pod。
+### 坑 2：告警单出口 + 自指依赖
 
-修复：显式放行到 `kube-system/k8s-app=kube-dns` 的 53/UDP、53/TCP。
+原来唯一 receiver 是 n8n，而 n8n 挂了也会产生告警，导致“告警出口消失时，告警也发不出去”。
 
-### 坑 2：SealedSecret 不能直接接管已有 Secret
+**修复**：`severity=critical|warning` 同时走 `wecom-adapter` 和 `n8n-webhook`，`continue: true`，两者互不依赖。
 
-```text
-failed update: Resource "wecom-adapter" already exists
-and is not managed by SealedSecret
-```
+### 坑 3：27 条规则引用不存在的 metric
 
-修复：给现有 Secret 打 `sealedsecrets.bitnami.com/managed=true`，
-再让控制器重新 reconcile。
+例如 `container_oom_event_total`（少了复数 s）、`kube_pod_container_status_last_terminated_reason`（KSM 未采集）。
+这些规则 `health=ok` 但 `state=inactive`，看起来“没告警”，实际是**永远不会触发**。
 
-### 坑 3：`ref: values` source 顺序
+**修复**：逐条用 Prometheus API 验证表达式至少返回一个序列；对确实无数据的规则，要么补采集，要么删除/标注。
 
-`source 1 of 3` 渲染超时，controller 日志 `git_ms=60002`。
-把 ref source 放到第一位后解决。
+### 坑 4：`rate()` 抓不到累计重启
 
-### 坑 4：Alertmanager CRD 缺 `hostNetwork`
+`rate(kube_pod_container_status_restarts_total[15m]) > 0` 只能抓“正在频繁重启”。
+对已经稳定但历史重启 192 次的 apiserver 永远静默。
 
-chart 83.7.0 会渲染 `hostNetwork`，但 0.88.0 CRD 没声明，
-ArgoCD structured merge diff 报 `field not declared in schema`。
+**修复**：新增累计重启告警，直接比较 `kube_pod_container_status_restarts_total` 的绝对值/增量窗口。
 
-最终修复：把 CRD 升级到 0.90.1，而不是长期 ignore。
+### 坑 5：标签维度依赖 Pod 名
 
-### 坑 5：Grafana RWO PVC 滚动死锁
+`up{namespace="logging",pod=~"tempo3-.+"}` 在 Pod 改名/换 StatefulSet 后失效。
+**修复**：改用 `job=~"distributor|querier|..."`，按组件名而非 Pod 名匹配。
 
-新 Pod 等旧 Pod 释放 RWO 卷，旧 Pod 等新 Pod ready。
+### 坑 6：Promtail → Alloy 迁移丢了 5 项能力
 
-修复：
+配置文件搬过去了，但 chart 的隐式能力没搬：多行日志、Kubernetes 元数据、label 保留、
+pipeline stage、position 文件等。结果 Alloy 运行正常但 Loki 里 0 条日志。
 
-- 把 `grafana.deploymentStrategy` 设为 `Recreate`；
-- 必要时 `scale 0 → 1` 释放卷。
+**修复**：按 Promtail 的能力清单逐项对照，补 relabel/pipeline，再用 Loki API 验证
+`{namespace="logging"}[1h]` 有数据，而不是只看 Alloy Pod Running。
 
-> 注意字段名是 `deploymentStrategy`，不是 `strategy`。
+### 坑 7：Tempo3 的 S3 凭据错误导致全部 CrashLoop
 
-### 坑 6：Grafana admin Secret 迁移
+S3 `secret_key` 错误时，distributor/block-builder 会持续报签名失败。
+**修复**：用 RGW 真实凭据做 S3 签名请求验证，再改 Secret；不要只看 Pod 日志里的 “S3 error”。
 
-Helm 删除了旧 Secret `prometheus-grafana`，但 Grafana CR 还引用它，
-导致 37 个 Dashboard `NoMatchingInstance`。
+### 坑 8：Ceph RGW 17.2.8 的 aws-chunked 兼容 bug
 
-修复：把 Grafana CR 的 `adminUser/adminPassword` 指向
-`prometheus-grafana-admin`，重启 grafana-operator，等待 `GrafanaReady=True`。
+Tempo 用 minio-go 写 0 字节的 aws-chunked 终止块，RGW 17.2.8 把 seed 签名当终止块签名比对，
+必然 400 `XAmzContentSHA256Mismatch`。一度以为是 minio-go 的锅，做了兼容层代理，最后定位到 RGW 服务端。
 
-### 坑 7：Helm hook 资源
+**修复**：Ceph 17.2.8 → 18.2.8（reef）滚动升级，修复在 18.2.5+。兼容层代理从未接流量，已删除。
 
-chart 的 admission Job/ServiceAccount/RBAC 带 `helm.sh/hook`。
-ArgoCD 按 hook 处理，PreSync/PostSync 运行；不要手工删除。
+### 坑 9：Loki chunks-cache OOM 是配置矛盾，不是节点内存不足
 
-### 坑 8：白名单 selector 的“空窗”
+Loki 的 `chunks_cache` 上限设置大于容器 memory limit，缓存还没到上限容器就被 OOMKill。
+**修复**：让 cache 上限与 memory limit 匹配，并留出余量；不要盲目加内存。
 
-先收紧 selector、后给规则打标签，会让 Prometheus 短暂看不到规则。
-正确顺序：
+### 坑 10：Grafana Logs Drilldown 502
 
-1. 先给所有规则打 `platform.gitops/managed=true`；
-2. 确认 44 个规则都有标签；
-3. 再收紧 `ruleSelector` / `alertmanagerConfigSelector`。
+Loki gateway 的 upstream/端口配置与实际 Service 不一致，导致 drilldown 请求 502，普通查询却正常。
+**修复**：对齐 gateway 配置与 Service 端口，重启后验证 drilldown 的 `/api/ds/query` 路径。
+
+### 坑 11：Grafana 里“没有 traces”不一定是没数据
+
+可能是 datasource URL/tenant 不对、时间范围不对、或 trace 根本没落 S3。
+**修复**：先用 Tempo API 直接查 `api/search`，再查 Grafana datasource，最后看 OTel Collector 是否真的收到 span。
+
+### 坑 12：Dashboard 不是 Ingress，是 IngressRoute
+
+Traefik 环境里 `kubectl get ingress` 为空，不代表没有入口。要看 `kubectl get ingressroute -A`。
+本集群的 Grafana/Prometheus/ArgoCD/Hubble/Alloy/Tekton/Traefik Dashboard 全部是 IngressRoute。
 
 ## 修复关键
 
-1. **PrometheusRule / AlertmanagerConfig 是 GitOps 对象**；
-2. **标签白名单**：`platform.gitops/managed=true`；
-3. **基础路由 `continue: true`**，给团队路由留空间；
-4. **CRD 独立 App**，`sync-wave: -10`，`prune: false`；
-5. **Grafana 用 SealedSecret + `existingSecret` + `Recreate`**；
-6. **不要再用 Helm CLI**，否则会和 ArgoCD 的字段管理冲突；
-7. **运行时状态（TSDB、silences、PVC）不属于 GitOps**。
+### 阶段 1：规则与告警出口
 
-## 当前状态
+1. 6 个自建 PrometheusRule 纳入 ArgoCD，打 `platform.gitops/managed=true`；
+2. 修复 `ruleSelector` / `alertmanagerConfigSelector`，堵住手工规则；
+3. 部署 `wecom-adapter`，Alertmanager 双出口 + `continue: true`；
+4. 修 adapter 的 NetworkPolicy/DNS，端到端发一条测试告警；
+5. 审计 27 条失效规则，能补数据的补，不能补的删/标注。
 
-见 [04-current-state.md](04-current-state.md)：
+### 阶段 2：监控栈整体 GitOps
 
-- 44 个 PrometheusRule，全部带白名单标签；
-- 68 groups / 251 alerts / 0 health 异常；
-- `ruleSelector` 与 `alertmanagerConfigSelector` 已收紧；
-- 10 个 CRD 由 `platform-monitoring-crds` 管理；
-- 监控相关 5 个 ArgoCD App 全部 Synced/Healthy。
+1. kube-prometheus-stack 整体纳入 ArgoCD（Application + values）；
+2. CRD 单独一个 Application（10 个 CRD），避免 operator 升级时 CRD 落后；
+3. 规则单独一个 Application，按团队/主题拆文件；
+4. 所有 Secret 用 SealedSecret，不把明文提交到 Git。
 
-## 配套资产
+### 阶段 3：日志与追踪
 
-[`manifests/`](manifests/README.md) 下按目录放好了改造对应的 YAML 和 Python：
+1. Alloy 按 Promtail 能力清单补齐，验证 Loki 有数据；
+2. Tempo 3 的 S3 凭据/endpoint/bucket 全部对齐，验证 block 落盘；
+3. 统一 retention 为 5 天（Loki + S3 lifecycle + Tempo）；
+4. 修 Loki cache OOM、Logs Drilldown 502、node-exporter collector 错误；
+5. 补 Cilium/Alloy/Traefik/Hubble 等 Dashboard 和对应 IngressRoute。
 
-| 目录 | 内容 |
-|---|---|
-| `manifests/applications/` | 4 个 ArgoCD Application 示例 |
-| `manifests/rules/` | 6 个 PrometheusRule + Kustomize 白名单 patch |
-| `manifests/wecom/` | Deployment/Service/ConfigMap/NetworkPolicy + `adapter.py` |
-| `manifests/stack/` | `values.yaml` + Grafana admin SealedSecret 示例 |
-| `manifests/crds/` | 10 个 prometheus-operator CRD |
-
-应用顺序建议：
+### 阶段 4：验证
 
 ```bash
-kubectl apply --server-side --force-conflicts -k manifests/crds/
-kubectl apply -k manifests/rules/
-# 先按 manifests/README.md 生成真实 SealedSecret
-kubectl apply -k manifests/wecom/
+# 规则是否被 Prometheus 加载
+kubectl -n monitoring get prometheus -o jsonpath='{.items[0].spec.ruleSelector}'
+
+# target 是否全 up
+kubectl -n monitoring port-forward svc/prometheus-operated 9090:9090 &
+curl -s localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.health!="up")'
+
+# Loki 是否真的收到日志
+curl -sG http://loki-gateway.logging.svc/api/v1/query_range \
+  --data-urlencode 'query={namespace="logging"}' --data-urlencode 'limit=5'
+
+# Tempo 是否有 trace
+curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 ```
 
-`manifests/stack/values.yaml` 是 Helm values，按 `manifests/README.md` 里的
-`helm template`/ArgoCD 方式使用，不要直接 `kubectl apply`。
+## 本目录文档
 
-## 文档列表
+### 总体审计与运行状态
 
 | 文档 | 内容 |
 |---|---|
-| [monitoring-gitops-phase1.md](monitoring-gitops-phase1.md) | 第一期：规则 GitOps、WeCom DNS/路由修复、完整命令与验证 |
-| [monitoring-gitops-phase2-3.md](monitoring-gitops-phase2-3.md) | 第二/三期：adapter GitOps、stack 整体接管、CRD、白名单、踩坑记录 |
-| [prometheus-alertmanager-ops-guide.md](prometheus-alertmanager-ops-guide.md) | 日常运维：状态检查、规则/路由变更、升级、回滚、排障速查 |
-| [04-current-state.md](04-current-state.md) | 2026-11-10 当前集群状态快照 |
+| [observability-lab.md](notes/observability-lab.md) | 可观测性实战实验手册（基于本集群实测） |
+| [observability-stack-full-audit.md](notes/observability-stack-full-audit.md) | LGTM 全栈审计：组件、链路、P0/P1 问题 |
+| [cluster-observability-report.md](notes/cluster-observability-report.md) | LGTM 运行状态与三支柱关联分析 |
+| [observability-phase2-fixes.md](notes/observability-phase2-fixes.md) | Phase-2 修复：通知失败、Alloy、Tempo 等 |
+| [observability-upgrade-inventory.md](notes/observability-upgrade-inventory.md) | 升级前只读盘点 |
+| [observability-upgrade-report.md](notes/observability-upgrade-report.md) | 同期的 Ceph 集群诊断（文件名有历史原因） |
+| [monitoring-inventory.md](notes/monitoring-inventory.md) | 62 个 job / 125 targets 全量清单 |
+| [monitoring-coverage-gap-report.md](notes/monitoring-coverage-gap-report.md) | 监控覆盖缺口：A 类漏配 / B 类无 metrics |
 
-## 一句话总结
+### 告警治理
 
-**把“人手工改 Prometheus/Alertmanager”变成“改 Git → ArgoCD 同步”，
-同时用标签白名单和 CRD 版本对齐，堵住绕过 GitOps 的口子。**
+| 文档 | 内容 |
+|---|---|
+| [prometheus-promql-alerting-tutorial.md](notes/prometheus-promql-alerting-tutorial.md) | PromQL + 告警实战教程 |
+| [monitoring-alerts-analysis.md](notes/monitoring-alerts-analysis.md) | 全部告警规则逐条分析 |
+| [alerting-coverage-audit-20260930.md](notes/alerting-coverage-audit-20260930.md) | 告警覆盖审计与 n8n 业务面 |
+| [alert-fix-execution-report.md](notes/alert-fix-execution-report.md) | P0/P1 修复执行，推翻三处误判 |
+| [cluster-alert-effectiveness-report.md](notes/cluster-alert-effectiveness-report.md) | 告警有效性分析 |
+| [告警根因分析.md](notes/告警根因分析.md) | 告警根因与处置落地 |
+| [wecom-alert-receiver-20261001/](notes/wecom-alert-receiver-20261001/) | 企业微信双出口变更、失效规则、mcrun 事故 |
+
+### 日志 / 追踪
+
+| 文档 | 内容 |
+|---|---|
+| [retention-unification-5d.md](notes/retention-unification-5d.md) | Loki/S3/Tempo 三层保留统一为 5 天 |
+| [loki-labels-and-node-exporter-errors.md](notes/loki-labels-and-node-exporter-errors.md) | Loki 标签机制与 Alloy relabel |
+| [loki-cache-oom-fix-20261104.md](notes/loki-cache-oom-fix-20261104.md) | chunks-cache OOM 修复 |
+| [logging-components-analysis.md](notes/logging-components-analysis.md) | logging 命名空间组件分析 |
+| [logging-drilldown-fix-20261109/REPORT.md](notes/logging-drilldown-fix-20261109/REPORT.md) | Grafana Logs Drilldown 502 修复 |
+| [node-exporter-fix-report.md](notes/node-exporter-fix-report.md) | node-exporter collector 错误修复 |
+| [loki-and-cephcsi-probe-report.md](notes/loki-and-cephcsi-probe-report.md) | loki-canary / ceph-csi 探针修复 |
+| [traces-architecture-and-correlation.md](notes/traces-architecture-and-correlation.md) | Traces 原理、架构与三支柱关联 |
+| [trace-context-propagation-and-tempo-tiering.md](notes/trace-context-propagation-and-tempo-tiering.md) | Trace 上下文传播、Tempo 冷热分层 |
+| [grafana-traces-empty-analysis.md](notes/grafana-traces-empty-analysis.md) | Grafana traces 为空的根因 |
+| [tempo3/](notes/tempo3/) | Tempo 3 共存评估、S3 兼容、流量切换、旧栈退役、告警配置 |
+
+### Dashboard 与入口
+
+| 文档 | 内容 |
+|---|---|
+| [k8s-dashboard-inventory-20261110.md](notes/k8s-dashboard-inventory-20261110.md) | 47 个 Grafana 面板 + 组件自带 UI 全景 |
+| [ui-and-dashboards-update-20261110.md](notes/ui-and-dashboards-update-20261110.md) | IngressRoute 更正、Cilium 面板、Hubble/Alloy/Traefik 暴露 |
+| [fix-report-grafana-prometheus-https.md](notes/fix-report-grafana-prometheus-https.md) | Grafana/Prometheus HTTPS 访问修复 |
+| [ceph-monitoring-integration-report.md](notes/ceph-monitoring-integration-report.md) | Ceph 监控接入（含 ceph_exporter 方案） |
+
+## 配套资产
+
+| 资产 | 说明 |
+|---|---|
+| [manifests/](manifests/) | 4 个 ArgoCD Application、6 个规则、10 个 CRD、stack values、wecom adapter |
+| [assets/alert-backup/](assets/alert-backup/) | 修复前的规则与 Prometheus CR 备份 |
+| [assets/wecom/](assets/wecom/) | Alertmanager 配置与 `apply.sh`（webhook 已脱敏） |
+| [assets/retention/](assets/retention/) | Alloy/Loki/Tempo3 保留配置备份 |
+| [assets/loki-values-cache-fix.yaml](assets/loki-values-cache-fix.yaml) | Loki cache OOM 修复 values |
+| [assets/node-exporter-ds.yaml](assets/node-exporter-ds.yaml) | node-exporter DaemonSet 修复版 |
+| [assets/grafana-dashboards/](assets/grafana-dashboards/) | ArgoCD/cert-manager/CNPG/Knative/MetalLB/Strimzi/Tekton/Traefik 面板 JSON |
+| [assets/gen-dashboards.py](assets/gen-dashboards.py) | 批量生成/导入 Dashboard 的脚本 |
+| [assets/prometheus-cr-backup-20261003.yaml](assets/prometheus-cr-backup-20261003.yaml) | Prometheus CR 备份 |
+| [assets/current-prometheusrules.yaml](assets/current-prometheusrules.yaml) | 当前全部 PrometheusRule 快照 |
+
+> `manifests/` 里的 GitLab/n8n 地址、SealedSecret、webhook 已脱敏；使用前替换成你的环境。
+> 告警规则不要直接全量 apply，先 `promtool check rules` 并确认 metric 存在。

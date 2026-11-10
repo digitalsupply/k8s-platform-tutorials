@@ -1,0 +1,60 @@
+apiVersion: v1
+data:
+  config.alloy: "// =============================================================================\n//
+    Grafana Alloy v1.20.0 — Kubernetes Pod 日志采集\n// 基线来源：Promtail 3.5.1 原配置（备份 /root/observability-upgrade-backup-20260928-122529）\n//
+    转换方式：grafana/alloy 内置 `alloy convert` + 人工复刻 Promtail 标签契约\n// 契约保证：node_name
+    / job / app / instance / component / pod / container\n//            + /var/log/pods
+    路径双规则（uid 形式 + config.hash 注解形式）\n// =============================================================================\n\n//
+    ---------- 1. 服务发现：只看本节点的 Pod ----------\ndiscovery.kubernetes \"pod_logs\" {\n\trole
+    = \"pod\"\n\n\tselectors {\n\t\trole  = \"pod\"\n\t\tfield = \"spec.nodeName=\"
+    + coalesce(sys.env(\"K8S_NODE_NAME\"), constants.hostname)\n\t}\n}\n\n// ----------
+    2. 标签重写：1:1 复刻 Promtail 的 relabel_configs ----------\ndiscovery.relabel \"pod_logs\"
+    {\n\ttargets = discovery.kubernetes.pod_logs.targets\n\n\t// app：4 级回退（name label
+    → app label → controller name → pod name）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_controller_name\"]\n\t\tregex
+    \        = \"([0-9a-z-.]+?)(-[0-9a-f]{8,10})?\"\n\t\ttarget_label  = \"__tmp_controller_name\"\n\t}\n\n\trule
+    {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_name\",\n\t\t\t\"__meta_kubernetes_pod_label_app\",\n\t\t\t\"__tmp_controller_name\",\n\t\t\t\"__meta_kubernetes_pod_name\",\n\t\t]\n\t\tregex
+    \       = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"app\"\n\t}\n\n\t// instance\n\trule
+    {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_instance\",\n\t\t\t\"__meta_kubernetes_pod_label_instance\",\n\t\t]\n\t\tregex
+    \       = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"instance\"\n\t}\n\n\t//
+    component\n\trule {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_component\",\n\t\t\t\"__meta_kubernetes_pod_label_component\",\n\t\t]\n\t\tregex
+    \       = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"component\"\n\t}\n\n\t//
+    node_name（★ 存量 LogQL 依赖此标签名，不是 node）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_node_name\"]\n\t\ttarget_label
+    \ = \"node_name\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_namespace\"]\n\t\ttarget_label
+    \ = \"namespace\"\n\t}\n\n\t// job = \"<namespace>/<app>\"\n\trule {\n\t\tsource_labels
+    = [\"namespace\", \"app\"]\n\t\tseparator     = \"/\"\n\t\ttarget_label  = \"job\"\n\t}\n\n\trule
+    {\n\t\tsource_labels = [\"__meta_kubernetes_pod_name\"]\n\t\ttarget_label  = \"pod\"\n\t}\n\n\trule
+    {\n\t\tsource_labels = [\"__meta_kubernetes_pod_container_name\"]\n\t\ttarget_label
+    \ = \"container\"\n\t}\n\n\t// __path__：与 Promtail 原配置 1:1 复刻的两条规则\n\t//   A =
+    uid 形式（绝大多数 Pod）\n\t//   B = config.hash 注解形式（兼容老式 Deployment）\n\t// 说明：discovery.kubernetes(role=\"pod\")
+    不会产出 __path__，必须自己拼。\n\t// glob 展开由下方 loki.source.file 的 file_match 块负责（见该块注释）。\n\n\t//
+    __path__ 规则 A：uid 形式（绝大多数 Pod）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_uid\",
+    \"__meta_kubernetes_pod_container_name\"]\n\t\tseparator     = \"/\"\n\t\treplacement
+    \  = \"/var/log/pods/*$1/*.log\"\n\t\ttarget_label  = \"__path__\"\n\t}\n\n\t//
+    __path__ 规则 B：config.hash 注解形式（兼容老式 Deployment）\n\trule {\n\t\tsource_labels =
+    [\n\t\t\t\"__meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash\",\n\t\t\t\"__meta_kubernetes_pod_annotation_kubernetes_io_config_hash\",\n\t\t\t\"__meta_kubernetes_pod_container_name\",\n\t\t]\n\t\tseparator
+    \   = \"/\"\n\t\tregex        = \"true/(.*)\"\n\t\treplacement  = \"/var/log/pods/*$1/*.log\"\n\t\ttarget_label
+    = \"__path__\"\n\t}\n}\n\n// ---------- 3. 日志读取源（★ 迁移时完全缺失的一环）----------\nloki.source.file
+    \"pod_logs\" {\n\ttargets    = discovery.relabel.pod_logs.output\n\tforward_to
+    = [loki.process.logs_to_prometheus.receiver]\n\n\t// 从文件末尾开始追：避免把 Promtail 时代遗留的最多
+    7 天历史日志\n\t// 一次性重放进 Loki（会被 reject_old_samples / out-of-order 大面积拒绝，\n\t// 且会打爆
+    gateway 与 WAL）。代价是迁移窗口（约 4h）的日志不回填。\n\ttail_from_end = true\n\n\t// ★ 关键：loki.source.file
+    默认要求 targets.__path__ 是「具体文件路径」，\n\t//   遇到 glob 会对字面量直接 os.Stat 而不展开（实测 65 个
+    target 全部\n\t//   stat .../*.log: no such file or directory）。开启 file_match 后改由\n\t//
+    \  doublestar 库做通配符发现，并按 sync_period 自动感知文件轮转新增。\n\tfile_match {\n\t\tenabled
+    \    = true\n\t\tsync_period = \"10s\"\n\t}\n}\n\n// ---------- 4. 解析管道（对齐 Promtail
+    pipeline_stages）----------\nloki.process \"logs_to_prometheus\" {\n\tforward_to
+    = [loki.write.default.receiver]\n\n\t// 剥离 CRI 包装：timestamp / stream / P | F\n\tstage.cri
+    { }\n\n\t// 与 Promtail 一致：丢弃 7 天前的日志\n\tstage.drop {\n\t\tolder_than = \"168h\"\n\t}\n}\n\n//
+    ---------- 5. 写出（端点与租户与 Promtail 时代完全一致）----------\nloki.write \"default\" {\n\tendpoint
+    {\n\t\turl       = \"http://loki-gateway.logging.svc.cluster.local/loki/api/v1/push\"\n\t\ttenant_id
+    = \"fake\"\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.alloy":"// =============================================================================\n// Grafana Alloy v1.20.0 — Kubernetes Pod 日志采集\n// 基线来源：Promtail 3.5.1 原配置（备份 /root/observability-upgrade-backup-20260928-122529）\n// 转换方式：grafana/alloy 内置 `alloy convert` + 人工复刻 Promtail 标签契约\n// 契约保证：node_name / job / app / instance / component / pod / container\n//            + /var/log/pods 路径双规则（uid 形式 + config.hash 注解形式）\n// =============================================================================\n\n// ---------- 1. 服务发现：只看本节点的 Pod ----------\ndiscovery.kubernetes \"pod_logs\" {\n\trole = \"pod\"\n\n\tselectors {\n\t\trole  = \"pod\"\n\t\tfield = \"spec.nodeName=\" + coalesce(sys.env(\"K8S_NODE_NAME\"), constants.hostname)\n\t}\n}\n\n// ---------- 2. 标签重写：1:1 复刻 Promtail 的 relabel_configs ----------\ndiscovery.relabel \"pod_logs\" {\n\ttargets = discovery.kubernetes.pod_logs.targets\n\n\t// app：4 级回退（name label → app label → controller name → pod name）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_controller_name\"]\n\t\tregex         = \"([0-9a-z-.]+?)(-[0-9a-f]{8,10})?\"\n\t\ttarget_label  = \"__tmp_controller_name\"\n\t}\n\n\trule {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_name\",\n\t\t\t\"__meta_kubernetes_pod_label_app\",\n\t\t\t\"__tmp_controller_name\",\n\t\t\t\"__meta_kubernetes_pod_name\",\n\t\t]\n\t\tregex        = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"app\"\n\t}\n\n\t// instance\n\trule {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_instance\",\n\t\t\t\"__meta_kubernetes_pod_label_instance\",\n\t\t]\n\t\tregex        = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"instance\"\n\t}\n\n\t// component\n\trule {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_component\",\n\t\t\t\"__meta_kubernetes_pod_label_component\",\n\t\t]\n\t\tregex        = \"^;*([^;]+)(;.*)?$\"\n\t\ttarget_label = \"component\"\n\t}\n\n\t// node_name（★ 存量 LogQL 依赖此标签名，不是 node）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_node_name\"]\n\t\ttarget_label  = \"node_name\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_namespace\"]\n\t\ttarget_label  = \"namespace\"\n\t}\n\n\t// job = \"\u003cnamespace\u003e/\u003capp\u003e\"\n\trule {\n\t\tsource_labels = [\"namespace\", \"app\"]\n\t\tseparator     = \"/\"\n\t\ttarget_label  = \"job\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_name\"]\n\t\ttarget_label  = \"pod\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_container_name\"]\n\t\ttarget_label  = \"container\"\n\t}\n\n\t// __path__：与 Promtail 原配置 1:1 复刻的两条规则\n\t//   A = uid 形式（绝大多数 Pod）\n\t//   B = config.hash 注解形式（兼容老式 Deployment）\n\t// 说明：discovery.kubernetes(role=\"pod\") 不会产出 __path__，必须自己拼。\n\t// glob 展开由下方 loki.source.file 的 file_match 块负责（见该块注释）。\n\n\t// __path__ 规则 A：uid 形式（绝大多数 Pod）\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_uid\", \"__meta_kubernetes_pod_container_name\"]\n\t\tseparator     = \"/\"\n\t\treplacement   = \"/var/log/pods/*$1/*.log\"\n\t\ttarget_label  = \"__path__\"\n\t}\n\n\t// __path__ 规则 B：config.hash 注解形式（兼容老式 Deployment）\n\trule {\n\t\tsource_labels = [\n\t\t\t\"__meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash\",\n\t\t\t\"__meta_kubernetes_pod_annotation_kubernetes_io_config_hash\",\n\t\t\t\"__meta_kubernetes_pod_container_name\",\n\t\t]\n\t\tseparator    = \"/\"\n\t\tregex        = \"true/(.*)\"\n\t\treplacement  = \"/var/log/pods/*$1/*.log\"\n\t\ttarget_label = \"__path__\"\n\t}\n}\n\n// ---------- 3. 日志读取源（★ 迁移时完全缺失的一环）----------\nloki.source.file \"pod_logs\" {\n\ttargets    = discovery.relabel.pod_logs.output\n\tforward_to = [loki.process.logs_to_prometheus.receiver]\n\n\t// 从文件末尾开始追：避免把 Promtail 时代遗留的最多 7 天历史日志\n\t// 一次性重放进 Loki（会被 reject_old_samples / out-of-order 大面积拒绝，\n\t// 且会打爆 gateway 与 WAL）。代价是迁移窗口（约 4h）的日志不回填。\n\ttail_from_end = true\n\n\t// ★ 关键：loki.source.file 默认要求 targets.__path__ 是「具体文件路径」，\n\t//   遇到 glob 会对字面量直接 os.Stat 而不展开（实测 65 个 target 全部\n\t//   stat .../*.log: no such file or directory）。开启 file_match 后改由\n\t//   doublestar 库做通配符发现，并按 sync_period 自动感知文件轮转新增。\n\tfile_match {\n\t\tenabled     = true\n\t\tsync_period = \"10s\"\n\t}\n}\n\n// ---------- 4. 解析管道（对齐 Promtail pipeline_stages）----------\nloki.process \"logs_to_prometheus\" {\n\tforward_to = [loki.write.default.receiver]\n\n\t// 剥离 CRI 包装：timestamp / stream / P | F\n\tstage.cri { }\n\n\t// 与 Promtail 一致：丢弃 7 天前的日志\n\tstage.drop {\n\t\tolder_than = \"168h\"\n\t}\n}\n\n// ---------- 5. 写出（端点与租户与 Promtail 时代完全一致）----------\nloki.write \"default\" {\n\tendpoint {\n\t\turl       = \"http://loki-gateway.logging.svc.cluster.local/loki/api/v1/push\"\n\t\ttenant_id = \"fake\"\n\t}\n}\n"},"kind":"ConfigMap","metadata":{"annotations":{},"creationTimestamp":"2026-09-28T04:31:51Z","name":"alloy-config","namespace":"logging","resourceVersion":"10415051","uid":"c5fabe1f-4bf8-4bc6-a0fa-c4da0f8d27f0"}}
+  creationTimestamp: "2026-09-28T04:31:51Z"
+  name: alloy-config
+  namespace: logging
+  resourceVersion: "10421483"
+  uid: c5fabe1f-4bf8-4bc6-a0fa-c4da0f8d27f0

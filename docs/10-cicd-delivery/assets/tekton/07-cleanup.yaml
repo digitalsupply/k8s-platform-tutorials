@@ -1,0 +1,182 @@
+# Compassio CI/CD — 旧 PipelineRun 清理（连带 GC 其 PVC）
+#
+# 背景：TriggerTemplate 用 volumeClaimTemplate，每个 PipelineRun 会创建一块 PVC；
+# 而 PipelineRun 默认永久保留，PVC 就跟着累积。本 CronJob 每天删除 RETAIN_DAYS 天前
+# 已结束的 PipelineRun，由 Kubernetes GC 级联删除其 TaskRun / Pod / PVC。
+#
+# 跳过：
+#   - 未结束（Running/Pending）的 run
+#   - 带 label/annotation `cleanup=keep` 的 run
+#
+# 手工预演：kubectl create job --from=cronjob/cicd-cleanup cleanup-dry -n cicd
+#           （把 job 的 DRY_RUN 改成 "true" 即可只看不删）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cicd-cleanup
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cicd-cleanup
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+rules:
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["taskruns"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cicd-cleanup
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+subjects:
+  - kind: ServiceAccount
+    name: cicd-cleanup
+    namespace: cicd
+roleRef:
+  kind: Role
+  name: cicd-cleanup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cicd-cleanup-script
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+data:
+  cleanup.py: |
+    import os, json, ssl, urllib.request, datetime
+
+    SA = "/var/run/secrets/kubernetes.io/serviceaccount"
+    NS = open(f"{SA}/namespace").read().strip()
+    TOKEN = open(f"{SA}/token").read().strip()
+    CTX = ssl.create_default_context(cafile=f"{SA}/ca.crt")
+    BASE = "https://kubernetes.default.svc"
+    RETAIN_DAYS = int(os.getenv("RETAIN_DAYS", "7"))
+    DRY_RUN = os.getenv("DRY_RUN", "false").lower() in ("1", "true", "yes")
+
+    def api(method, path):
+        req = urllib.request.Request(
+            BASE + path, method=method,
+            headers={"Authorization": "Bearer " + TOKEN},
+        )
+        with urllib.request.urlopen(req, context=CTX, timeout=30) as r:
+            raw = r.read()
+            return json.loads(raw) if raw else {}
+
+    def list_all(path):
+        items, cont = [], ""
+        while True:
+            sep = "&" if "?" in path else "?"
+            data = api("GET", path + (f"{sep}continue={cont}" if cont else ""))
+            items += data.get("items", [])
+            cont = (data.get("metadata") or {}).get("continue", "")
+            if not cont:
+                return items
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cutoff = now - datetime.timedelta(days=RETAIN_DAYS)
+
+    prs = list_all(f"/apis/tekton.dev/v1/namespaces/{NS}/pipelineruns?limit=200")
+    pvs = list_all(f"/api/v1/namespaces/{NS}/persistentvolumeclaims?limit=200")
+    trs = list_all(f"/apis/tekton.dev/v1/namespaces/{NS}/taskruns?limit=500")
+
+    def reason_of(pr):
+        c = (pr.get("status") or {}).get("conditions") or []
+        return c[0].get("reason") if c else None
+
+    stats = {"deleted": 0, "skipped": 0, "pvc": 0, "taskrun": 0}
+    for pr in prs:
+        name = pr["metadata"]["name"]
+        labels = pr["metadata"].get("labels") or {}
+        ann = pr["metadata"].get("annotations") or {}
+        if labels.get("cleanup") == "keep" or ann.get("cleanup") == "keep":
+            print(f"SKIP keep {name}")
+            stats["skipped"] += 1
+            continue
+        reason = reason_of(pr)
+        done_raw = (pr.get("status") or {}).get("completionTime")
+        if reason not in ("Succeeded", "Failed", "Completed", "PipelineRunTimeout", "Cancelled") or not done_raw:
+            print(f"SKIP unfinished {name} ({reason})")
+            stats["skipped"] += 1
+            continue
+        done = datetime.datetime.fromisoformat(done_raw.replace("Z", "+00:00"))
+        if done >= cutoff:
+            print(f"KEEP recent {name} ({done_raw})")
+            stats["skipped"] += 1
+            continue
+
+        owned_pvc = [
+            p["metadata"]["name"] for p in pvs
+            if any(o.get("kind") == "PipelineRun" and o.get("name") == name
+                   for o in (p["metadata"].get("ownerReferences") or []))
+        ]
+        owned_tr = [
+            t["metadata"]["name"] for t in trs
+            if (t["metadata"].get("labels") or {}).get("tekton.dev/pipelineRun") == name
+        ]
+        print(f"{'DRY-RUN ' if DRY_RUN else ''}DELETE {name} "
+              f"({reason}, {done_raw}) pvc={len(owned_pvc)} taskruns={len(owned_tr)}")
+        stats["deleted"] += 1
+        stats["pvc"] += len(owned_pvc)
+        stats["taskrun"] += len(owned_tr)
+        if not DRY_RUN:
+            # 只删 PipelineRun，交给 K8s GC 级联 TaskRun -> Pod -> PVC
+            api("DELETE", f"/apis/tekton.dev/v1/namespaces/{NS}/pipelineruns/{name}")
+
+    print("done:", json.dumps({**stats, "retain_days": RETAIN_DAYS, "dry_run": DRY_RUN}))
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cicd-cleanup
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  schedule: "0 3 * * *"          # 每天 03:00
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: cicd-cleanup
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: harbor-auth
+          containers:
+            - name: cleanup
+              image: 192.168.67.202:8443/compassio/python:3.11-slim
+              env:
+                - name: RETAIN_DAYS
+                  value: "7"
+                - name: DRY_RUN
+                  value: "false"
+              command: ["python", "/scripts/cleanup.py"]
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: cicd-cleanup-script

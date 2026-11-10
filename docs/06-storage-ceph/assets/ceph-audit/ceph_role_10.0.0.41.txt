@@ -1,0 +1,15 @@
+Warning: Permanently added '10.0.0.41' (ED25519) to the list of known hosts.
+=== ceph-02 ===
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f@crash.ceph-02.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mds.cephfs.ceph-02.dtazsd.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mgr.ceph-02.wzbtbx.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@mon.ceph-02.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@node-exporter.ceph-02.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.1.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@osd.4.service ceph-594e535e-d82c-11f0-afa7-bc24112b746f@rgw.myrgw.ceph-02.socnwm.service 
+--- docker/podman containers ---
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-02|quay.io/prometheus/node-exporter:v1.5.0|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-rgw-myrgw-ceph-02-socnwm|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-02-dtazsd|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-4|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-1|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-02|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-02|quay.io/ceph/ceph|Up 2 days
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mgr-ceph-02-wzbtbx|quay.io/ceph/ceph|Up 2 days
+harbor-log|goharbor/harbor-log:v2.8.6|Up 4 days (healthy)
+--- podman ---
+podman cli n/a

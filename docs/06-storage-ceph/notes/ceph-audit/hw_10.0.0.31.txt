@@ -1,0 +1,45 @@
+Warning: Permanently added '10.0.0.31' (ED25519) to the list of known hosts.
+###HOST### ceph-01
+--CPU--
+CPU(s):                                  4
+Model name:                              QEMU Virtual CPU version 2.5+
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+--MEM--
+               total        used        free      shared  buff/cache   available
+Mem:            5665        3794         191         109        2076        1870
+--DISK--
+NAME SIZE ROTA MODEL
+sda   80G    1 QEMU HARDDISK
+sdb   30G    1 QEMU HARDDISK
+sdc   30G    1 QEMU HARDDISK
+sr0    4M    0 QEMU DVD-ROM
+--FILESYSTEM--
+Filesystem          Type  Size  Used Avail Use% Mounted on
+/dev/mapper/rl-root xfs    77G  9.9G   68G  13% /
+/dev/mapper/rl-root xfs    77G  9.9G   68G  13% /
+--NETIF--
+docker0 1500 down
+docker_gwbridge 1500 down
+eth0 1500 up
+eth1 1500 up
+--SELINUX--
+Disabled
+--FIREWALL--
+inactive
+-P INPUT ACCEPT
+-P FORWARD DROP
+-P OUTPUT ACCEPT
+-N DOCKER
+-N DOCKER-BRIDGE
+--TIME--
+               Local time: Fri 2026-10-02 14:09:35 CST
+           Universal time: Fri 2026-10-02 06:09:35 UTC
+                 RTC time: Fri 2026-10-02 06:09:35
+                Time zone: Asia/Shanghai (CST, +0800)
+--SELINUX-TUNABLES--
+vm.max_map_count = 65530
+net.core.rmem_max = 212992
+1024
+--NPROC-LIMITS--

@@ -1,0 +1,52 @@
+enableLBIPAM: false
+defaultLBServiceIPAM: none
+
+cluster:
+  name: home
+
+cni:
+  chainingMode: generic-veth
+  customConf: true
+  configMap: cni-configuration
+  exclusive: false
+
+routingMode: native
+enableIPv4Masquerade: false
+enableIdentityMark: false
+kubeProxyReplacement: "false"
+l7Proxy: false
+
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+  metrics:
+    enabled:
+      - drop
+      - tcp
+      - flow
+    serviceMonitor:
+      enabled: true
+      trustCRDsExist: true
+      labels:
+        release: prometheus
+
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    trustCRDsExist: true
+    labels:
+      release: prometheus
+
+operator:
+  replicas: 2
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      trustCRDsExist: true
+      labels:
+        release: prometheus

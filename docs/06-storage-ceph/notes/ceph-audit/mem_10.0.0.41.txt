@@ -1,0 +1,23 @@
+Warning: Permanently added '10.0.0.41' (ED25519) to the list of known hosts.
+#####HOST##### ceph-02
+=====MEM=====
+               total        used        free      shared  buff/cache   available
+Mem:            5665        3269         182         108        2612        2395
+=====KDUMP_RESERVED=====
+crashkernel=1G-4G:192M,4G-64G:256M,64G-:512M
+enabled
+=====NFS_KERNEL=====
+  nfsd线程数: 8
+3
+=====DOCKER_STATS=====
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-1|768.5MiB / 5.532GiB|13.57%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-osd-4|590.8MiB / 5.532GiB|10.43%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mgr-ceph-02-wzbtbx|473.2MiB / 5.532GiB|8.35%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mon-ceph-02|393.6MiB / 5.532GiB|6.95%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-rgw-myrgw-ceph-02-socnwm|105.2MiB / 5.532GiB|1.86%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-mds-cephfs-ceph-02-dtazsd|25.21MiB / 5.532GiB|0.44%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-node-exporter-ceph-02|19.53MiB / 5.532GiB|0.34%
+harbor-log|9.461MiB / 5.532GiB|0.17%
+ceph-594e535e-d82c-11f0-afa7-bc24112b746f-crash-ceph-02|9.086MiB / 5.532GiB|0.16%
+=====DOCKER_SUM=====
+  容器合计: 42.3%

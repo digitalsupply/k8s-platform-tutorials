@@ -1,0 +1,89 @@
+# Compassio CI/CD — EventListener + Traefik Ingress
+# GitLab webhook URL: http://el-deeptutor.internal/compassio-el
+#
+# 为什么不用 ci-compassio.xyz：该域名需要在 GitLab 主机的 /etc/hosts 里绑定
+# 10.0.0.252。2026-10-27 起该绑定失效，webhook 投递全部 "internal error"
+# （GitLab 侧解析不到主机名），CI 静默停摆三天且没有任何告警。
+# el-deeptutor.internal 是 GitLab 主机当前仍能解析的入口（deeptutor 的 webhook
+# 一直在用），所以这里复用它 + 路径前缀分流；Tekton EL sink 对路径不敏感。
+#
+# 恢复 DNS 后可以把 below 的 ci-compassio.xyz 规则继续用，并把 webhook URL 改回
+#   http://ci-compassio.xyz/
+# 注意：这条路径规则依赖 deeptutor 的 EL Ingress 主机名，改名时要一起改。
+# 注意：Service el-compassio-listener 由 triggers controller 自动创建（ClusterIP），
+# 不要在此手工声明同名 Service —— 否则 controller 报 "already exists"，
+# EL 的 spec（含 interceptor）将无法下发，webhook 行为会停留在旧配置。
+# 触发来源校验：GitLab interceptor 校验 X-Gitlab-Token == secret
+# cicd/gitlab-webhook-secret(secretToken)，事件仅接受 Push Hook。
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: compassio-listener
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: gitlab-push
+      interceptors:
+        - ref:
+            name: gitlab
+            kind: ClusterInterceptor
+          params:
+            - name: secretRef
+              value:
+                secretName: gitlab-webhook-secret
+                secretKey: secretToken
+            - name: eventTypes
+              value: ["Push Hook"]
+        # 只接 main 的 push;「是否要重建镜像」不再在这里按 commits 判断。
+        #
+        # 之前这里用 body.commits 过滤 backend/ frontend/,但 GitLab 的 push
+        # payload 最多带 20 个 commit(超出时只体现为 total_commits_count),
+        # 大 push / merge 里代码改动一旦落在截断之外就会**静默不触发**,
+        # 表现为"推上去了但没部署"。现在判定移到流水线的 check-changes 任务,
+        # 用真实 git diff(before..after)决定,失败一律放行。
+        - ref:
+            name: cel
+            kind: ClusterInterceptor
+          params:
+            - name: filter
+              value: body.object_kind == 'push' && body.ref == 'refs/heads/main'
+      bindings:
+        - ref: compassio-binding
+      template:
+        ref: compassio-template
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: compassio-el
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ci-compassio.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: el-compassio-listener
+                port:
+                  number: 8080
+    # 兜底入口：GitLab 主机能解析 el-deeptutor.internal，用路径前缀分流到本 EL。
+    # Tekton EL sink 只按方法/body 处理，不校验路径。
+    - host: el-deeptutor.internal
+      http:
+        paths:
+          - path: /compassio-el
+            pathType: Prefix
+            backend:
+              service:
+                name: el-compassio-listener
+                port:
+                  number: 8080
