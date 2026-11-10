@@ -146,6 +146,8 @@ Zabbix/MariaDB/nginx/php-fpm 下线前做了 4 项确认：
 | [scripts/sudo_audit.py](scripts/sudo_audit.py) | 只读 sudo/SSH 权限审计 |
 | [scripts/change_repo.sh](scripts/change_repo.sh) | Rocky Linux 仓库切换 |
 | [scripts/change_epel.sh](scripts/change_epel.sh) | EPEL 仓库配置 |
+| [scripts/dnf.sh](scripts/dnf.sh) | 常用包安装（ipvsadm/cowsay/sl） |
+| [scripts/kata-manager.sh](scripts/kata-manager.sh) | Kata Containers 安装/管理工具 |
 
 ```bash
 # 只读审计

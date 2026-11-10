@@ -205,6 +205,8 @@ rbd -p k8s-rbd rm <image>
 | [scripts/find_orphan_pv.py](scripts/find_orphan_pv.py) | 只读识别 Released/Failed 且无对应 PVC 的 PV |
 | [scripts/inspect-released-pv.sh](scripts/inspect-released-pv.sh) | 只读核对 PV、claimRef、RBD image、watchers |
 | [scripts/rbd-du.sh](scripts/rbd-du.sh) | 批量统计 RBD 实际占用 |
+| [scripts/recover-test.sh](scripts/recover-test.sh) | 从 S3 下载 base backup 并校验 tar/关键文件 |
+| [scripts/pitr-verify.sh](scripts/pitr-verify.sh) | PITR 可达性验证 |
 | [assets/ceph-audit/](assets/ceph-audit/) | Ceph 主机审计原始材料 |
 | [assets/ceph-status.txt](assets/ceph-status.txt) | 当前 `ceph -s` 快照 |
 | [assets/ceph-osd-tree.txt](assets/ceph-osd-tree.txt) | 当前 OSD 树 |

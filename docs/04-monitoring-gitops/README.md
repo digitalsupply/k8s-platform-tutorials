@@ -269,6 +269,7 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 | [assets/gen-dashboards.py](assets/gen-dashboards.py) | 批量生成/导入 Dashboard 的脚本 |
 | [assets/prometheus-cr-backup-20261003.yaml](assets/prometheus-cr-backup-20261003.yaml) | Prometheus CR 备份 |
 | [assets/current-prometheusrules.yaml](assets/current-prometheusrules.yaml) | 当前全部 PrometheusRule 快照 |
+| [scripts/sigv4-probe.py](scripts/sigv4-probe.py)、[sigv4-probe2.py](scripts/sigv4-probe2.py)、[rgw-rule-matrix.py](scripts/rgw-rule-matrix.py) | Ceph RGW aws-chunked 签名探针（复现 400 根因） |
 
 > `manifests/` 里的 GitLab/n8n 地址、SealedSecret、webhook 已脱敏；使用前替换成你的环境。
 > 告警规则不要直接全量 apply，先 `promtool check rules` 并确认 metric 存在。
