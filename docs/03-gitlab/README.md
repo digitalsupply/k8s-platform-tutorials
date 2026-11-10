@@ -90,6 +90,19 @@ GitLab reconfigure 会重启多个服务；端口切换期间可能短暂不可�
 4. **分层验证**：`ss` → `iptables/nftables` → `curl` → 浏览器。
 5. **保留回滚路径**：记录原配置和规则，必要时恢复 8088。
 
+## 配套脚本
+
+[`scripts/check_ports.py`](scripts/check_ports.py)
+
+```bash
+sudo python3 scripts/check_ports.py \
+  --ports 80,8088 \
+  --urls http://127.0.0.1:8088,http://<node-ip>:8088
+```
+
+只读收集：`ss` 监听、iptables、nftables、HTTP 探测、`gitlab-ctl status`。
+不会修改任何规则。
+
 ## 文档列表
 
 | 文档 | 内容 |

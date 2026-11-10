@@ -97,6 +97,18 @@ kubectl -n kube-system exec "$POD" -- cilium-dbg bpf lb list
 4. **用 `crictl` / `ctr` 查容器运行时**；
 5. **先确认节点，再执行 Cilium/BPF 命令**。
 
+## 配套脚本
+
+[`scripts/pod_inspect.py`](scripts/pod_inspect.py)
+
+```bash
+python3 scripts/pod_inspect.py kube-system <pod-name>
+# 在节点上以 root 运行，可额外拿到 sandbox ID / PID / cgroup：
+sudo python3 scripts/pod_inspect.py kube-system <pod-name>
+```
+
+只依赖标准库 + `kubectl`；有 `crictl` 时会继续展示 sandbox 和 cgroup 信息。
+
 ## 文档列表
 
 | 文档 | 内容 |

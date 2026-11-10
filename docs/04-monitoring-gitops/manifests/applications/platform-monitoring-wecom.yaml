@@ -1,0 +1,36 @@
+# 示例：本文件来自平台仓库 clusters/prod/applications/。
+# 在本教程仓库中直接使用时，请把 repoURL / path / valueFiles 改成实际路径。
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-monitoring-wecom
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.example.com/digitalsupply/platform-gitops.git
+    targetRevision: main
+    path: platform/monitoring/wecom
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  ignoreDifferences:
+    - group: bitnami.com
+      kind: SealedSecret
+      jsonPointers:
+        - /status
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m

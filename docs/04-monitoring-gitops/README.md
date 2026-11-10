@@ -198,6 +198,30 @@ ArgoCD 按 hook 处理，PreSync/PostSync 运行；不要手工删除。
 - 10 个 CRD 由 `platform-monitoring-crds` 管理；
 - 监控相关 5 个 ArgoCD App 全部 Synced/Healthy。
 
+## 配套资产
+
+[`manifests/`](manifests/README.md) 下按目录放好了改造对应的 YAML 和 Python：
+
+| 目录 | 内容 |
+|---|---|
+| `manifests/applications/` | 4 个 ArgoCD Application 示例 |
+| `manifests/rules/` | 6 个 PrometheusRule + Kustomize 白名单 patch |
+| `manifests/wecom/` | Deployment/Service/ConfigMap/NetworkPolicy + `adapter.py` |
+| `manifests/stack/` | `values.yaml` + Grafana admin SealedSecret 示例 |
+| `manifests/crds/` | 10 个 prometheus-operator CRD |
+
+应用顺序建议：
+
+```bash
+kubectl apply --server-side --force-conflicts -k manifests/crds/
+kubectl apply -k manifests/rules/
+# 先按 manifests/README.md 生成真实 SealedSecret
+kubectl apply -k manifests/wecom/
+```
+
+`manifests/stack/values.yaml` 是 Helm values，按 `manifests/README.md` 里的
+`helm template`/ArgoCD 方式使用，不要直接 `kubectl apply`。
+
 ## 文档列表
 
 | 文档 | 内容 |

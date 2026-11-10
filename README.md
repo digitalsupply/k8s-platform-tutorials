@@ -62,6 +62,25 @@
 
 ---
 
+## 配套 YAML 和 Python 脚本
+
+教程中的命令和清单已经按分类落到对应目录：
+
+| 分类 | 配套资产 |
+|---|---|
+| 01 Kubernetes/k3s | [`scripts/pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py) |
+| 02 Cilium/eBPF | [`scripts/collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py) |
+| 03 GitLab | [`scripts/check_ports.py`](docs/03-gitlab/scripts/check_ports.py) |
+| 04 Monitoring GitOps | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)（4 个 Application、6 个规则、wecom adapter.py、values、10 个 CRD） |
+| 05 Linux | [`scripts/sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py) |
+
+说明：
+
+- Python 脚本只依赖标准库和系统命令（`kubectl`/`crictl`/`ss`/`iptables`/`nft`/`curl`）；
+- `pod_inspect.py`、`collect_cilium_bpf.py` 需要能访问集群或节点；
+- `sudo_audit.py`、`check_ports.py` 是只读诊断脚本；
+- 监控 YAML 中的 GitLab/n8n 地址和 SealedSecret 已脱敏，使用前请替换。
+
 ## 脱敏与免责声明
 
 - 文档中的 `10.x.x.x`、`192.168.x.x`、`*.k8s.local` 等均为实验环境地址，

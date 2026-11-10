@@ -83,6 +83,29 @@ Kubernetes 对象正常不代表数据面正常；VIP→Pod 的映射在 BPF map
 5. 用 `hubble observe` 或 tcpdump 验证实际路径；
 6. 对照 Service/Endpoint/Pod 的 IP，确认没有“对象正常、数据面错误”。
 
+## 配套脚本
+
+[`scripts/collect_cilium_bpf.py`](scripts/collect_cilium_bpf.py)
+
+```bash
+python3 scripts/collect_cilium_bpf.py --node worker01 --out ./cilium-bpf
+```
+
+会采集：
+
+```text
+bpf-lb.txt
+bpf-ipcache.txt
+bpf-nodeid.txt
+status.txt
+endpoints.txt
+k8s-services.txt
+k8s-endpoints.txt
+k8s-pods.txt
+```
+
+脚本会自动找到指定节点的 Cilium Pod，避免 `kubectl exec ds/cilium` 打错节点。
+
 ## 文档列表
 
 | 文档 | 内容 |

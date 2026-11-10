@@ -73,6 +73,21 @@
 4. 不共享 root 密码；用 `visudo` 修改 sudoers；
 5. 审计 `sudo` 日志（`/var/log/auth.log` 或 journald）。
 
+## 配套脚本
+
+[`scripts/sudo_audit.py`](scripts/sudo_audit.py)
+
+```bash
+sudo python3 scripts/sudo_audit.py
+```
+
+只读检查：
+
+- UID 0 账户；
+- `sudoers` / `sudoers.d` 的 `NOPASSWD`；
+- `sshd_config` 的 `PermitRootLogin` / `PasswordAuthentication`；
+- `authorized_keys` 的 `command=` / `from=` / `restrict` 限制。
+
 ## 文档列表
 
 | 文档 | 内容 |
