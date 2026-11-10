@@ -36,6 +36,7 @@
 | [10 CI/CD 交付](docs/10-cicd-delivery/README.md) | GitLab→Tekton→BuildKit→Harbor→ArgoCD、Webhook、BuildKit 排障 | 做 GitOps/CI-CD 的人 |
 | [11 GitOps 平台化](docs/11-gitops-platform/README.md) | app-of-apps、覆盖盘点、Sealed Secrets、Vault/ESO 取舍 | 想把集群真正交给 Git 的人 |
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
+| [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
 
 ---
 
@@ -59,6 +60,7 @@
   → 10 CI/CD
   → 11 GitOps 平台化
   → 12 PVE/宿主机
+  → 13 SSO/OIDC
 ```
 
 ---
@@ -81,6 +83,7 @@
 | 存储 | Ceph Reef `18.2.8`，`HEALTH_OK`；17 个 PV 全部 Bound |
 | 备份 | etcd 每小时快照（`etcd-backup/etcd-snapshot`）；CNPG Barman 备份 |
 | 交付 | GitLab Runner + Tekton + BuildKit + Harbor + ArgoCD |
+| 统一登录 | GitLab OIDC：Grafana/ArgoCD/Harbor 原生；Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy |
 
 > 数字会变。把 `current-state.md` 当“某个时刻的证据”，而不是永久配置。
 
@@ -103,6 +106,7 @@
 | 10 CI/CD | [`tekton/`](docs/10-cicd-delivery/assets/tekton/)（Task/Pipeline/Trigger/EventListener/BuildKit）、[`tekton-operator/`](docs/10-cicd-delivery/assets/tekton-operator/)、[`openwebui/`](docs/10-cicd-delivery/assets/openwebui/)、[`tekton_retention_audit.py`](docs/10-cicd-delivery/scripts/tekton_retention_audit.py) |
 | 11 GitOps | [`app-of-apps.yaml`](docs/11-gitops-platform/assets/argocd/app-of-apps.yaml)、[`sealed-secrets/`](docs/11-gitops-platform/assets/sealed-secrets/)、[`clean-k8s-yaml.py`](docs/11-gitops-platform/scripts/clean-k8s-yaml.py)、[`argocd_gitops_audit.py`](docs/11-gitops-platform/scripts/argocd_gitops_audit.py) |
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
+| 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
 
 说明：
 
@@ -135,7 +139,8 @@ k8s-platform-tutorials/
     ├── 09-incidents-and-readiness/
     ├── 10-cicd-delivery/
     ├── 11-gitops-platform/
-    └── 12-proxmox-pve/
+    ├── 12-proxmox-pve/
+    └── 13-sso-oidc/
 ```
 
 每个分类目录的统一约定：

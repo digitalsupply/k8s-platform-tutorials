@@ -1,0 +1,57 @@
+# Hubble UI exposed through Traefik at hubble.xyz.
+#
+# 认证由 oauth2-proxy-hubble 负责（GitLab OIDC 反向代理）：
+# 浏览器 -> Traefik -> oauth2-proxy-hubble -> hubble-ui。
+# 旧的 basicAuth Middleware/Secret 保留用于回滚，不再挂到 IngressRoute。
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: hubble-ui-auth
+  namespace: kube-system
+spec:
+  basicAuth:
+    secret: hubble-ui-auth
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: hubble-https-redirect
+  namespace: kube-system
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: hubble
+  namespace: kube-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`hubble.xyz`)
+      services:
+        - name: oauth2-proxy-hubble
+          namespace: oauth2-proxy
+          port: 4180
+  tls: {}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: hubble-http-redirect
+  namespace: kube-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`hubble.xyz`)
+      middlewares:
+        - name: hubble-https-redirect
+      services:
+        - name: hubble-ui
+          port: 80

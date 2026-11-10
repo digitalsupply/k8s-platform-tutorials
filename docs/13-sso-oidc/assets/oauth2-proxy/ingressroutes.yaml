@@ -1,0 +1,18 @@
+{{- range .Values.instances }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: oauth2-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`{{ .host }}`) && PathPrefix(`/oauth2/`)
+      services:
+        - name: oauth2-proxy-{{ .name }}
+          port: 4180
+  tls: {}
+{{- end }}

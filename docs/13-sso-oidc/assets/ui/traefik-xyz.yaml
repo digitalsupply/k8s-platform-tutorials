@@ -1,0 +1,78 @@
+# Traefik dashboard exposed through Traefik at traefik.xyz.
+#
+# traefik.xyz 由 oauth2-proxy-traefik 反向代理到 traefik-api:9000，
+# 使用 GitLab OIDC 登录。
+# traefik.example.com 仍由 Helm 的 ingressRoute.dashboard 管理，保留 basicAuth。
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-https-redirect
+  namespace: traefik
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-xyz
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`)
+      services:
+        - name: oauth2-proxy-traefik
+          namespace: oauth2-proxy
+          port: 4180
+  tls: {}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-root-redirect
+  namespace: traefik
+spec:
+  redirectRegex:
+    regex: ^https?://traefik\.xyz/$
+    replacement: https://traefik.xyz/dashboard/
+    permanent: false
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-xyz-root
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`) && Path(`/`)
+      middlewares:
+        - name: traefik-root-redirect
+      services:
+        - name: oauth2-proxy-traefik
+          namespace: oauth2-proxy
+          port: 4180
+  tls: {}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-xyz-http-redirect
+  namespace: traefik
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`traefik.xyz`)
+      middlewares:
+        - name: traefik-https-redirect
+      services:
+        - name: traefik
+          port: 80

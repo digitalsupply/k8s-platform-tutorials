@@ -1,0 +1,46 @@
+# oauth2-proxy for Traefik ForwardAuth
+#
+# 每个受保护的 host 一个实例，原因是：
+#   - hubble.xyz / alloy.xyz / tekton.xyz / traefik.xyz 之间没有共享父域，
+#     无法用一个 cookie 跨域；
+#   - 每个实例有独立的 GitLab OAuth Application、cookie secret 和回调地址。
+#
+# client secret / cookie secret 在 templates/sealedsecret-*.yaml，
+# 不写在这里。
+
+image:
+  repository: quay.io/oauth2-proxy/oauth2-proxy
+  tag: v7.15.6
+  pullPolicy: IfNotPresent
+
+# GitLab OIDC issuer（当前是 HTTP）
+issuerURL: http://192.168.67.201
+
+# 临时固定到已缓存镜像的节点；所有 worker 缓存后可移除
+nodeSelector:
+  kubernetes.io/hostname: worker02
+
+instances:
+  - name: hubble
+    host: hubble.xyz
+    clientID: 9876a0d08f77da5f2f4313eff0567c5a929f1808c7f7e201bdd8e70d9e07f2f0
+    secretName: oauth2-hubble
+    upstream: http://hubble-ui.kube-system.svc.cluster.local:80
+
+  - name: alloy
+    host: alloy.xyz
+    clientID: 20fc4475cbbe2899f7708a5c1dc66e769901cae806d8fd4112f70c6a559c7a68
+    secretName: oauth2-alloy
+    upstream: http://alloy.logging.svc.cluster.local:12345
+
+  - name: tekton
+    host: tekton.xyz
+    clientID: 89b4d5ace9b9478f5b6de2a426039aa5b542ded7eb1d78c9cfe59de33cf8dc6f
+    secretName: oauth2-tekton
+    upstream: http://tekton-dashboard.tekton-pipelines.svc.cluster.local:9097
+
+  - name: traefik
+    host: traefik.xyz
+    clientID: 65d70294ac5fe9e81ee1702a60dc3f6290cf2af3920f7a941ccf05d220ca9a91
+    secretName: oauth2-traefik
+    upstream: http://traefik-api.traefik.svc.cluster.local:9000

@@ -1,0 +1,57 @@
+# Alloy UI exposed through Traefik at alloy.xyz.
+#
+# 认证由 oauth2-proxy-alloy 负责（GitLab OIDC 反向代理）：
+# 浏览器 -> Traefik -> oauth2-proxy-alloy -> alloy。
+# 旧的 basicAuth Middleware/Secret 保留用于回滚，不再挂到 IngressRoute。
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: alloy-ui-auth
+  namespace: logging
+spec:
+  basicAuth:
+    secret: alloy-ui-auth
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: alloy-https-redirect
+  namespace: logging
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alloy
+  namespace: logging
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`alloy.xyz`)
+      services:
+        - name: oauth2-proxy-alloy
+          namespace: oauth2-proxy
+          port: 4180
+  tls: {}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alloy-http-redirect
+  namespace: logging
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`alloy.xyz`)
+      middlewares:
+        - name: alloy-https-redirect
+      services:
+        - name: alloy
+          port: 12345

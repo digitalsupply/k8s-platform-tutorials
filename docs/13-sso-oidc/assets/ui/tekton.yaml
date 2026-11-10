@@ -1,0 +1,50 @@
+# Tekton Dashboard exposed through Traefik at tekton.xyz.
+#
+# 原先由手工 kubectl 创建，现在纳入 platform-ui App。
+# 认证从 basicAuth 改为 oauth2-proxy 反向代理：
+# 浏览器 -> Traefik -> oauth2-proxy-tekton -> tekton-dashboard。
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: tekton-dashboard-https
+  namespace: tekton-pipelines
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tekton-dashboard
+  namespace: tekton-pipelines
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`tekton.xyz`)
+      services:
+        - name: oauth2-proxy-tekton
+          namespace: oauth2-proxy
+          port: 4180
+  tls:
+    secretName: tekton-dashboard-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tekton-dashboard-http
+  namespace: tekton-pipelines
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`tekton.xyz`)
+      middlewares:
+        - name: tekton-dashboard-https
+      services:
+        - name: tekton-dashboard
+          port: 9097
+          scheme: http

@@ -1,0 +1,35 @@
+# ArgoCD OIDC / RBAC 配置
+#
+# 注意：ArgoCD 是平台的 bootstrap 组件，不能由它自己同步自己的配置。
+# 本文件是声明式 source of truth，变更通过下面的 Helm 命令应用：
+#
+#   helm -n argocd upgrade argocd argo-cd \
+#     --version 10.9.6 \
+#     -f platform/argocd/values.yaml \
+#     --reuse-values
+#
+# client secret 来自 SealedSecret `argocd/argocd-oauth`，不会写入本文件。
+
+configs:
+  cm:
+    url: https://argocd.devops.com
+    oidc.config: |
+      name: GitLab
+      # GitLab 目前是 HTTP；ArgoCD 允许 http issuer，但没有 TLS。
+      issuer: http://192.168.67.201
+      clientID: 7cde3dbfe3800036588275af741b36e60d882b18acda08cf25bc9637200038fe
+      clientSecret: $argocd-oauth:client-secret
+      requestedScopes: ["openid", "profile", "email"]
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+      enablePKCEAuthentication: true
+
+  rbac:
+    # 已认证用户默认只读；管理员通过下面的组/邮箱提升
+    policy.default: role:readonly
+    policy.csv: |
+      g, digitalsupply, role:admin
+      g, gitlab_admin_526ef4@example.com, role:admin
+    # GitLab 的 groups 可能缺失，email 作为兜底
+    scopes: '[groups, email]'
