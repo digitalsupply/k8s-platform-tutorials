@@ -371,6 +371,7 @@ fstrim -av
 | [scripts/ceph_csi_inventory.py](scripts/ceph_csi_inventory.py) | 只读盘点 Operator/Driver/CephConnection/ClientProfile/PV/PVC |
 | [assets/ceph-csi-operator/](assets/ceph-csi-operator/) | 升级前备份、Helm values、imageset、StorageClass、实时 CR |
 | [assets/cnpg/](assets/cnpg/) | CNPG Cluster/ObjectStore/ScheduledBackup/Plugin 清单与实时导出 |
+| [scripts/enforce-rp-filter.sh](scripts/enforce-rp-filter.sh) | 将节点 rp_filter 改为 loose(2) 并持久化，修复 CNPG webhook 超时 |
 
 ```bash
 # 只读盘点（不会删除任何东西）

@@ -248,6 +248,7 @@ bash docs/12-proxmox-pve/scripts/apply_discard.sh <vmid> <node> <ip>
 | [pve-vm-disk-location-2026-11-07.md](notes/pve-vm-disk-location-2026-11-07.md) | VM 磁盘到底在哪：块设备、QEMU、lsof、dmsetup |
 | [vm-110-115-archive.md](notes/vm-110-115-archive.md) | 旧 6 台 LB/Web VM 删除前的完整配置归档 |
 | [openeuler-batch-deploy-2026-11.md](notes/openeuler-batch-deploy-2026-11.md) | Proxmox + cloud-init + Terraform + Ansible 批量部署 openEuler |
+| [xceuler-repo-readme.md](notes/xceuler-repo-readme.md) | openEuler VM 仓库的目录、模板、用法与 gotchas |
 
 ## 配套资产
 

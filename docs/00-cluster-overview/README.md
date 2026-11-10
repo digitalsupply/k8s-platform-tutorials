@@ -105,6 +105,7 @@ Cilium Agent（DaemonSet，每节点一个）
 |---|---|
 | [current-state.md](assets/current-state.md) | 2026-11-10 16:03 的集群实况快照（节点/Helm/ArgoCD/Cilium/Ceph/监控/入口） |
 | [cluster_inventory.py](scripts/cluster_inventory.py) | 只读盘点脚本：输出 Markdown 或 JSON，可定期执行做基线对比 |
+| [root-workspace-inventory-20261110.md](assets/root-workspace-inventory-20261110.md) | `/root` 下 md/脚本盘点与删除记录 |
 
 ```bash
 # 生成 Markdown 快照

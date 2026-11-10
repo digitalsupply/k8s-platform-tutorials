@@ -248,6 +248,7 @@ CI 改 `overlays/prod` 不生效。**`images:` 只能出现在 overlay**，base 
 | [tekton-history-retention-2026-11-06.md](notes/tekton-history-retention-2026-11-06.md) | Tekton 历史保留：TTL 不存在、CronJob、Operator Pruner、Results |
 | [openwebui-cicd-gitops.md](notes/openwebui-cicd-gitops.md) | Open WebUI 全链路 CI/CD + GitOps 建设 |
 | [openwebui-ops-runbook.md](notes/openwebui-ops-runbook.md) | Open WebUI 项目/集群运维手册与历史记录 |
+| [tekton-platform-gitops-readme.md](notes/tekton-platform-gitops-readme.md) | Tekton 平台 GitOps 仓库的目录、版本、安装顺序与保留策略 |
 
 ## 配套资产
 

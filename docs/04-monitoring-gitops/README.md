@@ -317,6 +317,7 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 | [grafana-operator-stage-a-2026-11-08.md](notes/grafana-operator-stage-a-2026-11-08.md) | Grafana Operator 接管 4 Datasource + 37 Dashboard 与 5 个坑 |
 | [prometheus-nfs-to-ceph-feasibility-2026-11-09.md](notes/prometheus-nfs-to-ceph-feasibility-2026-11-09.md) | NFS → Ceph RBD 的容量/能力/风险可行性评估 |
 | [prometheus-nfs-to-ceph-migration-2026-11-09.md](notes/prometheus-nfs-to-ceph-migration-2026-11-09.md) | 三组件迁移全过程、Ceph full、CSI/RWO、CNPG failover |
+| [platform-gitops-repo/](../11-gitops-platform/notes/platform-gitops-repo/) | 平台仓原始文档：Grafana Operator、监控、日志、SSO |
 
 ## 配套资产
 
