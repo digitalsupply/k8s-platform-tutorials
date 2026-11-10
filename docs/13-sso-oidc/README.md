@@ -1,4 +1,4 @@
-# 11 · GitLab SSO / OIDC：把平台 UI 收进统一身份
+# 13 · GitLab SSO / OIDC：把平台 UI 收进统一身份
 
 ## 当时的情况
 
