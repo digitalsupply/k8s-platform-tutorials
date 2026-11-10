@@ -1,5 +1,8 @@
 # 10 · CI/CD 交付：GitLab → Tekton → BuildKit → Harbor → ArgoCD
 
+> GitLab 侧的账号/Token/Webhook/Runner 配置补充见
+> [14 GitLab / Harbor](../14-gitlab-harbor/README.md)。
+
 ## 当时的情况
 
 这是一套**Pull-based GitOps** 交付链路，服务内网业务系统（FastAPI + Vue3）：

@@ -37,6 +37,7 @@
 | [11 GitOps 平台化](docs/11-gitops-platform/README.md) | app-of-apps、覆盖盘点、Sealed Secrets、Vault/ESO 取舍 | 想把集群真正交给 Git 的人 |
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
+| [14 GitLab / Harbor 账号与仓库](docs/14-gitlab-harbor/README.md) | GitLab 账号/角色、Token、Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 CI/CD、GitOps、镜像仓库与权限治理的人 |
 
 ---
 
@@ -107,6 +108,7 @@
 | 11 GitOps | [`app-of-apps.yaml`](docs/11-gitops-platform/assets/argocd/app-of-apps.yaml)、[`sealed-secrets/`](docs/11-gitops-platform/assets/sealed-secrets/)、[`clean-k8s-yaml.py`](docs/11-gitops-platform/scripts/clean-k8s-yaml.py)、[`argocd_gitops_audit.py`](docs/11-gitops-platform/scripts/argocd_gitops_audit.py) |
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
+| 14 GitLab/Harbor | 文档为主：账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/imagePullSecret |
 
 说明：
 

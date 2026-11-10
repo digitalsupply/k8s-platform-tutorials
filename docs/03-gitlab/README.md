@@ -1,5 +1,8 @@
 # 03 · GitLab：安装、端口 80 与 Cilium 遗留规则
 
+> 账号体系、Token、Webhook、CI/CD 到 GitOps，以及 Harbor 的账号/镜像仓库，
+> 见 [14 GitLab / Harbor](../14-gitlab-harbor/README.md)。
+
 ## 当时的情况
 
 在实验节点上安装 **GitLab CE 19.4.2（Omnibus）**。
