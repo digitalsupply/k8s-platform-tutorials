@@ -1,0 +1,26 @@
+# 只允许 web pod 出站到指定域名 (L7 DNS 解析 + toFQDNs)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: web-egress-fqdn
+  namespace: lab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: web
+  egress:
+  - toFQDNs:
+    - matchName: "example.com"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": kube-system
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP

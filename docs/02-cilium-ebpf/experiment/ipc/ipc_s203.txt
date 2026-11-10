@@ -1,0 +1,1 @@
+10.0.2.93/32        identity=30056 encryptkey=0 tunnelendpoint=0.0.0.0 flags=<none>             

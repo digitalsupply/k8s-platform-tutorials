@@ -1,0 +1,27 @@
+# 只允许 web pod 出站到 api:80 以及 DNS:53 (egress 默认拒绝)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: web-egress
+  namespace: lab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: web
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        app: api
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP

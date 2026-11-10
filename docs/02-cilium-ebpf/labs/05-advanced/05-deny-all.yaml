@@ -1,0 +1,15 @@
+# 对 web 应用默认拒绝 (ingress + egress 均默认拒绝,无任何放行)
+# 只有显式添加的规则才能放行
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: web-deny-all
+  namespace: lab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: web
+  ingress:
+  - {}          # 空规则:无任何来源被放行 -> ingress 默认拒绝
+  egress:
+  - {}          # 空规则:无任何目的地被放行 -> egress 默认拒绝

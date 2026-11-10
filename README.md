@@ -69,7 +69,7 @@
 | 分类 | 配套资产 |
 |---|---|
 | 01 Kubernetes/k3s | [`scripts/pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py) |
-| 02 Cilium/eBPF | [`scripts/collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py) |
+| 02 Cilium/eBPF | [`scripts/collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md) |
 | 03 GitLab | [`scripts/check_ports.py`](docs/03-gitlab/scripts/check_ports.py) |
 | 04 Monitoring GitOps | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)（4 个 Application、6 个规则、wecom adapter.py、values、10 个 CRD） |
 | 05 Linux | [`scripts/sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py) |

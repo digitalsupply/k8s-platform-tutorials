@@ -83,6 +83,14 @@ Kubernetes 对象正常不代表数据面正常；VIP→Pod 的映射在 BPF map
 5. 用 `hubble observe` 或 tcpdump 验证实际路径；
 6. 对照 Service/Endpoint/Pod 的 IP，确认没有“对象正常、数据面错误”。
 
+## 配套实验与脚本
+
+- [`labs/`](labs/README.md)：Cilium 实验 01–07（基础、观测、L3/L4 策略、L7 策略、
+  高级、Service、排障），包含策略 YAML 和 `cagent.sh`（按节点进入 Cilium agent 的封装）。
+- [`experiment/`](experiment/README.md)：eBPF 数据面穿越实验报告、
+  `tools/analyze_monitor.py`，以及小型 BPF/ipcache 证据文本。
+  原始 pcap / monitor jsonl 体积较大，未纳入公开仓库。
+
 ## 配套脚本
 
 [`scripts/collect_cilium_bpf.py`](scripts/collect_cilium_bpf.py)

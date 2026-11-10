@@ -1,0 +1,18 @@
+# 只允许 role=curl 的 pod 访问 web:80 (ingress 默认拒绝)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: web-ingress
+  namespace: lab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: web
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        role: curl
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP

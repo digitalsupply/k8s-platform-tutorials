@@ -1,0 +1,22 @@
+# 只允许 role=curl 的 pod 以 HTTP GET 访问 web 的根路径 (L7)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: web-http-get
+  namespace: lab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: web
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        role: curl
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        http:
+        - method: GET
+          path: "/"
