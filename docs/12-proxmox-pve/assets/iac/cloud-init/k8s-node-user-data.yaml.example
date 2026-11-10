@@ -1,0 +1,63 @@
+#cloud-config
+# 通用 K8s 节点 cloud-init 示例（NoCloud）
+#
+# 用法 A：放到 PVE snippet，然后：
+#   qm set <vmid> --cicustom "user=local:snippets/k8s-node-user-data.yaml,meta=local:snippets/k8s-node-meta-data.yaml"
+# 用法 B：Terraform bpg/proxmox 的 initialization.user_account + ip_config 自动生成（更简单，但字段少）
+#
+# 安全提示：
+#   - 不要在这里写明文密码；用 SSH key；
+#   - 真实公钥替换 <YOUR_SSH_PUBLIC_KEY>；
+#   - 生产环境把 ssh_pwauth 设为 false、disable_root 设为 true。
+
+hostname: k8s-lab-w01
+fqdn: k8s-lab-w01.local
+manage_etc_hosts: false
+preserve_hostname: false
+
+users:
+  - name: hao
+    gecos: Platform Admin
+    groups: [wheel, sudo, adm, systemd-journal]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    ssh_authorized_keys:
+      - <YOUR_SSH_PUBLIC_KEY>
+
+ssh_pwauth: false
+disable_root: true
+package_update: true
+package_upgrade: false
+
+packages:
+  - qemu-guest-agent
+  - curl
+  - jq
+  - chrony
+  - vim
+  - tar
+  - unzip
+
+write_files:
+  - path: /etc/hosts
+    owner: root:root
+    permissions: "0644"
+    content: |
+      127.0.0.1 localhost
+      10.0.0.61  m01
+      10.0.0.120 master02
+      10.0.0.121 master01
+      10.0.0.122 worker01
+      10.0.0.123 worker02
+      10.0.0.124 worker03
+      10.0.0.130 k8s-lab-w01
+      10.0.0.131 k8s-lab-w02
+      10.0.0.132 k8s-lab-w03
+
+runcmd:
+  - [ systemctl, enable, --now, qemu-guest-agent ]
+  - [ systemctl, enable, --now, chronyd ]
+  - [ hostnamectl, set-hostname, k8s-lab-w01 ]
+
+final_message: "cloud-init done: ${hostname} ${uptime}"

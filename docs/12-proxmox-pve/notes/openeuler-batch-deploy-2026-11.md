@@ -440,7 +440,7 @@ ssh-keygen -f /root/.ssh/known_hosts -R 10.0.0.9
   vars:
     admin_pubkeys:
       - "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"                 # 宿主机 root@teacher
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIq7pE402rR9BZxVu1uOTxO2D5iMW9Q0hQq9fnKKXI41 poly@gmail.com"
+      - "<YOUR_SSH_PUBLIC_KEY>"
 ```
 
 对应任务（自动遍历列表）：

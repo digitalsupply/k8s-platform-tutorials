@@ -8,7 +8,8 @@
 | `terraform/main.tf` | 克隆黄金模板、CPU/内存/磁盘/网络、cloud-init |
 | `terraform/variables.tf` | 变量定义 |
 | `terraform/outputs.tf` | VM IP/VMID 输出 |
-| `terraform/terraform.tfvars.example` | 变量示例（Proxmox API token 已脱敏） |
+| `terraform/terraform.tfvars.example` | openEuler web/lb 变量示例（Proxmox API token 已脱敏） |
+| `terraform/terraform.tfvars.k8s.example` | 3 台 K8s 节点候选 VM 示例（VMID 130–132，CPU v3） |
 | `terraform/.terraform.lock.hcl` | provider 版本锁定 |
 | `ansible/inventory.ini` | 3 台 openEuler 主机清单 |
 | `ansible/playbook.yml` | 统一配置 playbook |

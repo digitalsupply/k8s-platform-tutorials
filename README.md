@@ -35,7 +35,7 @@
 | [09 生命周期与生产化](docs/09-incidents-and-readiness/README.md) | Knative/Tekton/宿主机应用下线、清理、生产化审计 | 做组件治理与生产化的人 |
 | [10 CI/CD 交付](docs/10-cicd-delivery/README.md) | GitLab→Tekton→BuildKit→Harbor→ArgoCD、Webhook、BuildKit 排障 | 做 GitOps/CI-CD 的人 |
 | [11 GitOps 平台化](docs/11-gitops-platform/README.md) | app-of-apps、覆盖盘点、Sealed Secrets、Vault/ESO 取舍 | 想把集群真正交给 Git 的人 |
-| [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、批量建机 | 管宿主机、VM、磁盘容量的人 |
+| [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
 
 ---
 
@@ -102,7 +102,7 @@
 | 09 生命周期 | [`pre_removal_audit.py`](docs/09-incidents-and-readiness/scripts/pre_removal_audit.py)、[`cleanup_checklist.md`](docs/09-incidents-and-readiness/scripts/cleanup_checklist.md) |
 | 10 CI/CD | [`tekton/`](docs/10-cicd-delivery/assets/tekton/)（Task/Pipeline/Trigger/EventListener/BuildKit）、[`tekton-operator/`](docs/10-cicd-delivery/assets/tekton-operator/)、[`openwebui/`](docs/10-cicd-delivery/assets/openwebui/)、[`tekton_retention_audit.py`](docs/10-cicd-delivery/scripts/tekton_retention_audit.py) |
 | 11 GitOps | [`app-of-apps.yaml`](docs/11-gitops-platform/assets/argocd/app-of-apps.yaml)、[`sealed-secrets/`](docs/11-gitops-platform/assets/sealed-secrets/)、[`clean-k8s-yaml.py`](docs/11-gitops-platform/scripts/clean-k8s-yaml.py)、[`argocd_gitops_audit.py`](docs/11-gitops-platform/scripts/argocd_gitops_audit.py) |
-| 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
+| 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 
 说明：
 

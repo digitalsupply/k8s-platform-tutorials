@@ -1,0 +1,153 @@
+---
+# K8s 节点前置配置：内核模块、sysctl、containerd、kubelet/kubeadm/kubectl。
+# 不负责 kubeadm init/join；join 见 k8s-join.yml。
+#
+# 先 dry-run：
+#   ansible-playbook -i inventory-k8s.ini k8s-node.yml --check --diff --limit worker03
+# 再全量：
+#   ansible-playbook -i inventory-k8s.ini k8s-node.yml
+
+- name: Prepare K8s node runtime and kernel settings
+  hosts: k8s_all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Load overlay and br_netfilter at boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
+          overlay
+          br_netfilter
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Load modules now
+      ansible.builtin.command: "modprobe {{ item }}"
+      loop: [overlay, br_netfilter]
+      changed_when: false
+
+    - name: Write bridge/forward sysctl
+      ansible.builtin.template:
+        src: templates/k8s.conf.j2
+        dest: /etc/sysctl.d/k8s.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Apply sysctl
+
+    # Cilium + CNPG 的教训：strict(1) 会导致 webhook/转发异常，统一用 loose(2)。
+    # 如果节点还启用了 Cilium 的 all=0 override，以 Cilium 的最终值为准。
+    - name: Write loose rp_filter for dual-NIC nodes
+      ansible.builtin.template:
+        src: templates/rp-filter.conf.j2
+        dest: /etc/sysctl.d/99-zz-k8s-rp-filter.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Apply sysctl
+
+    - name: Install containerd
+      ansible.builtin.package:
+        name: "{{ 'containerd.io' if ansible_os_family == 'RedHat' else 'containerd' }}"
+        state: present
+
+    - name: Verify containerd matches the cluster version
+      ansible.builtin.command: containerd --version
+      register: containerd_version_check
+      changed_when: false
+      failed_when: containerd_version not in containerd_version_check.stdout
+
+    - name: Ensure /etc/containerd exists
+      ansible.builtin.file:
+        path: /etc/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Generate default containerd config if missing
+      ansible.builtin.shell: |
+        set -o pipefail
+        containerd config default > /etc/containerd/config.toml
+      args:
+        creates: /etc/containerd/config.toml
+        executable: /bin/bash
+
+    - name: Use systemd cgroup driver
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*SystemdCgroup\s*=\s*false\s*$'
+        replace: '            SystemdCgroup = true'
+      notify: Restart containerd
+
+    - name: Pin pause image
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*sandbox_image\s*=\s*".*"\s*$'
+        replace: '    sandbox_image = "{{ pause_image }}"'
+      notify: Restart containerd
+
+    - name: Ensure registry config dir
+      ansible.builtin.file:
+        path: "/etc/containerd/certs.d/{{ item.name }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ containerd_registries }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Render registry hosts.toml
+      ansible.builtin.template:
+        src: templates/containerd-hosts.toml.j2
+        dest: "/etc/containerd/certs.d/{{ item.name }}/hosts.toml"
+        mode: "0644"
+      loop: "{{ containerd_registries }}"
+      loop_control:
+        label: "{{ item.name }}"
+      notify: Restart containerd
+
+    - name: Install Kubernetes packages
+      ansible.builtin.package:
+        name: [kubelet, kubeadm, kubectl]
+        state: present
+
+    - name: Verify kubelet and kubeadm match the cluster version
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        - kubelet --version
+        - kubeadm version -o short
+      register: k8s_version_check
+      changed_when: false
+      failed_when: k8s_version not in k8s_version_check.stdout
+
+    - name: Write kubelet extra args
+      ansible.builtin.copy:
+        dest: "{{ '/etc/sysconfig/kubelet' if ansible_os_family == 'RedHat' else '/etc/default/kubelet' }}"
+        content: |
+          KUBELET_EXTRA_ARGS={{ kubelet_extra_args }}
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart kubelet
+
+    - name: Enable kubelet (it will wait for join)
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: true
+
+  handlers:
+    - name: Apply sysctl
+      ansible.builtin.command: sysctl --system
+      changed_when: true
+
+    - name: Restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+        daemon_reload: true
+
+    - name: Restart kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        state: restarted
+      failed_when: false

@@ -1,0 +1,12 @@
+# /etc/containerd/config.toml 关键行（m01，2026-11-10）
+# 完整文件较大，这里只保留与 K8s 节点一致性相关的配置。
+#
+# [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "registry.aliyuncs.com/google_containers/pause:3.10"
+    # [plugins."io.containerd.grpc.v1.cri".containerd]
+      default_runtime_name = "runc"
+      snapshotter = "overlayfs"
+      # [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+            SystemdCgroup = true
+    # [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"

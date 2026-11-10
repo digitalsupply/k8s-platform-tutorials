@@ -1,0 +1,53 @@
+---
+# 把 worker 加入现有集群。
+#
+# 在 m01 获取 join 命令：
+#   kubeadm token create --print-join-command
+#
+# 执行：
+#   ansible-playbook -i inventory-k8s.ini k8s-join.yml \
+#     -e 'kubeadm_join_command=kubeadm join 10.0.0.168:6443 --token ... --discovery-token-ca-cert-hash sha256:...'
+#
+# 注意：
+#   - 不要往生产集群加来历不明的节点；
+#   - token 默认 24h 过期，ca-cert-hash 必须匹配；
+#   - 已 join 的节点（存在 /etc/kubernetes/kubelet.conf）会跳过。
+
+- name: Join workers to the existing cluster
+  hosts: k8s_worker
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Require join command
+      ansible.builtin.assert:
+        that:
+          - kubeadm_join_command is defined
+          - kubeadm_join_command | length > 0
+        fail_msg: "请用 -e 'kubeadm_join_command=...' 传入 m01 生成的 join 命令"
+
+    - name: Join cluster (idempotent via kubelet.conf)
+      ansible.builtin.command: "{{ kubeadm_join_command }}"
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+      register: join_result
+
+    - name: Show join output
+      ansible.builtin.debug:
+        var: join_result.stdout_lines
+      when: join_result is changed
+
+- name: Verify nodes from first control-plane
+  hosts: k8s_cp[0]
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: kubectl get nodes
+      ansible.builtin.command: kubectl get nodes -o wide
+      register: nodes
+      changed_when: false
+
+    - name: Print nodes
+      ansible.builtin.debug:
+        var: nodes.stdout_lines

@@ -64,6 +64,12 @@ variable "vm_cores" {
   default     = 2
 }
 
+variable "vm_cpu_type" {
+  description = "QEMU CPU model; use x86-64-v3 for Ceph-CSI 3.18 standard images"
+  type        = string
+  default     = "x86-64-v2-AES"
+}
+
 variable "vm_memory" {
   description = "Dedicated memory (MiB) per VM"
   type        = number

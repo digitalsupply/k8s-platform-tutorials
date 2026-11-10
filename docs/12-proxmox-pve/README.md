@@ -4,6 +4,9 @@
 thin pool 快满、VM 没开 discard、根分区被 NFS/ISO 占满、autoextend 空间不够。
 这一章把 PVE 的存储概念、VM 磁盘位置、容量“甜点”和批量建机流程讲清楚。
 
+> **IaC 实践子章节**：Terraform + cloud-init + Ansible 创建虚拟机、批量管理、接入现有 K8s 集群，
+> 见 [iac/README.md](iac/README.md)。
+
 ## 当时的情况
 
 宿主机 `teacher`：
@@ -250,6 +253,19 @@ bash docs/12-proxmox-pve/scripts/apply_discard.sh <vmid> <node> <ip>
 | [openeuler-batch-deploy-2026-11.md](notes/openeuler-batch-deploy-2026-11.md) | Proxmox + cloud-init + Terraform + Ansible 批量部署 openEuler |
 | [xceuler-repo-readme.md](notes/xceuler-repo-readme.md) | openEuler VM 仓库的目录、模板、用法与 gotchas |
 
+## IaC 子教程
+
+| 章节 | 内容 |
+|---|---|
+| [iac/README.md](iac/README.md) | 总览、边界、最短路径 |
+| [01 Terraform](iac/01-terraform-proxmox.md) | API token、provider、state、克隆、plan/apply/destroy |
+| [02 cloud-init](iac/02-cloudinit-golden-template.md) | 黄金模板、NoCloud、snippet、sysprep、guest-agent |
+| [03 Ansible 基线](iac/03-ansible-baseline.md) | inventory、playbook、混合 OS、check/diff、灰度 |
+| [04 K8s 节点](iac/04-k8s-node-baseline.md) | 内核、containerd、kubelet、join、Cilium |
+| [05 批量管理](iac/05-batch-ops.md) | 安全重启、扩容、discard、巡检、销毁 |
+| [06 故障排查](iac/06-troubleshooting.md) | 现象→根因→修复→验证 |
+| [labs/](iac/labs/README.md) | 5 个可动手实验（含清理） |
+
 ## 配套资产
 
 | 资产 | 说明 |
@@ -258,6 +274,10 @@ bash docs/12-proxmox-pve/scripts/apply_discard.sh <vmid> <node> <ip>
 | [assets/vm-configs/](assets/vm-configs/) | VM 110–115 归档配置、119–124 当前配置、discard 前备份 |
 | [assets/xceuler/terraform/](assets/xceuler/terraform/) | openEuler 批量创建的 Terraform 配置（token 已脱敏） |
 | [assets/xceuler/ansible/](assets/xceuler/ansible/) | inventory、playbook、ansible.cfg |
+| [assets/iac/cloud-init/](assets/iac/cloud-init/) | K8s 节点 NoCloud user-data/meta-data 示例 |
+| [assets/iac/ansible/](assets/iac/ansible/) | baseline / k8s-node / k8s-join playbook 与模板 |
+| [assets/iac/reference/m01/](assets/iac/reference/m01/README.md) | 从 m01 采集的 sysctl/containerd/kubeadm/kubelet 实际配置 |
+| [assets/xceuler/terraform/terraform.tfvars.k8s.example](assets/xceuler/terraform/terraform.tfvars.k8s.example) | 3 台 K8s 节点候选 VM 的 Terraform 变量示例 |
 | [scripts/pve_storage_report.py](scripts/pve_storage_report.py) | 只读容量/风险报告 |
 | [scripts/apply_discard.sh](scripts/apply_discard.sh) | 给 VM 加 discard 并 fstrim（会 drain/重启） |
 | [scripts/create-k8s-vms.sh](scripts/create-k8s-vms.sh) | 早期 K8s 节点批量创建（cloud-init） |

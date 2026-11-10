@@ -1,0 +1,61 @@
+---
+# 与现有集群对齐的基线变量（2026-11-10）
+# 版本/网段来自 m01 的 kubeadm-config 和实际节点。
+
+k8s_version: "1.35.9"
+k8s_minor: "1.35"
+control_plane_endpoint: "10.0.0.168:6443"
+pod_subnet: "10.244.0.0/16"
+service_subnet: "10.96.0.0/12"
+cluster_dns: "10.96.0.10"
+cluster_domain: "cluster.local"
+
+# 现有节点是混合 OS：m01 Rocky 9.6，其余 Ubuntu 22.04
+kubelet_extra_args: "--resolv-conf=/etc/resolv.conf"
+ssh_key_only: false   # 确认 key 登录可用后再改 true，避免把自己锁在门外
+
+# containerd 与 pause（与集群现状一致）
+containerd_version: "2.3.2"
+pause_image: "registry.aliyuncs.com/google_containers/pause:3.10"
+
+# Kubernetes 包版本。apt 支持 1.35.* 通配；RPM 建议显式写完整版本。
+# 新节点必须与 apiserver 同 minor，且 kubelet 不高于 apiserver。
+kube_package_version: ""
+
+# 节点 /etc/hosts（可按环境改）
+node_hosts:
+  - { name: m01, ip: 10.0.0.61 }
+  - { name: master02, ip: 10.0.0.120 }
+  - { name: master01, ip: 10.0.0.121 }
+  - { name: worker01, ip: 10.0.0.122 }
+  - { name: worker02, ip: 10.0.0.123 }
+  - { name: worker03, ip: 10.0.0.124 }
+
+# containerd registry 配置：与 m01 的 /etc/containerd/certs.d 对齐
+# mirrors 为空表示直连；Harbor 自签证书需要 skip_verify=true。
+containerd_registries:
+  - name: docker.io
+    server: https://registry-1.docker.io
+    mirrors:
+      - https://docker.1ms.run
+      - https://docker.m.daocloud.io
+    skip_verify: false
+  - name: registry.k8s.io
+    server: https://registry.k8s.io
+    mirrors:
+      - https://k8s.1ms.run
+    skip_verify: false
+  - name: quay.io
+    server: https://quay.io
+    mirrors:
+      - https://quay.1ms.run
+    skip_verify: false
+  - name: gcr.io
+    server: https://gcr.io
+    mirrors:
+      - https://gcr.m.daocloud.io
+    skip_verify: false
+  - name: "192.168.67.202:8443"
+    server: https://192.168.67.202:8443
+    mirrors: []
+    skip_verify: true

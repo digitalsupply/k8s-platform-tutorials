@@ -1,7 +1,7 @@
 agent: enabled=1
 boot: order=scsi0;ide2
 cicustom: user=local:snippets/force-password-login.yaml
-cipassword: $5$6BNcerN5$3YSv73jzBy5djTkc0QBHhXDZtcNd2L2qIYIKVP3tDC1
+cipassword: <redacted-password-hash>
 ciupgrade: 0
 ciuser: root
 cores: 4
@@ -28,7 +28,7 @@ vmgenid: e82d4430-64ed-4207-8079-01c360e1a6da
 agent: enabled=1
 boot: order=scsi0;ide2
 cicustom: user=local:snippets/force-password-login.yaml
-cipassword: $5$6BNcerN5$3YSv73jzBy5djTkc0QBHhXDZtcNd2L2qIYIKVP3tDC1
+cipassword: <redacted-password-hash>
 ciupgrade: 0
 ciuser: root
 cores: 4

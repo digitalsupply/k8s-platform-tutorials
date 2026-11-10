@@ -1,0 +1,107 @@
+---
+# 通用主机基线：hostname、/etc/hosts、时区、常用包、swap、SSH、qemu-guest-agent。
+# 不含 K8s 组件；K8s 相关在 k8s-node.yml。
+#
+# 先 dry-run：
+#   ansible-playbook -i inventory-k8s.ini baseline.yml --check --diff
+# 再执行：
+#   ansible-playbook -i inventory-k8s.ini baseline.yml
+
+- name: Baseline for K8s nodes
+  hosts: k8s_all
+  become: true
+  gather_facts: true
+
+  vars:
+    admin_user: hao
+    timezone: Asia/Shanghai
+
+  tasks:
+    - name: Set short hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+        use: systemd
+
+    - name: Keep 127.0.1.1 pointed at the short name
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s'
+        line: "127.0.1.1 {{ inventory_hostname }}"
+        state: present
+
+    - name: Render cluster hosts entries
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE MANAGED K8S HOSTS"
+        block: |
+          {% for h in node_hosts %}
+          {{ h.ip }} {{ h.name }}
+          {% endfor %}
+
+    - name: Read current timezone
+      ansible.builtin.command: timedatectl show -p Timezone --value
+      register: current_timezone
+      changed_when: false
+
+    - name: Set timezone
+      ansible.builtin.command: "timedatectl set-timezone {{ timezone }}"
+      when: current_timezone.stdout | trim != timezone
+      changed_when: true
+
+    - name: Install common packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: [qemu-guest-agent, chrony, curl, jq, tar, unzip, ca-certificates]
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Install common packages (RedHat/Rocky)
+      ansible.builtin.dnf:
+        name: [qemu-guest-agent, chrony, curl, jq, tar, unzip, ca-certificates]
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Enable qemu-guest-agent
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+
+    - name: Enable time sync
+      ansible.builtin.systemd:
+        name: "{{ 'chronyd' if ansible_os_family == 'RedHat' else 'chrony' }}"
+        enabled: true
+        state: started
+
+    - name: Disable swap immediately
+      ansible.builtin.command: swapoff -a
+      when: ansible_swaptotal_mb | int > 0
+      changed_when: true
+
+    - name: Comment swap entries in /etc/fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\sswap\s.*)$'
+        replace: '# \1'
+
+    - name: Harden sshd to key-only (optional)
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/99-keyonly.conf
+        content: |
+          # Managed by Ansible - key-only authentication
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          ChallengeResponseAuthentication no
+          PubkeyAuthentication yes
+        owner: root
+        group: root
+        mode: "0600"
+        validate: "sshd -t -f %s"
+      when: ssh_key_only | bool
+      notify: Restart sshd
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: "{{ 'sshd' if ansible_os_family == 'RedHat' else 'ssh' }}"
+        state: restarted

@@ -15,7 +15,8 @@
       - systemd-journal
     admin_pubkeys:
       - "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIq7pE402rR9BZxVu1uOTxO2D5iMW9Q0hQq9fnKKXI41 poly@gmail.com"
+      # 如需追加其他公钥：
+      # - "ssh-ed25519 AAAA... you@example"
 
   tasks:
     - name: Ensure admin user exists with sudo groups

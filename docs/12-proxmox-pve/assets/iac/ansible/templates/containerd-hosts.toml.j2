@@ -1,0 +1,11 @@
+server = "{{ item.server }}"
+
+{% for mirror in item.mirrors %}
+[host."{{ mirror }}"]
+  capabilities = ["pull", "resolve"]
+{% endfor %}
+{% if item.skip_verify | default(false) %}
+[host."{{ item.server }}"]
+  capabilities = ["pull", "resolve", "push"]
+  skip_verify = true
+{% endif %}

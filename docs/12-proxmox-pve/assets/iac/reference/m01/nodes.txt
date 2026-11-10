@@ -1,0 +1,7 @@
+NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
+m01        Ready    control-plane   297d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
+master01   Ready    control-plane   297d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+master02   Ready    control-plane   297d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker01   Ready    <none>          297d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker02   Ready    <none>          297d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker03   Ready    <none>          297d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
