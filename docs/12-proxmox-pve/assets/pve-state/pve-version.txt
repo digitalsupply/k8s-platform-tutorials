@@ -1,0 +1,8 @@
+# pveversion
+pve-manager/8.4.13/5b08ebc2823dd9cb (running kernel: 6.8.12-15-pve)
+
+# hostname
+teacher
+
+# date
+2026-11-10 17:51:06 CST

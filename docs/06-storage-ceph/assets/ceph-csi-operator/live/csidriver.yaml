@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  annotations:
+    csi.ceph.io/ownerref: '{"Namespace":"ceph-csi-rbd","Name":"rbd.csi.ceph.com"}'
+  name: rbd.csi.ceph.com
+spec:
+  attachRequired: true
+  fsGroupPolicy: File
+  podInfoOnMount: true
+  requiresRepublish: false
+  seLinuxMount: true
+  storageCapacity: false
+  volumeLifecycleModes:
+  - Persistent

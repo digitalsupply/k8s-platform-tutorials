@@ -1,0 +1,92 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: update-gitops-tag
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+spec:
+  description: >
+    Update the image tag in the GitOps repository and push the commit, which triggers
+    the Argo CD auto-sync that rolls the new image into the cluster.
+  params:
+    - name: image-tag
+      type: string
+      description: Tag to write into overlays/prod/kustomization.yaml
+    - name: kustomize-path
+      type: string
+      default: overlays/prod/kustomization.yaml
+    - name: gitops-subdir
+      type: string
+      default: gitops
+  workspaces:
+    - name: source
+  steps:
+    - name: patch-and-commit
+      image: alpine/git:v2.45.2
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: password
+        - name: GITOPS_URL
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: gitops-url
+        - name: IMAGE_TAG
+          value: "$(params.image-tag)"
+        - name: KUSTOMIZE_PATH
+          value: "$(params.kustomize-path)"
+        - name: GITOPS_SUBDIR
+          value: "$(params.gitops-subdir)"
+        - name: COMMIT_MSG
+          value: "ci(open-webui): promote image tag $(params.image-tag)"
+      script: |
+        #!/bin/sh
+        set -eu
+
+        cd "$(workspaces.source.path)"
+        DIR="${GITOPS_SUBDIR}"
+
+        # Build the authenticated URL up-front; GITOPS_URL itself stays credential-free.
+        NO_SCHEME="${GITOPS_URL#*://}"
+        HOST_PART="${NO_SCHEME%%/*}"
+        PATH_PART="${NO_SCHEME#*/}"
+        AUTH_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@${HOST_PART}/${PATH_PART}"
+
+        if [ ! -d "$DIR" ]; then
+          git clone "$AUTH_URL" "$DIR"
+        else
+          cd "$DIR"
+          git remote set-url origin "$AUTH_URL"
+          git pull --ff-only origin main
+        fi
+
+        cd "$DIR"
+        git config user.name  "openwebui-cicd-bot"
+        git config user.email "openwebui-cicd-bot@users.noreply.local"
+
+        # Rewrite the newTag under the `images:` block of the prod overlay.
+        sed -i "s#^\( *newTag:\).*#\1 ${IMAGE_TAG}#" "$KUSTOMIZE_PATH"
+
+        if git diff --quiet -- "$KUSTOMIZE_PATH"; then
+          echo "No change needed: tag already ${IMAGE_TAG}"
+          exit 0
+        fi
+
+        echo "--- diff ---"
+        git --no-pager diff -- "$KUSTOMIZE_PATH"
+
+        git add "$KUSTOMIZE_PATH"
+        git commit -m "$COMMIT_MSG"
+        git push origin HEAD:main
+
+        echo "GitOps repo updated to tag ${IMAGE_TAG}; Argo CD will auto-sync."

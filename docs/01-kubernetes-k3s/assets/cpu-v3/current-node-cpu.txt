@@ -1,0 +1,28 @@
+# CPU v3 现状快照
+# 采集时间: 2026-11-10 17:51:56 CST
+# 采集方式: kubectl + ssh 到各节点读取 /proc/cpuinfo
+
+## kubectl get nodes -o wide
+NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
+m01        Ready    control-plane   297d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
+master01   Ready    control-plane   297d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+master02   Ready    control-plane   297d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker01   Ready    <none>          297d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker02   Ready    <none>          297d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker03   Ready    <none>          297d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+
+NODE       MODEL                          AVX2   FMA    BMI1   BMI2  
+m01        QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+master01   QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+master02   QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+worker01   QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+worker02   QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+worker03   QEMU Virtual CPU version 2.5+  avx2=yes fma=yes bmi1=yes bmi2=yes 
+
+## Proxmox VM CPU 配置
+VM 119: cores: 4 cpu: x86-64-v3 sockets: 1 
+VM 120: cores: 4 cpu: x86-64-v3 sockets: 1 
+VM 121: cores: 4 cpu: x86-64-v3 sockets: 1 
+VM 122: cores: 6 cpu: x86-64-v3 sockets: 1 
+VM 123: cores: 6 cpu: x86-64-v3 sockets: 1 
+VM 124: cores: 4 cpu: x86-64-v3 sockets: 1 

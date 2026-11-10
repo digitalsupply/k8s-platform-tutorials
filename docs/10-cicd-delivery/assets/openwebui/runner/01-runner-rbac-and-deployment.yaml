@@ -1,0 +1,144 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitlab-runner
+  namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+imagePullSecrets:
+  - name: harbor-auth
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-auth
+  namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: |
+    {"auths":{"192.168.67.202:8443":{"username":"admin","password":"<redacted-harbor-admin-password>","auth":"<base64-admin-password>"}}}
+---
+# Lets the runner job create Tekton PipelineRuns (it only fires the pipeline;
+# the pipeline itself does the clone/build/push).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openwebui-runner-role
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+rules:
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns", "pipelineruns/status"]
+    verbs: ["create", "get", "list", "watch", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims", "secrets", "configmaps", "serviceaccounts"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openwebui-runner-binding
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openwebui-runner-role
+subjects:
+  # The Kubernetes executor runs job pods as the `default` ServiceAccount of the
+  # executor namespace, so grant that identity (not just the runner's own SA)
+  # permission to create Tekton PipelineRuns.
+  - kind: ServiceAccount
+    name: default
+    namespace: gitlab-runner
+  - kind: ServiceAccount
+    name: gitlab-runner
+    namespace: gitlab-runner
+---
+# The runner itself needs to create/manage job pods in its own namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitlab-runner-manager
+  namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/exec", "pods/attach", "secrets", "configmaps", "serviceaccounts", "events", "persistentvolumeclaims"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitlab-runner-manager-binding
+  namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gitlab-runner-manager
+subjects:
+  - kind: ServiceAccount
+    name: gitlab-runner
+    namespace: gitlab-runner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-runner
+  namespace: gitlab-runner
+  labels:
+    app: gitlab-runner
+    app.kubernetes.io/part-of: openwebui-cicd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab-runner
+  template:
+    metadata:
+      labels:
+        app: gitlab-runner
+    spec:
+      serviceAccountName: gitlab-runner
+      containers:
+        - name: runner
+          image: 192.168.67.202:8443/openwebui/gitlab-runner:alpine-v17.8.3
+          imagePullPolicy: IfNotPresent
+          args:
+            - run
+          env:
+            - name: CONFIG_DIR
+              value: /etc/gitlab-runner
+            - name: KUBERNETES_SERVICE_HOST
+              value: "kubernetes.default.svc"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/gitlab-runner
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+      volumes:
+        - name: config
+          configMap:
+            name: gitlab-runner-config
+            items:
+              - key: runners.toml
+                path: config.toml

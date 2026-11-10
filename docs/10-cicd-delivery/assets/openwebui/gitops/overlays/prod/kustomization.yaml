@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: open-webui
+
+resources:
+  - ../../base
+
+# Kustomize rewrites this image reference. The Tekton pipeline rewrites newTag
+# after every successful build; ArgoCD then auto-syncs the new tag to the cluster.
+images:
+  - name: open-webui
+    newName: 192.168.67.202:8443/openwebui/open-webui
+    newTag: a077c804
+
+replicas:
+  # 2026-10-27: app is paused to free cluster resources. All objects
+  # (Deployment/Service/Ingress/Secret/PVC) stay managed by ArgoCD, and the
+  # SQLite data on open-webui-data is untouched. To restore, set both counts
+  # back to 1, commit and push (ArgoCD auto-syncs).
+  - name: open-webui
+    count: 0
+  # frpc only exists to publish open-webui; stop it together with the app.
+  - name: frpc
+    count: 0

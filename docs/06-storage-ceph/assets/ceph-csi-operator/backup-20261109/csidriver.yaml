@@ -1,0 +1,27 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: platform-ceph-csi:storage.k8s.io/CSIDriver:ceph-csi-rbd/rbd.csi.ceph.com
+    meta.helm.sh/release-name: ceph-csi-rbd
+    meta.helm.sh/release-namespace: ceph-csi-rbd
+  creationTimestamp: "2026-04-03T06:32:33Z"
+  generation: 1
+  labels:
+    app: ceph-csi-rbd
+    app.kubernetes.io/managed-by: Helm
+    chart: ceph-csi-rbd-3.18.2
+    heritage: Helm
+    release: ceph-csi-rbd
+  name: rbd.csi.ceph.com
+  resourceVersion: "58312018"
+  uid: bc3ecc62-0a14-4384-a1ce-43f0710d38b3
+spec:
+  attachRequired: true
+  fsGroupPolicy: File
+  podInfoOnMount: true
+  requiresRepublish: false
+  seLinuxMount: true
+  storageCapacity: false
+  volumeLifecycleModes:
+  - Persistent

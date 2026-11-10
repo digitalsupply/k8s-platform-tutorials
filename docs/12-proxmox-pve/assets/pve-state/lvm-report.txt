@@ -1,0 +1,60 @@
+# pvs
+  PV             VG  Fmt  Attr PSize    PFree 
+  /dev/nvme0n1p3 pve lvm2 a--  <930.51g 16.00g
+
+# vgs
+  VG  #PV #LV #SN Attr   VSize    VFree 
+  pve   1  47   0 wz--n- <930.51g 16.00g
+
+# lvs -a
+  LV                               VG  LSize   Type      Pool Data%  Meta%  Monitor   Devices               
+  base-100-disk-0                  pve  20.00g thin      data                                               
+  base-9000-disk-0                 pve  40.00g thin      data                                               
+  base-9010-disk-0                 pve   4.00m thin      data                                               
+  base-9010-disk-1                 pve  40.00g thin      data                                               
+  data                             pve 794.30g thin-pool      65.62  2.15   monitored data_tdata(0)         
+  [data_tdata]                     pve 794.30g linear                                 /dev/nvme0n1p3(26624) 
+  [data_tmeta]                     pve   8.10g linear                                 /dev/nvme0n1p3(229966)
+  [lvol0_pmspare]                  pve   8.10g linear                                 /dev/nvme0n1p3(232040)
+  root                             pve  96.00g linear                                 /dev/nvme0n1p3(2048)  
+  snap_vm-119-disk-0_before_resize pve  50.00g thin      data                                               
+  swap                             pve   8.00g linear                                 /dev/nvme0n1p3(0)     
+  vm-100-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-101-disk-1                    pve 200.00g thin      data 21.78                                         
+  vm-116-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-116-disk-0                    pve  80.00g thin      data 28.47                                         
+  vm-116-disk-1                    pve  30.00g thin      data 99.99                                         
+  vm-116-disk-2                    pve  30.00g thin      data 99.99                                         
+  vm-117-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-117-disk-0                    pve  80.00g thin      data 38.78                                         
+  vm-117-disk-1                    pve  30.00g thin      data 99.99                                         
+  vm-117-disk-2                    pve  30.00g thin      data 99.99                                         
+  vm-118-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-118-disk-0                    pve  80.00g thin      data 22.95                                         
+  vm-118-disk-1                    pve  30.00g thin      data 99.99                                         
+  vm-118-disk-2                    pve  30.00g thin      data 99.99                                         
+  vm-119-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-119-disk-0                    pve  50.00g thin      data 61.84                                         
+  vm-120-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-120-disk-0                    pve  40.00g thin      data 38.80                                         
+  vm-121-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-121-disk-0                    pve  50.00g thin      data 39.05                                         
+  vm-122-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-122-disk-0                    pve  60.00g thin      data 77.22                                         
+  vm-123-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-123-disk-0                    pve  60.00g thin      data 62.52                                         
+  vm-124-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-124-disk-0                    pve  60.00g thin      data 67.77                                         
+  vm-125-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-125-disk-0                    pve   4.00m thin      data 14.06                                         
+  vm-125-disk-1                    pve  40.00g thin      data 6.57                                          
+  vm-126-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-126-disk-0                    pve   4.00m thin      data 14.06                                         
+  vm-126-disk-1                    pve  40.00g thin      data 6.49                                          
+  vm-127-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-127-disk-0                    pve   4.00m thin      data 14.06                                         
+  vm-127-disk-1                    pve  40.00g thin      data 6.48                                          
+  vm-600-cloudinit                 pve   4.00m thin      data 9.38                                          
+  vm-600-disk-0                    pve  40.00g thin      data 35.88                                         
+  vm-9000-cloudinit                pve   4.00m thin      data 9.38                                          
+  vm-9010-cloudinit                pve   4.00m thin      data 9.38                                          

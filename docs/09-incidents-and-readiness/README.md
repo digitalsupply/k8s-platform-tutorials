@@ -180,6 +180,7 @@ crictl rmi --prune
 | [production-readiness-gaps-20261109.md](../00-cluster-overview/notes/production-readiness-gaps-20261109.md) | 生产化差距审计（P0/P1/P2） |
 | [k8s-cluster-audit-2026-10-03.md](../01-kubernetes-k3s/notes/k8s-cluster-audit-2026-10-03.md) | 磁盘/镜像/资源巡检与 52GB 回收 |
 | [default-ns-pod-provenance.md](../01-kubernetes-k3s/notes/default-ns-pod-provenance.md) | default 命名空间残留 Pod 的来源追踪 |
+| [2026-11-09-weekly-postmortem-index.md](notes/2026-11-09-weekly-postmortem-index.md) | 7 轮改造总索引：CNPG、GitOps、Grafana、Sealed Secrets、Vault、存储迁移 |
 
 ## 配套资产
 

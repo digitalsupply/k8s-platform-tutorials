@@ -1,0 +1,18 @@
+      VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID       
+       100 VM 100               stopped    2048              20.00 0         
+       101 eve-network          stopped    32768            200.00 0         
+       116 nfs01                running    6144              80.00 5035      
+       117 backup               running    6144              80.00 5076      
+       118 db01                 running    8192              80.00 5169      
+       119 m01                  running    6144              50.00 1684961   
+       120 master02             running    4096              40.00 1683373   
+       121 master01             running    6144              50.00 1683932   
+       122 worker01             running    10240             60.00 1675010   
+       123 worker02             running    10240             60.00 1677443   
+       124 worker03             running    8192              60.00 1670131   
+       125 web01                stopped    2048              40.00 0         
+       126 sweb01               stopped    2048              40.00 0         
+       127 lb01                 stopped    2048              40.00 0         
+       600 kubesphere           stopped    8192              40.00 0         
+      9000 Ubuntu2204cloudinit  stopped    4096              40.00 0         
+      9010 tmpl-openeuler2403   stopped    2048              40.00 0         

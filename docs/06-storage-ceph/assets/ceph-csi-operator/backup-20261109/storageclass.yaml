@@ -1,0 +1,23 @@
+allowVolumeExpansion: true
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: platform-ceph-csi:storage.k8s.io/StorageClass:ceph-csi-rbd/ceph-rbd-sc
+  creationTimestamp: "2026-04-03T10:23:23Z"
+  name: ceph-rbd-sc
+  resourceVersion: "58302624"
+  uid: 7ae594b4-ec4a-467f-b5ef-afcf5bda1a65
+mountOptions:
+- discard
+parameters:
+  clusterID: 594e535e-d82c-11f0-afa7-bc24112b746f
+  csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: ceph-csi-rbd
+  csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: ceph-csi-rbd
+  imageFeatures: layering
+  pool: k8s-rbd
+provisioner: rbd.csi.ceph.com
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

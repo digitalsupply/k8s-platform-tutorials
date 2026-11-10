@@ -27,6 +27,9 @@
 - 环境限制：无法直连 `registry.k8s.io` / Docker Hub，需要镜像加速；
 - 业务约束：Prometheus、Loki、Tempo、Kafka、CNPG、ArgoCD 全程不能长时间中断。
 
+升级到 1.35 之后又做了一次**节点 CPU 基线升级**：6 台 PVE VM 从 `x86-64-v2-AES` 改为 `x86-64-v3`，
+原因是 Ceph-CSI 3.18.2 的标准镜像需要 AVX2/BMI2，而 v2 节点会直接 `SIGILL`。
+
 ## 主要概念与原理
 
 ### 1. k3s 是“单二进制”
@@ -86,6 +89,20 @@ etcd 是 **stacked etcd**：每个 control-plane 一个成员，数据在 `/var/
 
 本集群最终把 IPVS 迁到 iptables，再在后续 Cilium 改造中**彻底移除 kube-proxy**（见 02 章）。
 
+### 7. CPU 基线与 QEMU CPU 型号
+
+- `x86-64-v2` / `v3` 是 **glibc/编译器定义的指令集基线**，不是内核版本；
+- QEMU 的 `--cpu x86-64-v3` 会向 guest 暴露 AVX/AVX2/BMI1/BMI2/FMA 等 flag；
+- 宿主机 CPU 必须支持这些指令，否则 VM 起不来或运行时报 `SIGILL`；
+- **CPU 型号不是热插拔**：必须 VM stop/start，guest 内 `reboot` 不会改变 CPUID。
+
+检查：
+
+```bash
+grep -m1 '^flags' /proc/cpuinfo | grep -oE 'avx2|bmi1|bmi2|fma'
+qm config <vmid> | grep '^cpu:'
+```
+
 ## 踩坑点
 
 ### 坑 1：kubeadm 自我保护
@@ -143,6 +160,47 @@ containerd 2.x 支持 v3 配置，但为了可回滚，本集群**保留 v2**，
 正确顺序：**etcd 快照 → control-plane 逐台 → worker 逐台 → CNI → kube-proxy → 业务验证**。
 任何一步跳过验证，后面都会把问题误判成“升级 bug”。
 
+### 坑 10：改 CPU 型号只 reboot，guest 里看不到变化
+
+`qm reboot` 只是 guest 重启，QEMU 进程和 CPU 参数没变。必须：
+
+```bash
+qm shutdown <vmid> --timeout 120
+qm set <vmid> --cpu x86-64-v3
+qm start <vmid>
+```
+
+改完在 guest 里 `grep flags /proc/cpuinfo` 验证 `avx2`，不能只看 `qm config`。
+
+### 坑 11：先改 m01 会把 kubectl 自己弄断
+
+本机 kubeconfig 默认指向 `10.0.0.61:6443`（m01）。m01 关机期间 kubectl 不可用，
+无法 drain/uncordon 它自己。**m01 必须最后改**，并准备指向 kube-vip VIP 的临时 kubeconfig：
+
+```bash
+cp ~/.kube/config /tmp/kubeconfig-v3
+kubectl --kubeconfig /tmp/kubeconfig-v3 config set-cluster kubernetes \
+  --server=https://10.0.0.168:6443
+```
+
+### 坑 12：节点重启后镜像缓存不均衡 + DiskPressure 残留
+
+worker01 重启后，部分 Pod 被调度过来，但镜像只在 worker02 缓存，节点从公网拉取很慢，
+Pod 长时间 `ContainerCreating`；同时磁盘到 85% 触发 `DiskPressure`，`crictl rmi --prune`
+释放空间后条件仍不消失（kubelet 缓存旧状态）。
+
+**修复**：
+
+```bash
+# worker02 导出 → 宿主机中转 → worker01 导入
+ctr -n k8s.io images export /tmp/img.tar <image>
+ctr -n k8s.io images import /tmp/img.tar
+
+# 清理后重启 kubelet，让 DiskPressure 重新计算
+crictl rmi --prune
+systemctl restart kubelet
+```
+
 ## 修复关键
 
 1. **先定 12 项决策**：目标版本、containerd 方式、runc、pause、config 版本、CNI 差异、磁盘、etcd、Ceph 兼容、Calico 路径、kube-proxy 模式、回滚方案。
@@ -152,8 +210,17 @@ containerd 2.x 支持 v3 配置，但为了可回滚，本集群**保留 v2**，
 5. **升级后验证四件事**：节点版本一致、etcd 3/3 healthy、DNS 正常、Prometheus targets 全 up。
 6. **把镜像加速、hold、bind-address 这些“环境特例”写进脚本**，不要依赖记忆。
 
+CPU v3 迁移的顺序与验证：
+
+```text
+worker03 → worker01（先 CNPG failover）→ worker02（再 failover）
+  → master02 → master01 → m01（最后，使用 VIP kubeconfig）
+每台：drain → qm shutdown → qm set --cpu x86-64-v3 → qm start
+      → kubectl wait Ready → uncordon → 验证 avx2 / CSI / CNI
+```
+
 最终结果：6/6 节点 `v1.35.9`，containerd `2.3.2`，runc `1.4.3`，etcd `3.5.12`（后续升到 `3.6.6`），
-Calico `3.32.2`，Prometheus 125/125 targets up。
+Calico `3.32.2`，Prometheus 125/125 targets up；6/6 节点均为 `x86-64-v3`。
 
 ## 本目录文档
 
@@ -178,6 +245,7 @@ Calico `3.32.2`，Prometheus 125/125 targets up。
 | [default-ns-pod-provenance.md](notes/default-ns-pod-provenance.md) | default 命名空间 Pod 来源追踪 |
 | [pod-load-balancing-plan-20261003.md](notes/pod-load-balancing-plan-20261003.md) | 工作节点 Pod 负载均衡方案 |
 | [compassio-autoscaling-analysis-20261109.md](notes/compassio-autoscaling-analysis-20261109.md) | HPA vs VPA：按 LLM 等待 P95 扩容，CPU 兜底 |
+| [cpu-v3-migration-2026-11-09.md](notes/cpu-v3-migration-2026-11-09.md) | 6 台 VM 升 x86-64-v3：CNPG failover、镜像缓存、DiskPressure |
 | [upgrade-1.29-to-1.35/](notes/upgrade-1.29-to-1.35/) | 9 篇完整升级记录：盘点、方案、总纲、4 条线执行报告 |
 
 升级记录建议按顺序读：
@@ -199,6 +267,10 @@ Calico `3.32.2`，Prometheus 125/125 targets up。
 | [assets/upgrade-scripts/](assets/upgrade-scripts/) | `upgrade-containerd.sh`、`rollback-containerd.sh`、`upgrade-calico.sh`、`migrate-kube-proxy-iptables.sh`、`upgrade-k8s.sh`、`upgrade-k8s-series.sh` |
 | [assets/ansible/](assets/ansible/) | Ansible inventory 与 containerd 重启 playbook（本次未采用，但保留对比） |
 | [assets/containerd-config.toml](assets/containerd-config.toml) | containerd 2.3.2 的 v2 配置备份 |
+| [scripts/check_cpu_v3.sh](scripts/check_cpu_v3.sh) | 只读检查 6 节点是否满足 x86-64-v3 |
+| [scripts/migrate_vm_cpu_v3.sh](scripts/migrate_vm_cpu_v3.sh) | PVE 上逐台 drain/stop/set cpu/start/uncordon（默认 dry-run） |
+| [scripts/fix_images.py](scripts/fix_images.py) | 节点间导出/导入镜像，解决注册中心不可达与缓存不均 |
+| [assets/cpu-v3/current-node-cpu.txt](assets/cpu-v3/current-node-cpu.txt) | 2026-11-10 CPU 基线快照 |
 
 ```bash
 # 查看 Pod 在宿主机上的进程链

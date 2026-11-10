@@ -1,0 +1,50 @@
+apiVersion: v1
+data:
+  cleanup.py: "import os, json, ssl, urllib.request, datetime\n\nSA = \"/var/run/secrets/kubernetes.io/serviceaccount\"\
+    \nNS = open(f\"{SA}/namespace\").read().strip()\nTOKEN = open(f\"{SA}/token\"\
+    ).read().strip()\nCTX = ssl.create_default_context(cafile=f\"{SA}/ca.crt\")\n\
+    BASE = \"https://kubernetes.default.svc\"\nRETAIN_DAYS = int(os.getenv(\"RETAIN_DAYS\"\
+    , \"7\"))\nDRY_RUN = os.getenv(\"DRY_RUN\", \"false\").lower() in (\"1\", \"true\"\
+    , \"yes\")\n\ndef api(method, path):\n    req = urllib.request.Request(\n    \
+    \    BASE + path, method=method,\n        headers={\"Authorization\": \"Bearer\
+    \ \" + TOKEN},\n    )\n    with urllib.request.urlopen(req, context=CTX, timeout=30)\
+    \ as r:\n        raw = r.read()\n        return json.loads(raw) if raw else {}\n\
+    \ndef list_all(path):\n    items, cont = [], \"\"\n    while True:\n        sep\
+    \ = \"&\" if \"?\" in path else \"?\"\n        data = api(\"GET\", path + (f\"\
+    {sep}continue={cont}\" if cont else \"\"))\n        items += data.get(\"items\"\
+    , [])\n        cont = (data.get(\"metadata\") or {}).get(\"continue\", \"\")\n\
+    \        if not cont:\n            return items\n\nnow = datetime.datetime.now(datetime.timezone.utc)\n\
+    cutoff = now - datetime.timedelta(days=RETAIN_DAYS)\n\nprs = list_all(f\"/apis/tekton.dev/v1/namespaces/{NS}/pipelineruns?limit=200\"\
+    )\npvs = list_all(f\"/api/v1/namespaces/{NS}/persistentvolumeclaims?limit=200\"\
+    )\ntrs = list_all(f\"/apis/tekton.dev/v1/namespaces/{NS}/taskruns?limit=500\"\
+    )\n\ndef reason_of(pr):\n    c = (pr.get(\"status\") or {}).get(\"conditions\"\
+    ) or []\n    return c[0].get(\"reason\") if c else None\n\nstats = {\"deleted\"\
+    : 0, \"skipped\": 0, \"pvc\": 0, \"taskrun\": 0}\nfor pr in prs:\n    name = pr[\"\
+    metadata\"][\"name\"]\n    labels = pr[\"metadata\"].get(\"labels\") or {}\n \
+    \   ann = pr[\"metadata\"].get(\"annotations\") or {}\n    if labels.get(\"cleanup\"\
+    ) == \"keep\" or ann.get(\"cleanup\") == \"keep\":\n        print(f\"SKIP keep\
+    \ {name}\")\n        stats[\"skipped\"] += 1\n        continue\n    reason = reason_of(pr)\n\
+    \    done_raw = (pr.get(\"status\") or {}).get(\"completionTime\")\n    if reason\
+    \ not in (\"Succeeded\", \"Failed\", \"Completed\", \"PipelineRunTimeout\", \"\
+    Cancelled\") or not done_raw:\n        print(f\"SKIP unfinished {name} ({reason})\"\
+    )\n        stats[\"skipped\"] += 1\n        continue\n    done = datetime.datetime.fromisoformat(done_raw.replace(\"\
+    Z\", \"+00:00\"))\n    if done >= cutoff:\n        print(f\"KEEP recent {name}\
+    \ ({done_raw})\")\n        stats[\"skipped\"] += 1\n        continue\n\n    owned_pvc\
+    \ = [\n        p[\"metadata\"][\"name\"] for p in pvs\n        if any(o.get(\"\
+    kind\") == \"PipelineRun\" and o.get(\"name\") == name\n               for o in\
+    \ (p[\"metadata\"].get(\"ownerReferences\") or []))\n    ]\n    owned_tr = [\n\
+    \        t[\"metadata\"][\"name\"] for t in trs\n        if (t[\"metadata\"].get(\"\
+    labels\") or {}).get(\"tekton.dev/pipelineRun\") == name\n    ]\n    print(f\"\
+    {'DRY-RUN ' if DRY_RUN else ''}DELETE {name} \"\n          f\"({reason}, {done_raw})\
+    \ pvc={len(owned_pvc)} taskruns={len(owned_tr)}\")\n    stats[\"deleted\"] +=\
+    \ 1\n    stats[\"pvc\"] += len(owned_pvc)\n    stats[\"taskrun\"] += len(owned_tr)\n\
+    \    if not DRY_RUN:\n        # 只删 PipelineRun，交给 K8s GC 级联 TaskRun -> Pod ->\
+    \ PVC\n        api(\"DELETE\", f\"/apis/tekton.dev/v1/namespaces/{NS}/pipelineruns/{name}\"\
+    )\n\nprint(\"done:\", json.dumps({**stats, \"retain_days\": RETAIN_DAYS, \"dry_run\"\
+    : DRY_RUN}))\n"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+  name: cicd-cleanup-script
+  namespace: cicd

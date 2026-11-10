@@ -1,0 +1,16 @@
+apiVersion: csi.ceph.io/v1
+kind: ClientProfile
+metadata:
+  name: 594e535e-d82c-11f0-afa7-bc24112b746f
+  namespace: ceph-csi-rbd
+spec:
+  cephConnectionRef:
+    name: ceph-connection
+  rbd:
+    cephCsiSecrets:
+      controllerPublishSecret:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd
+      nodePublishSecret:
+        name: csi-rbd-secret
+        namespace: ceph-csi-rbd

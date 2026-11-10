@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 00-namespace-and-secrets.yaml
+  - 10-open-webui.yaml
+  # frpc publishes this app publicly through the Tencent VPS tunnel.
+  - frpc.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: openwebui-pipeline
+      app.kubernetes.io/managed-by: argocd
+
+# NOTE: the image tag is deliberately NOT pinned here. The `images:` transformer
+# in this base would run *after* the overlay's and win, forcing the tag back to
+# `latest`. Only the overlay owns the tag, so the CI-updated newTag takes effect.
+
+# Generate the opencode-proxy ConfigMap with a content hash in its name.
+# Two benefits:
+#  1. Editing nginx.conf changes the generated name, which changes the Pod
+#     template, so the sidecar is automatically rolled onto the new config.
+#     (With a plain ConfigMap mounted via `subPath`, Kubernetes does NOT push
+#     updates into the running container - a very easy trap.)
+#  2. Kustomize's name-reference transformer rewrites the Deployment's
+#     `configMap.name: opencode-proxy` to the hashed name automatically.
+configMapGenerator:
+  - name: opencode-proxy
+    files:
+      - nginx.conf
+    options:
+      labels:
+        app.kubernetes.io/name: open-webui
+        app.kubernetes.io/component: opencode-proxy
+      disableNameSuffixHash: false

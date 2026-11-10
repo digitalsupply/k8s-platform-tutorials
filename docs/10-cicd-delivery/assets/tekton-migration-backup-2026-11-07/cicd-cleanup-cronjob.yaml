@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/part-of: compassio-cicd
+  name: cicd-cleanup
+  namespace: cicd
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata: {}
+    spec:
+      backoffLimit: 1
+      template:
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - python
+            - /scripts/cleanup.py
+            env:
+            - name: RETAIN_DAYS
+              value: '1'
+            - name: DRY_RUN
+              value: 'false'
+            image: 192.168.67.202:8443/compassio/python:3.11-slim
+            imagePullPolicy: IfNotPresent
+            name: cleanup
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /scripts
+              name: script
+              readOnly: true
+          dnsPolicy: ClusterFirst
+          imagePullSecrets:
+          - name: harbor-auth
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: cicd-cleanup
+          serviceAccountName: cicd-cleanup
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - configMap:
+              defaultMode: 420
+              name: cicd-cleanup-script
+            name: script
+  schedule: 0 */6 * * *
+  successfulJobsHistoryLimit: 1
+  suspend: false

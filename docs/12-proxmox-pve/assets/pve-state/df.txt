@@ -1,0 +1,10 @@
+Filesystem           Type      Size  Used Avail Use% Mounted on
+udev                 devtmpfs   32G     0   32G   0% /dev
+tmpfs                tmpfs     6.3G  8.7M  6.3G   1% /run
+/dev/mapper/pve-root ext4       94G   28G   62G  32% /
+tmpfs                tmpfs      32G   46M   32G   1% /dev/shm
+tmpfs                tmpfs     5.0M     0  5.0M   0% /run/lock
+efivarfs             efivarfs  512K   64K  444K  13% /sys/firmware/efi/efivars
+/dev/nvme0n1p2       vfat     1022M   12M 1011M   2% /boot/efi
+/dev/fuse            fuse      128M   32K  128M   1% /etc/pve
+tmpfs                tmpfs     6.3G     0  6.3G   0% /run/user/0

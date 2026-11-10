@@ -1,0 +1,40 @@
+---
+# Harbor credentials for Kaniko push + base-image pulls (self-signed -> skip-verify in Kaniko)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-auth
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: |
+    {"auths":{"192.168.67.202:8443":{"username":"admin","password":"<redacted-harbor-admin-password>","auth":"<base64-admin-password>"}}}
+---
+# GitLab basic-auth used by git-clone (app repo) and the gitops commit/push
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-auth
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+type: Opaque
+stringData:
+  username: "root"
+  password: "<redacted-gitlab-pat>"
+  # PAT as password; used via basic auth for both clone and push
+  token: "<redacted-gitlab-pat>"
+  git-url: "http://192.168.67.201/digitalsupply/openwebui.git"
+  gitops-url: "http://192.168.67.201/digitalsupply/openwebui-gitops.git"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+imagePullSecrets:
+  - name: harbor-auth

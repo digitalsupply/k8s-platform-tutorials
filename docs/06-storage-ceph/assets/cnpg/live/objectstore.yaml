@@ -1,0 +1,23 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: pg16-ceph-store
+  namespace: cnpg-system
+spec:
+  configuration:
+    data:
+      compression: gzip
+      jobs: 2
+    destinationPath: s3://pg-backups/
+    endpointURL: http://10.0.0.31:7480
+    s3Credentials:
+      accessKeyId:
+        key: ACCESS_KEY_ID
+        name: pg-backup-s3-creds
+      secretAccessKey:
+        key: ACCESS_SECRET_KEY
+        name: pg-backup-s3-creds
+    wal:
+      compression: gzip
+      maxParallel: 2
+  retentionPolicy: 30d

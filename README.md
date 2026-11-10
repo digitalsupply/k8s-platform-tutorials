@@ -34,6 +34,8 @@
 | [08 Control Plane HA](docs/08-control-plane-ha/README.md) | kube-vip、API VIP、apiserver 内存、etcd 备份/恢复 | 管控制面高可用的人 |
 | [09 生命周期与生产化](docs/09-incidents-and-readiness/README.md) | Knative/Tekton/宿主机应用下线、清理、生产化审计 | 做组件治理与生产化的人 |
 | [10 CI/CD 交付](docs/10-cicd-delivery/README.md) | GitLab→Tekton→BuildKit→Harbor→ArgoCD、Webhook、BuildKit 排障 | 做 GitOps/CI-CD 的人 |
+| [11 GitOps 平台化](docs/11-gitops-platform/README.md) | app-of-apps、覆盖盘点、Sealed Secrets、Vault/ESO 取舍 | 想把集群真正交给 Git 的人 |
+| [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、批量建机 | 管宿主机、VM、磁盘容量的人 |
 
 ---
 
@@ -55,6 +57,8 @@
   → 08 控制面 HA
   → 09 生命周期
   → 10 CI/CD
+  → 11 GitOps 平台化
+  → 12 PVE/宿主机
 ```
 
 ---
@@ -92,11 +96,13 @@
 | 03 GitLab | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/) |
 | 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
 | 05 Linux | [`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
-| 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`assets/`](docs/06-storage-ceph/assets/) |
+| 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`ceph_csi_inventory.py`](docs/06-storage-ceph/scripts/ceph_csi_inventory.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`ceph-csi-operator/`](docs/06-storage-ceph/assets/ceph-csi-operator/)、[`cnpg/`](docs/06-storage-ceph/assets/cnpg/) |
 | 07 Networking | [`current-ingressroutes.yaml`](docs/07-networking/assets/current-ingressroutes.yaml)、[`current-metallb-config.yaml`](docs/07-networking/assets/current-metallb-config.yaml) |
 | 08 Control Plane | [`kube-vip-ha-daemonset-FIXED.yaml`](docs/08-control-plane-ha/assets/kube-vip-ha-daemonset-FIXED.yaml)、[`planA-switch-worker.sh`](docs/08-control-plane-ha/scripts/planA-switch-worker.sh)、[`etcd-snapshot-cronjob.yaml`](docs/08-control-plane-ha/assets/etcd-snapshot-cronjob.yaml) |
 | 09 生命周期 | [`pre_removal_audit.py`](docs/09-incidents-and-readiness/scripts/pre_removal_audit.py)、[`cleanup_checklist.md`](docs/09-incidents-and-readiness/scripts/cleanup_checklist.md) |
-| 10 CI/CD | [`tekton/`](docs/10-cicd-delivery/assets/tekton/)（Task/Pipeline/Trigger/EventListener/BuildKit） |
+| 10 CI/CD | [`tekton/`](docs/10-cicd-delivery/assets/tekton/)（Task/Pipeline/Trigger/EventListener/BuildKit）、[`tekton-operator/`](docs/10-cicd-delivery/assets/tekton-operator/)、[`openwebui/`](docs/10-cicd-delivery/assets/openwebui/)、[`tekton_retention_audit.py`](docs/10-cicd-delivery/scripts/tekton_retention_audit.py) |
+| 11 GitOps | [`app-of-apps.yaml`](docs/11-gitops-platform/assets/argocd/app-of-apps.yaml)、[`sealed-secrets/`](docs/11-gitops-platform/assets/sealed-secrets/)、[`clean-k8s-yaml.py`](docs/11-gitops-platform/scripts/clean-k8s-yaml.py)、[`argocd_gitops_audit.py`](docs/11-gitops-platform/scripts/argocd_gitops_audit.py) |
+| 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 
 说明：
 
@@ -127,7 +133,9 @@ k8s-platform-tutorials/
     ├── 07-networking/
     ├── 08-control-plane-ha/
     ├── 09-incidents-and-readiness/
-    └── 10-cicd-delivery/
+    ├── 10-cicd-delivery/
+    ├── 11-gitops-platform/
+    └── 12-proxmox-pve/
 ```
 
 每个分类目录的统一约定：

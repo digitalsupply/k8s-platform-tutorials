@@ -21,6 +21,12 @@
 5. Tempo 写 RGW 持续 400 `XAmzContentSHA256Mismatch`；
 6. ceph-csi nodeplugin 累计重启 69 次，`kubectl` 显示 Running、`crictl` 里却查不到容器。
 
+2026-11-09 又做了两件存储层的大改造：
+
+- **Ceph-CSI 从 Helm 3.16.2 分阶段升级到 3.18.2，再迁移到 Ceph-CSI-Operator 1.1.0**，三个 Application 全部纳入 ArgoCD；
+- **CNPG 从 1.22.0 升到 1.30.1**，备份从内置 `barmanObjectStore` 迁到 Barman Cloud Plugin，PostgreSQL 镜像固定到 16.15；
+- 期间还做了 **K8s 节点磁盘两轮清理**（旧镜像、已完成 Pod、kubelet GC、Harbor tag 保留、Tekton 历史、PVE discard/TRIM）。
+
 ## 主要概念与原理
 
 ### 1. Ceph 的三种接口
@@ -66,6 +72,62 @@ PVC（命名空间内）──绑定──► PV（集群级）──► CSI vol
 
 RBD 是 thin provisioning：PVC 声明 10Gi，不代表 Ceph 实际用了 10Gi。
 `rbd du` 才是实际占用；清理前要同时看 `watchers`（是否有客户端映射）和文件系统内容。
+
+### 6. Operator 模式：CRD + controller + reconcile
+
+Ceph-CSI Operator 和 CNPG 都是同一套模式：
+
+```text
+CRD（自定义 API）
+  + controller 进程（watch CR）
+  + reconcile 循环：期望状态 vs 实际状态 → 创建/更新/删除子资源
+  + status/conditions 回写
+```
+
+它不是“安装脚本”，而是**长期运行的控制器**。因此：
+
+- 升级 Operator 不等于升级 CRD，也不等于升级它管理的驱动/实例；
+- CR 里写的是期望状态，Pod/Service/PVC 是 Operator 生成的；
+- 调试时先看 CR 的 `status.conditions`，再看 Operator 日志和子资源事件。
+
+### 7. Ceph-CSI Operator 的分层
+
+本集群拆成三个 ArgoCD Application：
+
+| Application | 内容 |
+|---|---|
+| `platform-ceph-csi-operator` | Operator CRD + Deployment + RBAC |
+| `platform-ceph-csi-drivers` | `Driver`、`CephConnection`、`ClientProfile`、驱动 RBAC/ConfigMap |
+| `platform-ceph-csi` | StorageClass `ceph-rbd-sc` + SealedSecret |
+
+关键 CR：
+
+- `CephConnection`：mon 地址、认证引用；
+- `ClientProfile`：集群 ID、pool、secret 引用；
+- `Driver`：驱动类型（rbd）、镜像、sidecar 版本、nodeplugin/ctrlplugin 规格；
+- `OperatorConfig`：全局默认值（本集群未创建）。
+
+> `helm list -n ceph-csi-rbd` 为空是正常的：Helm release 已卸载，驱动由 Operator 根据 CR 生成。
+
+### 8. CNPG：Operator + Instance Manager + Plugin
+
+- **Operator**：管集群级决策（实例数、主从、Service、PVC、备份、升级）；
+- **Instance Manager**：每个 PostgreSQL Pod 内的 sidecar，负责启动/停止/检查数据库进程；
+- **Plugin**：扩展备份等能力，本集群用 `plugin-barman-cloud` 0.15.1 对接 S3。
+
+CNPG 的 `Cluster` CR 不是“一个 StatefulSet 的别名”，它还会生成：
+
+- 主/备 Service（`-rw`、`-ro`、`-r`）；
+- 每个实例的 PVC；
+- PDB、Lease、Secret、证书；
+- `ScheduledBackup` / `Backup` 对象和 WAL 归档配置。
+
+### 9. 磁盘为什么会被镜像吃满
+
+- CI 每次构建产生新 tag，Harbor 和历史镜像持续增长；
+- kubelet 默认 `imageGCHighThresholdPercent=85`，不到 85% 不 GC；
+- 已完成 Pod 仍引用镜像，`crictl rmi --prune` 也删不掉；
+- PVE thin pool 需要 VM 开启 `discard=on` + 周期性 `fstrim` 才能把空间还给宿主机。
 
 ## 踩坑点
 
@@ -138,6 +200,53 @@ CRI 侧却没有对应容器，日志出现 `Missing actuated resource record`�
 `nfs-subdir-external-provisioner` 最后一版是 2023-03，无维护、有已知漏洞。
 本集群仍有 `nfs-sc` 在用，建议迁移到 `csi-driver-nfs`。
 
+### 坑 9：`WATCH_NAMESPACE` 只 watch 一个命名空间
+
+Ceph-CSI Operator 的 Deployment 通过 `WATCH_NAMESPACE` 限定监听范围。
+如果 Operator 在 `ceph-csi-operator-system`，Driver CR 却在 `ceph-csi-rbd`，
+而 `WATCH_NAMESPACE` 只写了前者，Operator 会“看起来正常但不 reconcile”。
+
+**修复**：让 `WATCH_NAMESPACE` 覆盖 CR 所在命名空间，或留空监听全集群；
+改完后重启 Operator，确认日志出现对应 CR 的 reconcile。
+
+### 坑 10：Helm release 残留会与 ArgoCD 争管
+
+Traefik/Ceph-CSI 都出现过：资源已被 ArgoCD 接管，但 `sh.helm.release.v1.*` 还在。
+`helm list` 显示旧版本，运维一执行 `helm upgrade` 就会覆盖 GitOps 管理的资源。
+
+**修复**：确认 ArgoCD `Synced/Healthy` 后，只删 Helm release secret（不碰运行资源）：
+
+```bash
+kubectl -n ceph-csi-rbd delete secret -l owner=helm
+```
+
+### 坑 11：标准 Ceph-CSI 镜像要求 x86-64-v3
+
+Ceph-CSI 3.18.2 的官方镜像包含 AVX2 等指令集。节点 CPU 还是 `x86-64-v2-AES` 时，
+容器会直接 `SIGILL`（Illegal instruction），表现是 CrashLoop 而不是普通报错。
+
+**修复**：两条路二选一：
+
+1. 用兼容构建（如 `-rocky9` 镜像）临时过渡；
+2. 把 PVE VM CPU 型号改为 `x86-64-v3`（必须 stop/start，reboot 不生效），再切回标准镜像。
+   本集群最终选 2，见 [01 CPU v3 迁移](../01-kubernetes-k3s/notes/cpu-v3-migration-2026-11-09.md)。
+
+### 坑 12：浮动镜像 tag 让“升级”不可复现
+
+CNPG 曾使用浮动的 PostgreSQL tag，重新拉取就可能换版本；Ceph-CSI 也出现过
+`latest`/`stable` 与实际版本不一致。**升级记录里必须写镜像 digest 或固定 tag。**
+
+**修复**：所有生产 CR 固定到 `16.15`、`v3.18.2` 这类不可变版本；
+用 `imagePullPolicy: IfNotPresent` + 预拉取，避免节点重启时被动升级。
+
+### 坑 13：`rp_filter=1` 让 CNPG webhook 全集群超时
+
+m01 的 `net.ipv4.conf.all.rp_filter=1` 与 Cilium 的转发路径冲突，
+CNPG webhook 请求被丢弃，表现为所有 Cluster 操作卡住、备份也一起失败。
+
+**修复**：统一节点 `rp_filter=0` 并持久化，再重启 CNPG Operator/webhook。
+这类“网络策略没变但 webhook 全挂”的问题，要先查内核参数，不要只查 CNPG。
+
 ## 修复关键
 
 ### 1. 孤儿 PV 清理
@@ -184,6 +293,49 @@ rbd -p k8s-rbd rm <image>
 - 定期跑 `rbd du` 对账，防止“PV 没了镜像还在”；
 - NFS 仅用于非关键数据，逐步迁移到 CephFS/RBD。
 
+### 5. Ceph-CSI 分阶段升级并迁移 Operator
+
+```text
+3.16.2（Helm）
+  → 3.16.2 原版本先纳入 GitOps
+  → 3.17.2 → 3.18.2（逐 minor，不跳版本）
+  → Operator 1.1.0 + Driver CR
+```
+
+每一步都先预拉镜像、确认 17 个 PVC 全 Bound、做一次动态 provisioning 测试，
+再进入下一步。Operator 迁移完成后的验证：
+
+```bash
+kubectl -n ceph-csi-rbd get driver,cephconnection,clientprofile
+kubectl -n ceph-csi-rbd get pods
+kubectl get pv | grep -c Bound
+helm -n ceph-csi-rbd list          # 应为空
+```
+
+### 6. CNPG 升级与备份迁移
+
+- 先升 Operator，再改 Cluster；`primaryUpdateMethod` 从 `restart` 改为 `switchover`，减少停机；
+- 内置 `barmanObjectStore` 在 1.31 将移除，提前迁到 Barman Cloud Plugin；
+- 备份验证不能只看 `ContinuousArchiving=True`，要确认 S3 里同时有 base backup 和 WAL；
+- 做一次真实恢复演练（恢复到临时集群或临时实例）。
+
+### 7. 磁盘容量治理
+
+```bash
+# 节点侧：未使用镜像 + 已完成 Pod
+crictl rmi --prune
+kubectl delete pod --field-selector=status.phase=Succeeded -A
+
+# PVE 侧：thin pool 回收
+qm set <vmid> --scsi0 <disk>,discard=on,ssd=1
+fstrim -av
+
+# 长效：kubelet GC 阈值、Harbor tag 保留、Tekton 历史清理
+```
+
+本集群两轮清理释放约 **137GiB thin pool + 34GiB 节点根盘**，但 **没有降低 Prometheus 的 21G 本地数据**；
+容量治理要区分“镜像/日志/历史对象”和“真实业务数据”。
+
 ## 本目录文档
 
 | 文档 | 内容 |
@@ -197,6 +349,11 @@ rbd -p k8s-rbd rm <image>
 | [ceph-s3-rbd-client-setup-20261006.md](notes/ceph-s3-rbd-client-setup-20261006.md) | 在 m01 安装 s3cmd/ceph-common 并验证 RBD/S3 |
 | [minio-vs-ceph-rgw-analysis.md](notes/minio-vs-ceph-rgw-analysis.md) | “MinIO”命名错误的排查与 RGW 两种访问路径 |
 | [compassio-pg-redis-ops-plan.md](notes/compassio-pg-redis-ops-plan.md) | PostgreSQL/Redis 运维、主库故障切换、RTO/RPO |
+| [ceph-csi-operator-how-it-works-2026-11-09.md](notes/ceph-csi-operator-how-it-works-2026-11-09.md) | 以 Ceph-CSI 为例讲 Operator/CRD/reconcile、RBAC、leader election |
+| [ceph-csi-upgrade-to-operator-2026-11-09.md](notes/ceph-csi-upgrade-to-operator-2026-11-09.md) | 3.16.2 → 3.17.2 → 3.18.2 → Operator 1.1.0 的分阶段升级与回滚 |
+| [cnpg-operator-how-it-works-2026-11-09.md](notes/cnpg-operator-how-it-works-2026-11-09.md) | CNPG Operator、Instance Manager、Plugin、reconcile 全过程 |
+| [cnpg-upgrade-postmortem-2026-11-08.md](notes/cnpg-upgrade-postmortem-2026-11-08.md) | CNPG 1.22 → 1.30.1、rp_filter、barman plugin、switchover |
+| [ceph-disk-optimization-2026-11-05.md](notes/ceph-disk-optimization-2026-11-05.md) | 镜像/Pod/GC/Harbor/Tekton/PVE discard 两轮磁盘清理 |
 
 ## 配套资产
 
@@ -211,6 +368,9 @@ rbd -p k8s-rbd rm <image>
 | [assets/ceph-status.txt](assets/ceph-status.txt) | 当前 `ceph -s` 快照 |
 | [assets/ceph-osd-tree.txt](assets/ceph-osd-tree.txt) | 当前 OSD 树 |
 | [assets/pv-list.yaml](assets/pv-list.yaml) | 当前 PV 全量清单 |
+| [scripts/ceph_csi_inventory.py](scripts/ceph_csi_inventory.py) | 只读盘点 Operator/Driver/CephConnection/ClientProfile/PV/PVC |
+| [assets/ceph-csi-operator/](assets/ceph-csi-operator/) | 升级前备份、Helm values、imageset、StorageClass、实时 CR |
+| [assets/cnpg/](assets/cnpg/) | CNPG Cluster/ObjectStore/ScheduledBackup/Plugin 清单与实时导出 |
 
 ```bash
 # 只读盘点（不会删除任何东西）

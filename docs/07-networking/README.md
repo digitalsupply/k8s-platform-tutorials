@@ -21,6 +21,10 @@
 - Cloudflare Tunnel 断线后告警发不出去；
 - kube-proxy 切 nftables 后规则为空，Service 全挂。
 
+2026-11-09 又对 Traefik 做了 GitOps 收尾：清理旧 Helm release、把 Gateway API CRD 独立纳管、
+处理 Traefik 3.7 的 `aliasHeadersStrategy`/`safeNaming` 警告、单副本更新策略、清理
+`last-applied-configuration` 注解。
+
 ## 主要概念与原理
 
 ### 1. 请求进入集群的完整路径
@@ -89,6 +93,24 @@ options ndots:5
 访问 `n8n-svc.n8n.svc.cluster.local` 会先尝试多个 search 后缀；如果 CoreDNS 慢或
 NetworkPolicy 挡了 53 端口，就会出现“短域名能通、长域名超时”或相反。
 
+### 8. Helm release 与 ArgoCD 的归属边界
+
+同一组资源只能有一个“管理者”：
+
+- Helm release secret（`sh.helm.release.v1.*`）存在，`helm list` 就会显示旧版本；
+- ArgoCD 接管后，资源注解会变成 `argocd.argoproj.io/tracking-id`；
+- 两者同时存在时，任何一次 `helm upgrade` 都可能覆盖 GitOps 期望状态。
+
+**判定**：ArgoCD `Synced/Healthy` + `helm list` 为空 + 资源无 `last-applied-configuration`，
+才算真正完成 GitOps 化。
+
+### 9. Gateway API CRD 为什么要独立纳管
+
+Gateway API 的 CRD 体积大、生命周期独立于 Traefik chart。把它们塞进 Traefik 的 Helm release，
+会出现“升级 Traefik 顺带改 CRD”或“CRD 未装导致 Gateway/HTTPRoute 无法创建”。
+
+本集群用独立 Application `platform-gateway-api` 管理 6 个 standard channel CRD（v1.4.0）。
+
 ## 踩坑点
 
 ### 坑 1：Traefik 环境没有 Ingress
@@ -156,6 +178,44 @@ kubectl run -it --rm dns-test --image=busybox:1.36 --restart=Never -- \
 
 并检查 NetworkPolicy 是否放行 UDP/TCP 53。
 
+### 坑 10：`helm list` 还有旧 release，ArgoCD 却显示 Synced
+
+资源已被 ArgoCD 接管，但 Helm release secret 没删。`helm list` 显示 `37.4.0 / v3.6.2 rev 5`，
+与集群实际 `v3.7.17` 不符。此时执行 `helm upgrade` 会直接覆盖 ArgoCD 管理的资源。
+
+**修复**：
+
+```bash
+kubectl -n traefik delete secret -l owner=helm,name=traefik
+helm -n traefik list    # 应为空
+```
+
+只删 release 元数据，不碰 Deployment/Service/IngressRoute。
+
+### 坑 11：Traefik 3.7 的两个安全/命名警告被忽略
+
+- `aliasHeadersStrategy` 未配置：非标准别名头（如 `X_Auth_User`）可能被用于 header 伪装；
+- `safeNaming` 未显式设置：升级后路由/服务可能改名，已有 Ingress 引用失效。
+
+**修复**（values）：
+
+```yaml
+global:
+  aliasHeadersStrategy: delete
+providers:
+  kubernetesCRD:
+    safeNaming: false   # 保持 legacy 命名，避免影响已有引用
+```
+
+改完确认 Deployment args 里出现对应参数，且路由数量不变。
+
+### 坑 12：内存紧张时滚动更新瞬时起两个 Traefik
+
+单副本 + `maxSurge: 1` 会在升级时临时占两份内存，可能把节点压到 OOM。
+本集群改为 `maxSurge: 0 / maxUnavailable: 1`，代价是更新期间入口短暂中断。
+
+**修复**：内存缓解后再恢复 `maxSurge: 1`；或者用 PDB + 两副本，而不是在单副本上硬撑。
+
 ## 修复关键
 
 1. **先画链路**：DNS → VIP → L2 宣告 → Traefik → IngressRoute → Service → Pod；
@@ -165,6 +225,10 @@ kubectl run -it --rm dns-test --image=busybox:1.36 --restart=Never -- \
 5. **VIP 只保留一个宣告者**：Cilium L2 与 MetalLB Speaker 不要同时宣告同一 IP；
 6. **DNS 与 NetworkPolicy 一起改**：放行 53 端口，避免“CoreDNS 正常但客户端解析失败”；
 7. **隧道只做备用**：关键告警出口必须直连或有第二通道。
+
+8. **GitOps 收尾四件事**：清 Helm release、CRD 独立纳管、消除 `last-applied` 漂移、固定更新策略；
+9. **改完用状态验证**：`helm list` 为空、ArgoCD `Synced/Healthy`、Deployment args 与 values 一致、
+   IngressRoute 数量不变。
 
 ## 本目录文档
 
@@ -178,6 +242,7 @@ kubectl run -it --rm dns-test --image=busybox:1.36 --restart=Never -- \
 | [ipip-vs-vxlan-explained.md](notes/ipip-vs-vxlan-explained.md) | IPIP/VXLAN 封装、MTU 与本集群配置 |
 | [kube-proxy-service-iptables-explained.md](notes/kube-proxy-service-iptables-explained.md) | Service/kube-proxy/iptables 的完整数据流 |
 | [kube-proxy-nftables-diagnosis.md](notes/kube-proxy-nftables-diagnosis.md) | nftables 模式规则为空的诊断与回退 |
+| [traefik-gitops-remediation-2026-11-09.md](notes/traefik-gitops-remediation-2026-11-09.md) | Traefik GitOps 5 项收尾：Helm release、Gateway API CRD、3.7 警告、更新策略 |
 
 ## 配套资产
 
@@ -188,6 +253,9 @@ kubectl run -it --rm dns-test --image=busybox:1.36 --restart=Never -- \
 | [assets/current-metallb-config.yaml](assets/current-metallb-config.yaml) | 当前 MetalLB IPAddressPool/L2Advertisement |
 | [assets/metallb-config-backup.yaml](assets/metallb-config-backup.yaml) | MetalLB 配置备份 |
 | [assets/traefik-svc-backup.yaml](assets/traefik-svc-backup.yaml) | Traefik Service 备份 |
+| [assets/traefik-gitops/values.yaml](assets/traefik-gitops/values.yaml) | 当前 Traefik Helm values（含 3.7 安全项与更新策略） |
+| [assets/traefik-gitops/application.yaml](assets/traefik-gitops/application.yaml) | ArgoCD `platform-traefik` Application |
+| [scripts/traefik_gitops_audit.py](scripts/traefik_gitops_audit.py) | 只读检查 Helm 残留、副本/策略、CRD、IngressRoute、ArgoCD 状态 |
 
 ```bash
 # 查看入口（不要只看 ingress）

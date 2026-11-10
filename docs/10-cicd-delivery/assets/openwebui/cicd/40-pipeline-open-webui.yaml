@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: open-webui-cicd
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+spec:
+  description: >
+    Open WebUI CI/CD: clone from GitLab -> build image -> push to Harbor ->
+    promote the tag in the GitOps repo (Argo CD then syncs to the cluster).
+  params:
+    - name: git-url
+      type: string
+      default: http://192.168.67.201/digitalsupply/openwebui.git
+    - name: git-revision
+      type: string
+      default: main
+    - name: image-repository
+      type: string
+      default: 192.168.67.202:8443/openwebui/open-webui
+    - name: image-tag
+      type: string
+      description: Tag to build and promote (commit SHA or branch-suffixed)
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: clone
+      taskRef:
+        kind: Task
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: build-push
+      runAfter: [clone]
+      taskRef:
+        kind: Task
+        name: build-and-push
+      params:
+        - name: image
+          value: $(params.image-repository):$(params.image-tag)
+        - name: context
+          value: source
+        - name: dockerfile
+          value: Dockerfile.harbor
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: promote-gitops
+      runAfter: [build-push]
+      taskRef:
+        kind: Task
+        name: update-gitops-tag
+      params:
+        - name: image-tag
+          value: $(params.image-tag)
+      workspaces:
+        - name: source
+          workspace: shared-workspace

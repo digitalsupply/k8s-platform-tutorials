@@ -22,6 +22,12 @@
 - Tempo 2.x 与 3.x 共存，3.x 因 S3 凭据错误全部 CrashLoop；
 - Grafana 里 traces 查询为空，日志/指标/追踪三支柱没有真正关联。
 
+2026-11-08 到 11-09 又完成了两件与可观测性强相关的事：
+
+- **Grafana Operator Stage A**：4 个 Datasource + 37 个 Dashboard 从 Helm sidecar 迁到 Operator 管理；
+- **Prometheus / Alertmanager / Grafana 存储从 NFS 迁到 Ceph RBD**，期间遇到 `k8s-rbd` 池写满、
+  CSI/RWO 挂载卡死、worker02 I/O 卡死、CNPG failover 等连锁事故。
+
 ## 主要概念与原理
 
 ### 1. 三支柱与数据流
@@ -85,6 +91,24 @@ Loki 的标签由采集端（Alloy relabel）决定，常见标签：
 `tempo-distributed` 把 distributor、querier、live-store、block-builder、backend-scheduler/worker、
 query-frontend、metrics-generator 拆成独立组件。trace 先写 live-store/Kafka，再由 block-builder
 落 S3。**S3 凭据、endpoint、bucket 任一错误都会让 block-builder 持续失败。**
+
+### 7. Grafana 的三种供给方式
+
+| 方式 | 管理者 | 特点 |
+|---|---|---|
+| Helm sidecar | chart 内的 sidecar 容器扫描 ConfigMap/Secret | 简单，但和 chart 生命周期绑死 |
+| Grafana Operator CR | `GrafanaDatasource` / `GrafanaDashboard` | GitOps 友好，资源级 reconcile |
+| 手工 UI | 人 | 无法复现，重启/迁移即丢 |
+
+Stage A 的目标不是“装 Operator”，而是把 Datasource/Dashboard 的**所有权**从 Helm sidecar
+转到 CR，同时保持 Grafana 实例本身仍由 Helm 管理（external Grafana 模式）。
+
+### 8. 监控数据为什么不适合放 NFS
+
+- Prometheus TSDB 是大量小文件 + 频繁 rename，NFS 延迟和锁语义会放大抖动；
+- RWO 语义下，Pod 漂移时 NFS 可能仍被旧节点挂载，出现“新 Pod 卡 ContainerCreating”；
+- Ceph RBD 提供块设备 + 明确 attach/detach，适合单副本 TSDB，但没有 RWX；
+- 迁移时必须停写、复制数据、改 PVC，不能在线 `rsync` 一个正在写的 TSDB。
 
 ## 踩坑点
 
@@ -160,6 +184,27 @@ Loki gateway 的 upstream/端口配置与实际 Service 不一致，导致 drill
 Traefik 环境里 `kubectl get ingress` 为空，不代表没有入口。要看 `kubectl get ingressroute -A`。
 本集群的 Grafana/Prometheus/ArgoCD/Hubble/Alloy/Tekton/Traefik Dashboard 全部是 IngressRoute。
 
+### 坑 13：Grafana Operator 接管后，旧 sidecar 资源仍带 `provisioned` 标志
+
+Datasource PUT 返回 403 `Cannot update read-only data source`；Dashboard DELETE 返回 400
+`provisioned dashboard cannot be deleted`。
+
+**根因**：Helm sidecar 时期创建的资源带 `provisioned=true` / `readOnly=true` 标志，
+Operator 通过 API 更新时被 Grafana 拒绝。必须先关 sidecar、按 label 找到旧资源、删除后
+再由 Operator 重建，而不是继续在 UI 里改。
+
+### 坑 14：统计“存储不够”时只看 PVC 声明容量
+
+Prometheus PVC 声明 100Gi，NFS 上实际 19.3G；Ceph RBD 是 thin provisioning，声明不等于占用。
+迁移前必须用 `du`/`rbd du` 看实际数据量，并给目标池留出 **快照/副本/突发写入** 余量。
+本集群 `k8s-rbd` 被新 PVC 一次写满，直接导致 CSI、CNPG、监控连锁故障。
+
+### 坑 15：RWO 卷在 Pod 漂移时会“假死”
+
+旧 Pod 所在节点失联，新 Pod 已调度，但 RBD 卷仍被旧节点 attach，新 Pod 卡在
+`Multi-Attach error` / `ContainerCreating`。此时删 Pod 没用，要确认旧节点上的
+`rbd map`/watcher 是否释放，必要时在 Ceph 侧处理。
+
 ## 修复关键
 
 ### 阶段 1：规则与告警出口
@@ -202,6 +247,21 @@ curl -sG http://loki-gateway.logging.svc/api/v1/query_range \
 # Tempo 是否有 trace
 curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 ```
+
+### 阶段 5：存储迁移
+
+```text
+预检查（Ceph 容量 / CSI 健康 / 20Gi 测试 PVC）
+  → 缩副本、停写
+  → 新 PVC（ceph-rbd-sc）
+  → helper Pod 同时挂旧/新卷，rsync
+  → 改 Helm values/PVC 名
+  → 启动、验证
+  → 保留旧卷至少一个保留周期再删
+```
+
+顺序：Grafana（10Gi）→ Alertmanager（20Gi）→ Prometheus（100Gi）。
+**Prometheus 最后做**，因为它数据量最大、最怕写中断。
 
 ## 本目录文档
 
@@ -254,6 +314,9 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 | [ui-and-dashboards-update-20261110.md](notes/ui-and-dashboards-update-20261110.md) | IngressRoute 更正、Cilium 面板、Hubble/Alloy/Traefik 暴露 |
 | [fix-report-grafana-prometheus-https.md](notes/fix-report-grafana-prometheus-https.md) | Grafana/Prometheus HTTPS 访问修复 |
 | [ceph-monitoring-integration-report.md](notes/ceph-monitoring-integration-report.md) | Ceph 监控接入（含 ceph_exporter 方案） |
+| [grafana-operator-stage-a-2026-11-08.md](notes/grafana-operator-stage-a-2026-11-08.md) | Grafana Operator 接管 4 Datasource + 37 Dashboard 与 5 个坑 |
+| [prometheus-nfs-to-ceph-feasibility-2026-11-09.md](notes/prometheus-nfs-to-ceph-feasibility-2026-11-09.md) | NFS → Ceph RBD 的容量/能力/风险可行性评估 |
+| [prometheus-nfs-to-ceph-migration-2026-11-09.md](notes/prometheus-nfs-to-ceph-migration-2026-11-09.md) | 三组件迁移全过程、Ceph full、CSI/RWO、CNPG failover |
 
 ## 配套资产
 

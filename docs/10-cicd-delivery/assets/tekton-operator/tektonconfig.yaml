@@ -1,0 +1,36 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  targetNamespace: tekton-pipelines
+  profile: all
+
+  # 当前集群没有 Tekton Results / Chains 的存储配置，先关闭
+  result:
+    disabled: true
+  chain:
+    disabled: true
+
+  # 与当前 Dashboard 行为保持一致：只读
+  dashboard:
+    readonly: true
+
+  # 当前是 Kubernetes，不需要 Pipelines-as-Code；避免额外组件阻塞 Ready
+  platforms:
+    kubernetes:
+      pipelinesAsCode:
+        enable: false
+
+  # 生产保留策略：不再只留 1 天
+  # 使用事件驱动 Pruner（Operator v0.77.0 支持 TektonPruner）
+  # 30 天 TTL；成功/失败分别限制数量
+  pruner:
+    disabled: true
+  tektonpruner:
+    disabled: false
+    global-config:
+      enforcedConfigLevel: namespace
+      ttlSecondsAfterFinished: 2592000   # 30 天
+      successfulHistoryLimit: 200
+      failedHistoryLimit: 100

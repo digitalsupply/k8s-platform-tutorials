@@ -114,6 +114,13 @@ python3 docs/00-cluster-overview/scripts/cluster_inventory.py --format md > /tmp
 python3 docs/00-cluster-overview/scripts/cluster_inventory.py --format json > /tmp/cluster.json
 ```
 
+## 与其他章节的关系
+
+- 宿主机、VM、LVM-thin、磁盘容量的“物理层地图”：[12 Proxmox VE](../12-proxmox-pve/README.md)；
+- 集群如何逐步交给 Git、Secret 如何不落明文：[11 GitOps 平台化](../11-gitops-platform/README.md)；
+- 存储/PV/CNPG 备份：[06 Storage / Ceph](../06-storage-ceph/README.md)；
+- 入口/DNS/Service：[07 Networking](../07-networking/README.md)。
+
 ## 读完后你应该能回答
 
 - 这套集群的控制面、数据面、入口、存储、可观测性分别由谁负责？

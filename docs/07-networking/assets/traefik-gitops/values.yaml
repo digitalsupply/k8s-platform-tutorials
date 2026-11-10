@@ -1,0 +1,66 @@
+# Traefik Helm values
+#
+# Managed by ArgoCD Application: platform-traefik
+# 初始值来自集群中已存在的 Helm release `traefik` (rev 5, chart 37.4.0)，
+# 后续所有变更都应通过 Git 提交完成。
+
+additionalArguments:
+  - --api.dashboard=true
+  # 显式开启 API；oauth2-proxy 反向代理 traefik.xyz 到 :9000 时需要
+  - --api=true
+  # 让 API 直接监听 traefik entrypoint(:9000)；该端口只通过集群内
+  # ClusterIP Service 暴露，外部仍走 oauth2-proxy 认证
+  - --api.insecure=true
+
+# Traefik 3.7 安全建议：对未单独配置的 entryPoint，删除可被用于
+# header 伪装的非标准别名头（如 X_Auth_User -> X-Auth-User）。
+global:
+  aliasHeadersStrategy: delete
+
+# 保持现有（legacy）路由/服务命名，避免升级后改名影响已有 Ingress 引用。
+providers:
+  kubernetesCRD:
+    safeNaming: false
+    # oauth2-proxy 的 ForwardAuth/Errors Middleware 统一放在 oauth2-proxy
+    # namespace，由各业务 IngressRoute 跨 namespace 引用。
+    # 单租户平台，允许跨 namespace 中间件引用。
+    allowCrossNamespace: true
+
+# 单副本且节点内存紧张：滚动更新时先停旧 Pod 再起新 Pod，
+# 避免升级期间临时出现两个 Traefik Pod。
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+
+ingressRoute:
+  dashboard:
+    # traefik.example.com 已下线；dashboard 只通过 traefik.xyz + oauth2-proxy 暴露
+    enabled: false
+    entryPoints:
+      - websecure
+    matchRule: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    middlewares:
+      - name: traefik-dashboard-auth
+
+ports:
+  traefik:
+    exposedPort: 9000
+    port: 9000
+
+# 单副本。滚动更新保持 maxUnavailable: 0（先起新 Pod 再停旧 Pod），
+# 不额外增加常驻副本，避免占用节点内存。
+deployment:
+  replicas: 1
+
+# 原先通过手工 patch Deployment 注入的 OTLP tracing 参数，纳入 values 管理。
+tracing:
+  serviceName: traefik
+  sampleRate: 1.0
+  otlp:
+    enabled: true
+    grpc:
+      enabled: true
+      endpoint: otel-collector.opentelemetry.svc.cluster.local:4317
+      insecure: true

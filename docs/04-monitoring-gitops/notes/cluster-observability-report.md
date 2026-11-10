@@ -25,7 +25,7 @@
 | 告警 | 🟢 **已修复** | **firing 规则仅剩 Watchdog**（心跳，恒 firing 属正常）；Alertmanager 活跃告警 12 → **2 条**；etcd 全部 11 条规则 inactive |
 | 统一入口 | 🟢 **已修复** | Grafana 四个数据源（Prometheus / Alertmanager / Loki / Tempo）**现已全部由 ConfigMap 原生 provisioning 管理**，uid 保持兼容，存量仪表盘变量引用未断 |
 | 磁盘占用 | 🟢 无压力 | 指标 3.86 GiB / 日志 256 MiB / 追踪 0.4 MiB，合计约 4.1 GiB；PVC 配额普遍 <5% 使用率 |
-| **保留窗口统一** | 🟢 **已修复** | **L/M/T 三层全部 5 天（120h）**：Prometheus `5d`、Alertmanager `120h`、Loki compactor `120h`（改前为**无限**）、Tempo `block_retention 120h`（改前 48h）。MinIO 兜底 `loki-chunks` ILM 7d→10d。详见 [retention-unification-5d.md](/root/retention-unification-5d.md) |
+| **保留窗口统一** | 🟢 **已修复** | **L/M/T 三层全部 5 天（120h）**：Prometheus `5d`、Alertmanager `120h`、Loki compactor `120h`（改前为**无限**）、Tempo `block_retention 120h`（改前 48h）。MinIO 兜底 `loki-chunks` ILM 7d→10d。详见 [retention-unification-5d.md](retention-unification-5d.md) |
 | 主机监控 | 🟡 半残 | Zabbix 6.0.42 服务正常、444 主机/17900 items 入库，但**其余 5 节点 Zabbix Agent 端口 10050 全部关闭**，实际只监控本机 |
 | 遗留隐患 | 🟡 | 剩余待处理：Tempo 空转（P0-2）、AlertmanagerConfig 未使用、`repeat_interval: 12h` 偏长、S3 凭据明文、MinIO 桶未开 versioning |
 

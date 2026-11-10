@@ -1,0 +1,91 @@
+NAME                              SIZE TYPE FSTYPE      MOUNTPOINTS DISC-GRAN DISC-MAX
+nvme0n1                         931.5G disk                              512B       2T
+├─nvme0n1p1                      1007K part                              512B       2T
+├─nvme0n1p2                         1G part vfat        /boot/efi        512B       2T
+└─nvme0n1p3                     930.5G part LVM2_member                  512B       2T
+  ├─pve-swap                        8G lvm  swap        [SWAP]           512B       2T
+  ├─pve-root                       96G lvm  ext4        /                512B       2T
+  ├─pve-data_tmeta                8.1G lvm                               512B       2T
+  │ └─pve-data-tpool            794.3G lvm                               512B       2T
+  │   ├─pve-data                794.3G lvm                               512B       2T
+  │   ├─pve-vm--101--disk--1      200G lvm                                64K      64M
+  │   ├─pve-vm--100--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--116--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--116--disk--0       80G lvm                                64K      64M
+  │   ├─pve-vm--117--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--117--disk--0       80G lvm                                64K      64M
+  │   ├─pve-vm--118--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--118--disk--0       80G lvm                                64K      64M
+  │   ├─pve-vm--119--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--119--disk--0       50G lvm                                64K      64M
+  │   ├─pve-vm--9000--cloudinit     4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--121--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--121--disk--0       50G lvm                                64K      64M
+  │   ├─pve-vm--122--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--122--disk--0       60G lvm                                64K      64M
+  │   ├─pve-vm--123--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--123--disk--0       60G lvm                                64K      64M
+  │   ├─pve-vm--124--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--124--disk--0       60G lvm                                64K      64M
+  │   ├─pve-vm--120--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--120--disk--0       40G lvm                                64K      64M
+  │   ├─pve-vm--118--disk--1       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--117--disk--1       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--116--disk--1       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--118--disk--2       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--116--disk--2       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--117--disk--2       30G lvm  LVM2_member                   64K      64M
+  │   ├─pve-vm--600--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--600--disk--0       40G lvm                                64K      64M
+  │   ├─pve-vm--9010--cloudinit     4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--125--disk--0        4M lvm                                64K      64M
+  │   ├─pve-vm--127--disk--0        4M lvm                                64K      64M
+  │   ├─pve-vm--126--disk--0        4M lvm                                64K      64M
+  │   ├─pve-vm--125--disk--1       40G lvm                                64K      64M
+  │   ├─pve-vm--127--disk--1       40G lvm                                64K      64M
+  │   ├─pve-vm--126--disk--1       40G lvm                                64K      64M
+  │   ├─pve-vm--125--cloudinit      4M lvm  iso9660                       64K      64M
+  │   ├─pve-vm--127--cloudinit      4M lvm  iso9660                       64K      64M
+  │   └─pve-vm--126--cloudinit      4M lvm  iso9660                       64K      64M
+  └─pve-data_tdata              794.3G lvm                               512B       2T
+    └─pve-data-tpool            794.3G lvm                               512B       2T
+      ├─pve-data                794.3G lvm                               512B       2T
+      ├─pve-vm--101--disk--1      200G lvm                                64K      64M
+      ├─pve-vm--100--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--116--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--116--disk--0       80G lvm                                64K      64M
+      ├─pve-vm--117--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--117--disk--0       80G lvm                                64K      64M
+      ├─pve-vm--118--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--118--disk--0       80G lvm                                64K      64M
+      ├─pve-vm--119--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--119--disk--0       50G lvm                                64K      64M
+      ├─pve-vm--9000--cloudinit     4M lvm  iso9660                       64K      64M
+      ├─pve-vm--121--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--121--disk--0       50G lvm                                64K      64M
+      ├─pve-vm--122--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--122--disk--0       60G lvm                                64K      64M
+      ├─pve-vm--123--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--123--disk--0       60G lvm                                64K      64M
+      ├─pve-vm--124--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--124--disk--0       60G lvm                                64K      64M
+      ├─pve-vm--120--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--120--disk--0       40G lvm                                64K      64M
+      ├─pve-vm--118--disk--1       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--117--disk--1       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--116--disk--1       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--118--disk--2       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--116--disk--2       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--117--disk--2       30G lvm  LVM2_member                   64K      64M
+      ├─pve-vm--600--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--600--disk--0       40G lvm                                64K      64M
+      ├─pve-vm--9010--cloudinit     4M lvm  iso9660                       64K      64M
+      ├─pve-vm--125--disk--0        4M lvm                                64K      64M
+      ├─pve-vm--127--disk--0        4M lvm                                64K      64M
+      ├─pve-vm--126--disk--0        4M lvm                                64K      64M
+      ├─pve-vm--125--disk--1       40G lvm                                64K      64M
+      ├─pve-vm--127--disk--1       40G lvm                                64K      64M
+      ├─pve-vm--126--disk--1       40G lvm                                64K      64M
+      ├─pve-vm--125--cloudinit      4M lvm  iso9660                       64K      64M
+      ├─pve-vm--127--cloudinit      4M lvm  iso9660                       64K      64M
+      └─pve-vm--126--cloudinit      4M lvm  iso9660                       64K      64M

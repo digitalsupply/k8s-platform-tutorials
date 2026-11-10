@@ -1,0 +1,4 @@
+proxmox_endpoint  = "https://127.0.0.1:8006/"
+proxmox_api_token = "<redacted-proxmox-api-token>"
+proxmox_node      = "teacher"
+template_vmid     = 9010

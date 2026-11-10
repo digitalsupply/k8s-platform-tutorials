@@ -1,0 +1,93 @@
+---
+# Post-provisioning configuration for the openEuler cloud-init VMs.
+# Terraform handles VM creation + first-boot cloud-init; Ansible enforces
+# the final, repeatable desired state.
+- name: Configure openEuler cloud VMs
+  hosts: openeuler
+  become: true
+  gather_facts: true
+
+  vars:
+    admin_user: hao
+    admin_groups:
+      - wheel
+      - adm
+      - systemd-journal
+    admin_pubkeys:
+      - "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIq7pE402rR9BZxVu1uOTxO2D5iMW9Q0hQq9fnKKXI41 poly@gmail.com"
+
+  tasks:
+    - name: Ensure admin user exists with sudo groups
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        groups: "{{ admin_groups }}"
+        append: true
+        shell: /bin/bash
+
+    - name: Ensure passwordless sudo for the admin user
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/90-{{ admin_user }}"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: "visudo -cf %s"
+
+    - name: Ensure the admin SSH public keys are authorized
+      ansible.builtin.authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ item }}"
+        state: present
+        exclusive: false
+      loop: "{{ admin_pubkeys }}"
+
+    # --- Exact short hostname (cloud-init set the FQDN, e.g. web01.local) ---
+    - name: Set the short hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+        use: systemd
+
+    - name: Point local hostname resolution at the short name
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s'
+        line: "127.0.1.1 {{ inventory_hostname }}"
+        state: present
+
+    - name: Normalize the 127.0.0.1 hostname line
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.0\.1\s+.*'
+        line: "127.0.0.1 {{ inventory_hostname }}.local {{ inventory_hostname }}"
+        state: present
+
+    # --- Key-only SSH: no password authentication ---
+    - name: Harden sshd (key-only authentication)
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/99-keyonly.conf
+        content: |
+          # Managed by Ansible - key-only authentication
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          ChallengeResponseAuthentication no
+          PubkeyAuthentication yes
+        owner: root
+        group: root
+        mode: "0600"
+        validate: "sshd -t -f %s"
+      notify: Restart sshd
+
+    # --- Guest agent (baked into the golden template, keep it running) ---
+    - name: Ensure qemu-guest-agent is enabled and running
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+      failed_when: false
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

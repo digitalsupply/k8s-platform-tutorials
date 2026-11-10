@@ -1,0 +1,82 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: cicd
+  labels:
+    app.kubernetes.io/part-of: openwebui-cicd
+spec:
+  description: Clone the application repository from GitLab into the shared workspace
+  params:
+    - name: url
+      type: string
+      description: Full http(s) URL of the repository
+    - name: revision
+      type: string
+      default: main
+    - name: subdirectory
+      type: string
+      default: source
+    - name: depth
+      type: string
+      default: "1"
+    - name: deleteExisting
+      type: string
+      default: "true"
+  workspaces:
+    - name: output
+  steps:
+    - name: clone
+      image: alpine/git:v2.45.2
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-auth
+              key: password
+        - name: GIT_URL
+          value: "$(params.url)"
+        - name: GIT_REVISION
+          value: "$(params.revision)"
+        - name: GIT_DEPTH
+          value: "$(params.depth)"
+        - name: DELETE_EXISTING
+          value: "$(params.deleteExisting)"
+        - name: TARGET
+          value: "$(workspaces.output.path)/$(params.subdirectory)"
+      script: |
+        #!/bin/sh
+        set -eu
+
+        if [ "${DELETE_EXISTING}" = "true" ]; then
+          rm -rf "$TARGET"
+        fi
+
+        # Split "http://host[:port]/group/project.git" into host and path.
+        NO_SCHEME="${GIT_URL#*://}"
+        HOST_PART="${NO_SCHEME%%/*}"
+        PATH_PART="${NO_SCHEME#*/}"
+        AUTH_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@${HOST_PART}/${PATH_PART}"
+
+        # The revision may be a branch/tag OR a raw commit SHA (CI passes
+        # CI_COMMIT_SHA). `git clone -b <sha>` only accepts branches/tags, so we
+        # always shallow-clone the default branch (cheap) and then try to fetch
+        # the exact commit on top.
+        git clone --depth 1 --no-single-branch "$AUTH_URL" "$TARGET"
+        cd "$TARGET"
+
+        git fetch --depth 1 origin "$GIT_REVISION" 2>/dev/null \
+          && git checkout -q FETCH_HEAD \
+          || {
+              # Not fetchable by SHA (server-side restriction): fall back to
+              # resolving the revision among the refs we already have.
+              git checkout -q "$GIT_REVISION" 2>/dev/null \
+                || git checkout -q "origin/$GIT_REVISION"
+            }
+
+        echo "Cloned commit: $(git rev-parse --short HEAD) (${GIT_REVISION})"

@@ -1,0 +1,38 @@
+apiVersion: csi.ceph.io/v1
+kind: Driver
+metadata:
+  annotations:
+    csi.ceph.io/image-refresh: '1794228955'
+  name: rbd.csi.ceph.com
+  namespace: ceph-csi-rbd
+spec:
+  attachRequired: true
+  cephFsClientType: kernel
+  controllerPlugin:
+    hostNetwork: false
+    privileged: false
+    replicas: 1
+    serviceAccountName: rbd-csi-ceph-com-ctrlplugin-sa
+    tolerations: []
+    volumes: []
+  deployCsiAddons: false
+  enableFencing: false
+  fsGroupPolicy: File
+  fuseMountOptions: {}
+  generateOMapInfo: false
+  grpcTimeout: 30
+  imageSet:
+    name: rbd-csi-images
+  kernelMountOptions: {}
+  log:
+    rotation:
+      maxFiles: 7
+      maxLogSize: 10G
+      periodicity: daily
+    verbosity: 0
+  nodePlugin:
+    imagePullPolicy: IfNotPresent
+    serviceAccountName: rbd-csi-ceph-com-nodeplugin-sa
+    tolerations: []
+    volumes: []
+  snapshotPolicy: none

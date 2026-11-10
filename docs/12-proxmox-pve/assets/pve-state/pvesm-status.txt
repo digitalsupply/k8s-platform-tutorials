@@ -1,0 +1,3 @@
+Name             Type     Status           Total            Used       Available        %
+local             dir     active        98497780        29093276        64354956   29.54%
+local-lvm     lvmthin     active       832888832       546541651       286347180   65.62%

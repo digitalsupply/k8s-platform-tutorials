@@ -54,6 +54,38 @@ nft list ruleset | grep -i cilium
 - Cilium LB/NodePort；
 - 本机对自身 IP 的访问路径。
 
+### 4. GitLab 仓库访问的三种凭据
+
+| 方式 | 凭据 | 适用 |
+|---|---|---|
+| HTTPS + PAT | 用户名 + Personal Access Token | 临时/脚本/CI |
+| SSH Key | 私钥 + 公钥注册 | 开发者本机、长期 |
+| Deploy Token / Project Access Token | 项目级 token | 只读部署、ArgoCD |
+
+关键区别：
+
+- **PAT 是用户身份**，权限跟人走；Deploy Token 是项目身份，人走了仍然有效；
+- **Deploy Token 默认只读**（`read_repository`），要推代码必须显式给 `write_repository`；
+- ArgoCD 拉私有仓库用 repository Secret，`password` 填 PAT/Deploy Token，不是登录密码。
+
+### 5. ArgoCD 仓库凭据
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: platform-gitops-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  type: git
+  url: http://192.168.67.201/digitalsupply/platform-gitops.git
+  username: <USERNAME>
+  password: <PAT-OR-DEPLOY-TOKEN>
+  insecure: "true"      # 自签 HTTP/HTTPS 时
+```
+
 ## 踩坑点
 
 ### 坑 1：只改 `external_url`
@@ -80,6 +112,23 @@ Cilium 规则可能承载 NodePort/LB/策略功能。清理前要备份，
 
 GitLab reconfigure 会重启多个服务；端口切换期间可能短暂不可用。
 不要在业务高峰期操作。
+
+### 坑 6：把 PAT 当登录密码用
+
+HTTPS clone 时 `Username` 可以是任意非空值（建议填真实用户名），`Password` 填 PAT；
+填 GitLab 登录密码会 401。CI 里不要把 PAT 写进 `.git/config` 或命令行参数，
+用 `credential.helper store` 也有落盘风险。
+
+### 坑 7：Deploy Token 权限不足
+
+只给 `read_repository` 的 Deploy Token 只能拉取；ArgoCD 如果还要回写 GitOps 仓，
+需要 `write_repository`，或者改用 Project Access Token。
+
+### 坑 8：HTTP 的 GitLab 与 `insecure` 标记
+
+自建 GitLab 常用 HTTP 或自签 HTTPS。ArgoCD 仓库 Secret 必须带 `insecure: "true"`，
+否则报 `x509: certificate signed by unknown authority` 或 `server certificate verification failed`。
+但这只应用于内网实验环境，生产应配受信任证书。
 
 ## 修复关键
 
@@ -138,6 +187,7 @@ GitOps 仓（overlays/prod）→ ArgoCD → K8s 滚动发布
 | [scripts/check_ports.py](scripts/check_ports.py) | 只读检查端口监听、iptables/nftables、HTTP 探测、GitLab 服务状态 |
 | [assets/gitlab-runner-deployment.yaml](assets/gitlab-runner-deployment.yaml) | 当前 GitLab Runner Deployment（已脱敏） |
 | [assets/gitlab-runner-config.yaml](assets/gitlab-runner-config.yaml) | 当前 runner `runners.toml` ConfigMap（token 已脱敏） |
+| [assets/argocd-repo-secret.example.yaml](assets/argocd-repo-secret.example.yaml) | ArgoCD 仓库凭据示例（PAT/Deploy Token） |
 
 ## 文档列表
 
@@ -148,5 +198,6 @@ GitOps 仓（overlays/prod）→ ArgoCD → K8s 滚动发布
 | [gitlab-port-80-troubleshooting.md](gitlab-port-80-troubleshooting.md) | 8088→80 的完整排查时间线 |
 | [gitlab-fix-port80.md](gitlab-fix-port80.md) | 清理 Cilium 遗留规则并测试 80 |
 | [gitlab-port80-cleanup-final.md](gitlab-port80-cleanup-final.md) | 最终方案：80→8088 重定向与清理总结 |
+| [notes/gitlab-repo-access-tutorial-2026-11-09.md](notes/gitlab-repo-access-tutorial-2026-11-09.md) | SSH / HTTPS PAT / Deploy Token、ArgoCD 凭据与排错 |
 
 > 安装文档中的初始 root 密码已脱敏；实际部署请立即修改默认密码。

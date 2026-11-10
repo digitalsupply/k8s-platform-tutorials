@@ -1,0 +1,10 @@
+apiVersion: csi.ceph.io/v1
+kind: CephConnection
+metadata:
+  name: ceph-connection
+  namespace: ceph-csi-rbd
+spec:
+  monitors:
+  - 10.0.0.31:6789
+  - 10.0.0.41:6789
+  - 10.0.0.51:6789

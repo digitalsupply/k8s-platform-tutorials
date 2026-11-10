@@ -1,0 +1,813 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    ceph.conf: |
+      [global]
+        auth_cluster_required = cephx
+        auth_service_required = cephx
+        auth_client_required = cephx
+    keyring: ""
+  kind: ConfigMap
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:/ConfigMap:ceph-csi-rbd/ceph-config
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: nodeplugin
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-config
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311982"
+    uid: 6854d9f2-2427-4191-8406-03009988006e
+- apiVersion: v1
+  data:
+    cluster-mapping.json: '[]'
+    config.json: '[{"clusterID":"594e535e-d82c-11f0-afa7-bc24112b746f","monitors":["10.0.0.31:6789","10.0.0.41:6789","10.0.0.51:6789"]}]'
+  kind: ConfigMap
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:/ConfigMap:ceph-csi-rbd/ceph-csi-config
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: nodeplugin
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-config
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311981"
+    uid: 809401d1-8fe4-4bd9-b334-2d565a5f26cd
+- apiVersion: v1
+  data:
+    config.json: '{}'
+  kind: ConfigMap
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:/ConfigMap:ceph-csi-rbd/ceph-csi-encryption-kms-config
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: nodeplugin
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-encryption-kms-config
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311983"
+    uid: 80393957-416b-46b3-82ec-651016cbbf5c
+- apiVersion: v1
+  data:
+    ca.crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIDBTCCAe2gAwIBAgIIAWvzpydun+4wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+      AxMKa3ViZXJuZXRlczAeFw0yNjAxMTYxMjUwMjBaFw0zNjAxMTQxMjU1MjBaMBUx
+      EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+      AoIBAQDDzGrETONGsxxr8+t49queV8757OoAXW+B/781OA+m1DAQ1yO8QvXB5RIN
+      bbYDYnZPBw3YV6KC5vQt8g4O8i0I5w4cB7TDbu5nrS5WFqsvGw0Rle5pirD5RXHx
+      9eYFUKxIsnR2CpXk2hgMM0ypwTeMZ8TeRnqODNzPZdcUJ5visDYwXHY0whMTQOyH
+      1ebdjzEMqQwU++9Gr9xVfJxOXZaxu1jXARNxJmWqoQbiLvRDKkll+pG25vJgyJGx
+      ekEc6/asbn8N9TR3SvdEC3ZpxiC3B+U3k64vP5wuVLIkBp7NwGyFDO7BTNBhoiVf
+      pSlEtqjCO/xxwI9jdzHwC2yg70CVAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+      BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQlQmwclYSJo3ah2ichfwyl5Bzk4TAV
+      BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQCUHD49pjsj
+      GR1oybDIJLQ8q9QBL+ZH8E9tsAIWO01u9BvhAxsVrYHEfWXQq399IZxdUPozih4Q
+      6D/3uLijfYzx2YF2uwYySvJ/f7kYhYJT3uBUBh8sR0tgwsTwWgDg+uULWicyK29u
+      oE63OhC2eYTxjiakDvPNInNAKsa3Td+E2qSC2duYXyh6Oru0RlzM3sWCbUj3sEhQ
+      wsODjLGCmuSTIAMioPpTmdC6vBkKwKUiXA5zHDHX0w+oH1hW5fsqz64n66tjtwkx
+      FiA8kiUUA6x6D57WHv1DhUGl/nNjsr6GwKxQiHu4xzLBSRNJlzUgjP6+j5pST0Y/
+      u4PEERrWbTJc
+      -----END CERTIFICATE-----
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubernetes.io/description: Contains a CA bundle that can be used to verify the
+        kube-apiserver when using internal endpoints such as the internal service
+        IP or kubernetes.default.svc. No other usage is guaranteed across distributions
+        of Kubernetes clusters.
+    creationTimestamp: "2026-04-03T06:31:54Z"
+    name: kube-root-ca.crt
+    namespace: ceph-csi-rbd
+    resourceVersion: "3565359"
+    uid: 1677771a-28a3-4db0-b520-f5f560cdb554
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:apps/Deployment:ceph-csi-rbd/ceph-csi-rbd-provisioner
+      deployment.kubernetes.io/revision: "6"
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    generation: 8
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: provisioner
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-provisioner
+    namespace: ceph-csi-rbd
+    resourceVersion: "58315655"
+    uid: 98aa4a33-d5ae-4be2-a03a-399c37bfd231
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: ceph-csi-rbd
+        component: provisioner
+        release: ceph-csi-rbd
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 50%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2026-11-08T11:36:19+08:00"
+        labels:
+          app: ceph-csi-rbd
+          chart: ceph-csi-rbd-3.18.2
+          component: provisioner
+          heritage: Helm
+          release: ceph-csi-rbd
+      spec:
+        containers:
+        - args:
+          - --nodeid=$(NODE_ID)
+          - --type=rbd
+          - --controllerserver=true
+          - --automaxprocs=true
+          - --pidlimit=-1
+          - --endpoint=$(CSI_ENDPOINT)
+          - --csi-addons-endpoint=$(CSI_ADDONS_ENDPOINT)
+          - --v=5
+          - --drivername=$(DRIVER_NAME)
+          - --rbdhardmaxclonedepth=8
+          - --rbdsoftmaxclonedepth=4
+          - --maxsnapshotsonimage=450
+          - --minsnapshotsonimage=250
+          - --setmetadata=true
+          - --logslowopinterval=30s
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: DRIVER_NAME
+            value: rbd.csi.ceph.com
+          - name: NODE_ID
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: CSI_ENDPOINT
+            value: unix:///csi/csi-provisioner.sock
+          - name: CSI_ADDONS_ENDPOINT
+            value: unix:///csi/csi-addons.sock
+          image: quay.io/cephcsi/cephcsi:v3.18.2-rocky9
+          imagePullPolicy: IfNotPresent
+          name: csi-rbdplugin
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+          - mountPath: /dev
+            name: host-dev
+          - mountPath: /sys
+            name: host-sys
+          - mountPath: /lib/modules
+            name: lib-modules
+            readOnly: true
+          - mountPath: /etc/ceph-csi-config/
+            name: ceph-csi-config
+          - mountPath: /etc/ceph/
+            name: ceph-config
+          - mountPath: /etc/ceph-csi-encryption-kms-config/
+            name: ceph-csi-encryption-kms-config
+          - mountPath: /tmp/csi/keys
+            name: keys-tmp-dir
+          - mountPath: /run/secrets/tokens
+            name: oidc-token
+            readOnly: true
+        - args:
+          - --csi-address=$(ADDRESS)
+          - --v=1
+          - --timeout=60s
+          - --leader-election=true
+          - --retry-interval-start=500ms
+          - --default-fstype=ext4
+          - --extra-create-metadata=true
+          - --automaxprocs=true
+          - --prevent-volume-mode-conversion=true
+          - --immediate-topology=false
+          env:
+          - name: ADDRESS
+            value: unix:///csi/csi-provisioner.sock
+          image: registry.k8s.io/sig-storage/csi-provisioner:v6.3.0
+          imagePullPolicy: IfNotPresent
+          name: csi-provisioner
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        - args:
+          - --v=1
+          - --csi-address=$(ADDRESS)
+          - --timeout=60s
+          - --leader-election
+          - --retry-interval-start=500ms
+          - --handle-volume-inuse-error=false
+          - --feature-gates=RecoverVolumeExpansionFailure=true
+          - --automaxprocs=true
+          env:
+          - name: ADDRESS
+            value: unix:///csi/csi-provisioner.sock
+          image: registry.k8s.io/sig-storage/csi-resizer:v2.2.1
+          imagePullPolicy: IfNotPresent
+          name: csi-resizer
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        - args:
+          - --csi-address=$(ADDRESS)
+          - --v=1
+          - --timeout=60s
+          - --leader-election=true
+          - --extra-create-metadata=true
+          - --automaxprocs=true
+          - --feature-gates=CSIVolumeGroupSnapshot=false
+          env:
+          - name: ADDRESS
+            value: unix:///csi/csi-provisioner.sock
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.6.0
+          imagePullPolicy: IfNotPresent
+          name: csi-snapshotter
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        - args:
+          - --automaxprocs=true
+          - --v=1
+          - --csi-address=$(ADDRESS)
+          - --leader-election=true
+          - --retry-interval-start=500ms
+          - --default-fstype=ext4
+          env:
+          - name: ADDRESS
+            value: unix:///csi/csi-provisioner.sock
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.13.0
+          imagePullPolicy: IfNotPresent
+          name: csi-attacher
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        - args:
+          - --type=controller
+          - --v=5
+          - --drivername=$(DRIVER_NAME)
+          - --drivernamespace=$(DRIVER_NAMESPACE)
+          - --setmetadata=true
+          env:
+          - name: DRIVER_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: DRIVER_NAME
+            value: rbd.csi.ceph.com
+          image: quay.io/cephcsi/cephcsi:v3.18.2-rocky9
+          imagePullPolicy: IfNotPresent
+          name: csi-rbdplugin-controller
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/ceph-csi-config/
+            name: ceph-csi-config
+          - mountPath: /tmp/csi/keys
+            name: keys-tmp-dir
+          - mountPath: /etc/ceph/
+            name: ceph-config
+        - args:
+          - --type=liveness
+          - --endpoint=$(CSI_ENDPOINT)
+          - --metricsport=8080
+          - --metricspath=/metrics
+          - --polltime=60s
+          - --timeout=3s
+          env:
+          - name: CSI_ENDPOINT
+            value: unix:///csi/csi-provisioner.sock
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          image: quay.io/cephcsi/cephcsi:v3.18.2-rocky9
+          imagePullPolicy: IfNotPresent
+          name: liveness-prometheus
+          ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        dnsPolicy: ClusterFirst
+        priorityClassName: system-cluster-critical
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: ceph-csi-rbd-provisioner
+        serviceAccountName: ceph-csi-rbd-provisioner
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir:
+            medium: Memory
+          name: socket-dir
+        - hostPath:
+            path: /dev
+            type: ""
+          name: host-dev
+        - hostPath:
+            path: /sys
+            type: ""
+          name: host-sys
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+        - configMap:
+            defaultMode: 420
+            name: ceph-config
+          name: ceph-config
+        - configMap:
+            defaultMode: 420
+            name: ceph-csi-config
+          name: ceph-csi-config
+        - configMap:
+            defaultMode: 420
+            name: ceph-csi-encryption-kms-config
+          name: ceph-csi-encryption-kms-config
+        - emptyDir:
+            medium: Memory
+          name: keys-tmp-dir
+        - name: oidc-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                audience: ceph-csi-kms
+                expirationSeconds: 3600
+                path: oidc-token
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-11-08T23:50:35Z"
+      lastUpdateTime: "2026-11-08T23:50:35Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-04-03T06:58:14Z"
+      lastUpdateTime: "2026-11-09T10:30:55Z"
+      message: ReplicaSet "ceph-csi-rbd-provisioner-646b4b65b6" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 8
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:apps/DaemonSet:ceph-csi-rbd/ceph-csi-rbd-nodeplugin
+      deprecated.daemonset.template.generation: "5"
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    generation: 5
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: nodeplugin
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-nodeplugin
+    namespace: ceph-csi-rbd
+    resourceVersion: "58315720"
+    uid: 416ca763-a82b-492e-a9b1-a970e08fae6c
+  spec:
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: ceph-csi-rbd
+        component: nodeplugin
+        release: ceph-csi-rbd
+    template:
+      metadata:
+        labels:
+          app: ceph-csi-rbd
+          chart: ceph-csi-rbd-3.18.2
+          component: nodeplugin
+          heritage: Helm
+          release: ceph-csi-rbd
+      spec:
+        containers:
+        - args:
+          - --nodeid=$(NODE_ID)
+          - --pluginpath=/var/lib/kubelet/plugins
+          - --stagingpath=/var/lib/kubelet/plugins/kubernetes.io/csi/
+          - --type=rbd
+          - --nodeserver=true
+          - --automaxprocs=true
+          - --pidlimit=-1
+          - --endpoint=$(CSI_ENDPOINT)
+          - --csi-addons-endpoint=$(CSI_ADDONS_ENDPOINT)
+          - --v=5
+          - --drivername=$(DRIVER_NAME)
+          - --enable-read-affinity=false
+          - --logslowopinterval=30s
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: DRIVER_NAME
+            value: rbd.csi.ceph.com
+          - name: NODE_ID
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: CSI_ENDPOINT
+            value: unix:///csi/csi.sock
+          - name: CSI_ADDONS_ENDPOINT
+            value: unix:///csi/csi-addons.sock
+          image: quay.io/cephcsi/cephcsi:v3.18.2-rocky9
+          imagePullPolicy: IfNotPresent
+          name: csi-rbdplugin
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              add:
+              - SYS_ADMIN
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+          - mountPath: /dev
+            name: host-dev
+          - mountPath: /run/mount
+            name: host-mount
+          - mountPath: /sys
+            name: host-sys
+          - mountPath: /etc/selinux
+            name: etc-selinux
+            readOnly: true
+          - mountPath: /lib/modules
+            name: lib-modules
+            readOnly: true
+          - mountPath: /etc/ceph-csi-config/
+            name: ceph-csi-config
+          - mountPath: /etc/ceph/
+            name: ceph-config
+          - mountPath: /etc/ceph-csi-encryption-kms-config/
+            name: ceph-csi-encryption-kms-config
+          - mountPath: /var/lib/kubelet/plugins
+            mountPropagation: Bidirectional
+            name: plugin-dir
+          - mountPath: /var/lib/kubelet/pods
+            mountPropagation: Bidirectional
+            name: mountpoint-dir
+          - mountPath: /tmp/csi/keys
+            name: keys-tmp-dir
+          - mountPath: /var/log/ceph
+            name: ceph-logdir
+          - mountPath: /run/secrets/tokens
+            name: oidc-token
+            readOnly: true
+        - args:
+          - --v=5
+          - --csi-address=/csi/csi.sock
+          - --kubelet-registration-path=/var/lib/kubelet/plugins/rbd.csi.ceph.com/csi.sock
+          - --automaxprocs=true
+          env:
+          - name: KUBE_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.0
+          imagePullPolicy: IfNotPresent
+          name: driver-registrar
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: true
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+          - mountPath: /registration
+            name: registration-dir
+        - args:
+          - --type=liveness
+          - --endpoint=$(CSI_ENDPOINT)
+          - --metricsport=8080
+          - --metricspath=/metrics
+          - --polltime=60s
+          - --timeout=3s
+          env:
+          - name: CSI_ENDPOINT
+            value: unix:///csi/csi.sock
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          image: quay.io/cephcsi/cephcsi:v3.18.2-rocky9
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: liveness-prometheus
+          ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: true
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true
+        hostPID: true
+        priorityClassName: system-node-critical
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: ceph-csi-rbd-nodeplugin
+        serviceAccountName: ceph-csi-rbd-nodeplugin
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - hostPath:
+            path: /var/lib/kubelet/plugins/rbd.csi.ceph.com
+            type: DirectoryOrCreate
+          name: socket-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+          name: registration-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins
+            type: Directory
+          name: plugin-dir
+        - hostPath:
+            path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+          name: mountpoint-dir
+        - hostPath:
+            path: /var/log/ceph
+            type: DirectoryOrCreate
+          name: ceph-logdir
+        - hostPath:
+            path: /dev
+            type: ""
+          name: host-dev
+        - hostPath:
+            path: /run/mount
+            type: ""
+          name: host-mount
+        - hostPath:
+            path: /sys
+            type: ""
+          name: host-sys
+        - hostPath:
+            path: /etc/selinux
+            type: ""
+          name: etc-selinux
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+        - configMap:
+            defaultMode: 420
+            name: ceph-config
+          name: ceph-config
+        - configMap:
+            defaultMode: 420
+            name: ceph-csi-config
+          name: ceph-csi-config
+        - configMap:
+            defaultMode: 420
+            name: ceph-csi-encryption-kms-config
+          name: ceph-csi-encryption-kms-config
+        - emptyDir:
+            medium: Memory
+          name: keys-tmp-dir
+        - name: oidc-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                audience: ceph-csi-kms
+                expirationSeconds: 3600
+                path: oidc-token
+    updateStrategy:
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+      type: RollingUpdate
+  status:
+    currentNumberScheduled: 3
+    desiredNumberScheduled: 3
+    numberAvailable: 3
+    numberMisscheduled: 0
+    numberReady: 3
+    observedGeneration: 5
+    updatedNumberScheduled: 3
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:/ServiceAccount:ceph-csi-rbd/ceph-csi-rbd-nodeplugin
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: nodeplugin
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-nodeplugin
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311979"
+    uid: b02c4e70-d785-46e1-903b-eb5b88ba42ff
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:/ServiceAccount:ceph-csi-rbd/ceph-csi-rbd-provisioner
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: provisioner
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-provisioner
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311978"
+    uid: 4afa6dc7-1e77-47a8-9531-d8895705a3ab
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: "2026-04-03T06:31:54Z"
+    name: default
+    namespace: ceph-csi-rbd
+    resourceVersion: "3565360"
+    uid: 7e4b9ecb-2457-423f-bba3-70ab32e2458a
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:rbac.authorization.k8s.io/Role:ceph-csi-rbd/ceph-csi-rbd-provisioner
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: provisioner
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-provisioner
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311989"
+    uid: 2d6b9bf7-58e4-4a3d-87a2-ceaf10462ae5
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - watch
+    - list
+    - delete
+    - update
+    - create
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: platform-ceph-csi:rbac.authorization.k8s.io/RoleBinding:ceph-csi-rbd/ceph-csi-rbd-provisioner
+      meta.helm.sh/release-name: ceph-csi-rbd
+      meta.helm.sh/release-namespace: ceph-csi-rbd
+    creationTimestamp: "2026-04-03T06:32:33Z"
+    labels:
+      app: ceph-csi-rbd
+      app.kubernetes.io/managed-by: Helm
+      chart: ceph-csi-rbd-3.18.2
+      component: provisioner
+      heritage: Helm
+      release: ceph-csi-rbd
+    name: ceph-csi-rbd-provisioner
+    namespace: ceph-csi-rbd
+    resourceVersion: "58311990"
+    uid: 9958a9c3-4caa-41e0-b14e-9277ca0a0003
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: ceph-csi-rbd-provisioner
+  subjects:
+  - kind: ServiceAccount
+    name: ceph-csi-rbd-provisioner
+    namespace: ceph-csi-rbd
+kind: List
+metadata:
+  resourceVersion: ""

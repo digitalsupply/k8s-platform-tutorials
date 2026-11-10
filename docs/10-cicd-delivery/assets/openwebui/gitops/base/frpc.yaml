@@ -1,0 +1,135 @@
+---
+# frpc client: dials OUT to the public VPS (49.233.210.176:7000) and exposes the
+# in-cluster Open WebUI over the internet through it.
+#
+# WHY: Cloudflare Tunnel was tried first and abandoned - the cluster's egress to
+# Cloudflare edge on port 7844 is heavily throttled (about 25% success, no
+# stable address), so it dropped connections constantly. The VPS has a normal
+# public route and the cluster dials OUT, which is the only reliable direction.
+#
+# Port 80/443 are blocked by Tencent Cloud for this (un-备案) domain, so the
+# public entry point is http://www.cngpt.ccwu.cc:8089
+apiVersion: v1
+kind: Secret
+metadata:
+  name: frp-token
+  namespace: open-webui
+  labels:
+    app.kubernetes.io/name: open-webui
+    app.kubernetes.io/part-of: openwebui-exposure
+type: Opaque
+stringData:
+  token: "<redacted-frp-token>"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frpc-config
+  namespace: open-webui
+  labels:
+    app.kubernetes.io/name: open-webui
+    app.kubernetes.io/part-of: openwebui-exposure
+data:
+  frpc.toml: |
+    serverAddr = "49.233.210.176"
+    serverPort = 7000
+
+    auth.method = "token"
+    auth.token = "<redacted-frp-token>"
+
+    transport.tcpMux = true
+    transport.dialServerTimeout = 30
+    transport.heartbeatInterval = 20
+    transport.heartbeatTimeout = 60
+
+    # Keep retrying instead of exiting on a failed login (default
+    # loginFailExit=true), otherwise a transient network hiccup becomes a
+    # CrashLoopBackOff.
+    loginFailExit = false
+
+    log.to = "console"
+    log.level = "info"
+
+    # Traefik already owns the cngpt.ccwu.cc host rule, so always rewrite the
+    # Host header to it. Without this the proxy would break for visitors using
+    # the www subdomain, and it decouples us from Traefik's host routing.
+    [[proxies]]
+    name = "openwebui-web"
+    type = "http"
+    localIP = "10.0.0.252"
+    localPort = 80
+    customDomains = ["www.cngpt.ccwu.cc", "cngpt.ccwu.cc"]
+    locations = ["/"]
+    hostHeaderRewrite = "cngpt.ccwu.cc"
+
+    [proxies.healthCheck]
+      type = "tcp"
+      timeoutSeconds = 10
+      intervalSeconds = 30
+      maxFailed = 3
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frpc
+  namespace: open-webui
+  labels:
+    app.kubernetes.io/name: open-webui
+    app.kubernetes.io/part-of: openwebui-exposure
+imagePullSecrets:
+  - name: harbor-pull
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frpc
+  namespace: open-webui
+  labels:
+    app.kubernetes.io/name: open-webui
+    app.kubernetes.io/part-of: openwebui-exposure
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frpc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frpc
+        app.kubernetes.io/part-of: openwebui-exposure
+    spec:
+      serviceAccountName: frpc
+      # worker01 has a stable outbound path to the VPS; pin there.
+      nodeSelector:
+        kubernetes.io/hostname: worker01
+      containers:
+        - name: frpc
+          image: 192.168.67.202:8443/openwebui/frpc:v0.61.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - -c
+            - /etc/frp/frpc.toml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/frp
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          # frpc v0.61 has no admin endpoint to probe, and killing the
+          # container while it retries the connection is counterproductive.
+          startupProbe:
+            exec:
+              command: ["/bin/sh","-c","test -x /usr/local/bin/frpc"]
+            initialDelaySeconds: 3
+            periodSeconds: 15
+            failureThreshold: 5
+      volumes:
+        - name: config
+          configMap:
+            name: frpc-config

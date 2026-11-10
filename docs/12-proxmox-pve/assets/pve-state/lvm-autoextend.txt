@@ -1,0 +1,17 @@
+# autoextend
+	# Configuration option allocation/thin_pool_chunk_size_policy.
+	#     If thin_pool_chunk_size is defined, use it. Otherwise, calculate
+	#     If thin_pool_chunk_size is defined, use it. Otherwise, calculate
+	# thin_pool_chunk_size_policy = "generic"
+	# Configuration option allocation/thin_pool_chunk_size.
+	# Configuration option activation/thin_pool_autoextend_threshold.
+	# Also see thin_pool_autoextend_percent.
+	 thin_pool_autoextend_threshold = 70
+	# thin_pool_autoextend_threshold = 100
+	# Configuration option activation/thin_pool_autoextend_percent.
+	 thin_pool_autoextend_percent = 20
+	# thin_pool_autoextend_percent = 20
+
+# monitoring
+active
+active
