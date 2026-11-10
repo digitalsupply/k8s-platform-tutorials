@@ -28,7 +28,7 @@
 | [02 Cilium / eBPF](docs/02-cilium-ebpf/README.md) | eBPF 核心概念、Calico→Cilium 全量迁移、KPR、L2 Announcements、Hubble | 排查 Service/NodePort/LB/网络策略的人 |
 | [03 GitLab / Harbor](docs/03-gitlab/README.md) | GitLab 安装/端口、账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 GitLab 运维、CI/CD、镜像仓库与权限治理的人 |
 | [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps | 做 K8s 可观测性与告警治理的人 |
-| [05 Linux](docs/05-linux/README.md) | su/sudo/PAM、在线扩容、内存分析、旧服务下线 | Linux 基础与主机层运维 |
+| [05 Linux](docs/05-linux/README.md) | 内核、用户态、文件系统、权限 UGO→capability、进程、内存、systemd、参数限制 | Linux 基础与主机层运维 |
 | [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏 | 管存储、PVC、数据库备份的人 |
 | [07 Networking](docs/07-networking/README.md) | Traefik/IngressRoute、Service/iptables、DNS、隧道、IPIP/VXLAN | 排查入口、DNS、Service 不通的人 |
 | [08 Control Plane HA](docs/08-control-plane-ha/README.md) | kube-vip、API VIP、apiserver 内存、etcd 备份/恢复 | 管控制面高可用的人 |
@@ -98,7 +98,7 @@
 | 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
 | 03 GitLab/Harbor | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/)、账号/Token/Webhook、CI-CD、Harbor 文档 |
 | 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
-| 05 Linux | [`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
+| 05 Linux | [`collect_linux_evidence.sh`](docs/05-linux/scripts/collect_linux_evidence.sh)、[`linux_lab_experiments.sh`](docs/05-linux/scripts/linux_lab_experiments.sh)、[`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
 | 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`ceph_csi_inventory.py`](docs/06-storage-ceph/scripts/ceph_csi_inventory.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`ceph-csi-operator/`](docs/06-storage-ceph/assets/ceph-csi-operator/)、[`cnpg/`](docs/06-storage-ceph/assets/cnpg/) |
 | 07 Networking | [`current-ingressroutes.yaml`](docs/07-networking/assets/current-ingressroutes.yaml)、[`current-metallb-config.yaml`](docs/07-networking/assets/current-metallb-config.yaml) |
 | 08 Control Plane | [`kube-vip-ha-daemonset-FIXED.yaml`](docs/08-control-plane-ha/assets/kube-vip-ha-daemonset-FIXED.yaml)、[`planA-switch-worker.sh`](docs/08-control-plane-ha/scripts/planA-switch-worker.sh)、[`etcd-snapshot-cronjob.yaml`](docs/08-control-plane-ha/assets/etcd-snapshot-cronjob.yaml) |

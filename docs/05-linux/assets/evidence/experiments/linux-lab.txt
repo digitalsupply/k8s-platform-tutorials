@@ -1,0 +1,159 @@
+
+
+===== 0. 环境 =====
+
+$ id; umask; uname -r; date -Is
+uid=0(root) gid=0(root) groups=0(root)
+0022
+6.8.12-15-pve
+2026-11-10T22:29:16+08:00
+
+
+===== 1. UGO / umask =====
+
+$ umask 077; touch /tmp/linux-lab.QNTxnb/umask-077; ls -l /tmp/linux-lab.QNTxnb/umask-077
+-rw------- 1 root root 0 Nov 10 22:29 /tmp/linux-lab.QNTxnb/umask-077
+
+$ umask 022; touch /tmp/linux-lab.QNTxnb/umask-022; ls -l /tmp/linux-lab.QNTxnb/umask-022
+-rw-r--r-- 1 root root 0 Nov 10 22:29 /tmp/linux-lab.QNTxnb/umask-022
+
+
+===== 2. ACL：UGO 不够用时 =====
+
+$ echo hello-acl > /tmp/linux-lab.QNTxnb/acl-file; chmod 600 /tmp/linux-lab.QNTxnb/acl-file; ls -l /tmp/linux-lab.QNTxnb/acl-file
+-rw------- 1 root root 10 Nov 10 22:29 /tmp/linux-lab.QNTxnb/acl-file
+
+$ setfacl -m u:nobody:r /tmp/linux-lab.QNTxnb/acl-file; getfacl -p /tmp/linux-lab.QNTxnb/acl-file
+# file: /tmp/linux-lab.QNTxnb/acl-file
+# owner: root
+# group: root
+user::rw-
+user:nobody:r--
+group::---
+mask::r--
+other::---
+
+
+$ su -s /bin/bash nobody -c 'cat /tmp/linux-lab.QNTxnb/acl-file'
+hello-acl
+
+
+===== 3. setuid：以文件所有者身份运行 =====
+
+$ cp /usr/bin/id /tmp/linux-lab.QNTxnb/id-suid; chmod 4755 /tmp/linux-lab.QNTxnb/id-suid; ls -l /tmp/linux-lab.QNTxnb/id-suid
+-rwsr-xr-x 1 root root 48144 Nov 10 22:29 /tmp/linux-lab.QNTxnb/id-suid
+
+$ su -s /bin/bash nobody -c '/tmp/linux-lab.QNTxnb/id-suid'
+uid=65534(nobody) gid=65534(nogroup) euid=0(root) groups=65534(nogroup)
+
+$ chmod 0755 /tmp/linux-lab.QNTxnb/id-suid; su -s /bin/bash nobody -c '/tmp/linux-lab.QNTxnb/id-suid'
+uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+
+
+===== 4. file capability：只给一项能力，而不是整个 root =====
+
+$ cp /bin/ping /tmp/linux-lab.QNTxnb/ping-cap; chmod 755 /tmp/linux-lab.QNTxnb/ping-cap; setcap cap_net_raw+ep /tmp/linux-lab.QNTxnb/ping-cap; getcap /tmp/linux-lab.QNTxnb/ping-cap
+/tmp/linux-lab.QNTxnb/ping-cap cap_net_raw=ep
+
+$ su -s /bin/bash nobody -c '/tmp/linux-lab.QNTxnb/ping-cap -c 1 127.0.0.1'
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.089 ms
+
+--- 127.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.089/0.089/0.089/0.000 ms
+
+$ setcap -r /tmp/linux-lab.QNTxnb/ping-cap; getcap /tmp/linux-lab.QNTxnb/ping-cap || true
+
+
+===== 5. 硬链接 / 符号链接 / 稀疏文件 =====
+
+$ echo data > /tmp/linux-lab.QNTxnb/file; ln /tmp/linux-lab.QNTxnb/file /tmp/linux-lab.QNTxnb/hard; ln -s /tmp/linux-lab.QNTxnb/file /tmp/linux-lab.QNTxnb/sym; ls -li /tmp/linux-lab.QNTxnb/file /tmp/linux-lab.QNTxnb/hard /tmp/linux-lab.QNTxnb/sym; stat -c '%n inode=%i links=%h size=%s blocks=%b' /tmp/linux-lab.QNTxnb/file /tmp/linux-lab.QNTxnb/hard /tmp/linux-lab.QNTxnb/sym
+1070350 -rw-r--r-- 2 root root  5 Nov 10 22:29 /tmp/linux-lab.QNTxnb/file
+1070350 -rw-r--r-- 2 root root  5 Nov 10 22:29 /tmp/linux-lab.QNTxnb/hard
+1070351 lrwxrwxrwx 1 root root 26 Nov 10 22:29 /tmp/linux-lab.QNTxnb/sym -> /tmp/linux-lab.QNTxnb/file
+/tmp/linux-lab.QNTxnb/file inode=1070350 links=2 size=5 blocks=8
+/tmp/linux-lab.QNTxnb/hard inode=1070350 links=2 size=5 blocks=8
+/tmp/linux-lab.QNTxnb/sym inode=1070351 links=1 size=26 blocks=0
+
+$ truncate -s 1G /tmp/linux-lab.QNTxnb/sparse; ls -lh /tmp/linux-lab.QNTxnb/sparse; du -h /tmp/linux-lab.QNTxnb/sparse; stat -c 'size=%s blocks=%b' /tmp/linux-lab.QNTxnb/sparse
+-rw-r--r-- 1 root root 1.0G Nov 10 22:29 /tmp/linux-lab.QNTxnb/sparse
+0	/tmp/linux-lab.QNTxnb/sparse
+size=1073741824 blocks=0
+
+
+===== 6. 页缓存与可用内存 =====
+
+$ free -m
+               total        used        free      shared  buff/cache   available
+Mem:           64028       60779        1149          26        2790        3249
+Swap:           8191        4306        3885
+
+$ dd if=/dev/zero of=/tmp/linux-lab.QNTxnb/cache bs=1M count=200 conv=fsync status=none; free -m; rm -f /tmp/linux-lab.QNTxnb/cache; sync; free -m
+               total        used        free      shared  buff/cache   available
+Mem:           64028       60773         954          26        2990        3255
+Swap:           8191        4306        3885
+               total        used        free      shared  buff/cache   available
+Mem:           64028       60780        1147          26        2791        3248
+Swap:           8191        4306        3885
+
+
+===== 7. 进程优先级与僵尸进程 =====
+
+$ sleep 30 & p=$!; renice 10 -p $p >/dev/null; ps -o pid,ppid,ni,pri,stat,comm -p $p; kill $p
+    PID    PPID  NI PRI STAT COMMAND
+2044167 2044166  10   9 SN   sleep
+
+$ ps -o pid,ppid,stat,comm -p 2044173; grep -E '^(Name|State|PPid|Uid)' /proc/2044173/status 2>/dev/null
+    PID    PPID STAT COMMAND
+2044173 2044171 Z    python3
+Name:	python3
+State:	Z (zombie)
+PPid:	2044171
+Uid:	0	0	0	0
+
+
+===== 8. cgroup v2 + systemd 资源限制 =====
+
+$ systemd-run --unit=linux-lab-memlimit-2044117 --property=MemoryMax=64M --property=CPUQuota=20% --property=TasksMax=16 /bin/sleep 30
+Running as unit: linux-lab-memlimit-2044117.service
+
+$ systemctl show linux-lab-memlimit-2044117 -p MemoryMax -p CPUQuota -p TasksMax -p LimitNOFILE -p LimitNPROC
+MemoryMax=67108864
+TasksMax=16
+LimitNOFILE=524288
+LimitNPROC=255847
+
+$ systemctl status linux-lab-memlimit-2044117 --no-pager | head -12
+● linux-lab-memlimit-2044117.service - /bin/sleep 30
+     Loaded: loaded (/run/systemd/transient/linux-lab-memlimit-2044117.service; transient)
+  Transient: yes
+     Active: active (running) since Tue 2026-11-10 22:29:18 CST; 25ms ago
+   Main PID: 2044183 (sleep)
+      Tasks: 1 (limit: 16)
+     Memory: 408.0K (max: 64.0M available: 63.6M)
+        CPU: 1ms
+     CGroup: /system.slice/linux-lab-memlimit-2044117.service
+             └─2044183 /bin/sleep 30
+
+Nov 10 22:29:18 teacher systemd[1]: Started linux-lab-memlimit-2044117.service - /bin/sleep 30.
+
+$ cat /sys/fs/cgroup/system.slice/linux-lab-memlimit-2044117.service/memory.max 2>/dev/null; cat /sys/fs/cgroup/system.slice/linux-lab-memlimit-2044117.service/cpu.max 2>/dev/null
+67108864
+20000 100000
+
+$ systemctl stop linux-lab-memlimit-2044117
+
+
+===== 9. ulimit 是进程属性，不是全局 =====
+
+$ ulimit -n; (ulimit -n 64; ulimit -n); ulimit -n
+1048576
+64
+1048576
+
+
+===== 10. 结束 =====
+
+$ date -Is
+2026-11-10T22:29:18+08:00

@@ -1,0 +1,13 @@
+=== m01 limits ===
+$ ulimit -Sn; ulimit -Hn
+1024
+524288
+$ /proc/self/limits
+Max processes             22485                22485                processes 
+Max open files            1024                 524288               files     
+$ systemctl show sshd.service -p LimitNOFILE -p LimitNPROC
+LimitNOFILE=524288
+LimitNPROC=22485
+$ sysctl fs.nr_open fs.file-max
+fs.nr_open = 1073741816
+fs.file-max = 9223372036854775807

@@ -1,0 +1,14 @@
+=== PVE host limits ===
+$ ulimit -Sn; ulimit -Hn
+1048576
+1048576
+$ /proc/self/limits
+Max processes             255847               255847               processes 
+Max open files            1048576              1048576              files     
+$ systemctl show sshd -p LimitNOFILE -p LimitNPROC
+LimitNOFILE=524288
+LimitNPROC=255847
+$ systemctl show user.slice -p LimitNOFILE
+$ sysctl fs.nr_open fs.file-max
+fs.nr_open = 1048576
+fs.file-max = 9223372036854775807

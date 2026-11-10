@@ -1,0 +1,51 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== cgroup path: /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5.scope
+--- memory.max
+67108864
+--- memory.current
+18026496
+--- memory.events
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+--- pids.max
+11788
+--- pids.current
+9
+--- cpu.max
+10000 100000
+--- cpu.stat
+usage_usec 5973368
+user_usec 4743030
+system_usec 1230337
+nr_periods 5139
+nr_throttled 33
+throttled_usec 2154222
+--- memory.stat
+anon 3592192
+file 13856768
+kernel_stack 147456
+pagetables 131072
+percpu 0
+sock 4096
+shmem 0
+file_mapped 11100160
+file_dirty 0
+file_writeback 0
+swapcached 0
+anon_thp 0
+file_thp 0
+shmem_thp 0
+inactive_anon 3588096
+active_anon 4096
+inactive_file 10031104
+active_file 3825664
+unevictable 0
+slab_reclaimable 159160
+slab_unreclaimable 104728
+slab 263888
+workingset_refault_anon 0
+workingset_refault_file 27
+workingset_activate_anon 0

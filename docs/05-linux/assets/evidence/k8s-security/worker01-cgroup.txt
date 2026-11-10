@@ -1,0 +1,39 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== kubepods cgroup tree
+Control group /kubepods.slice:
+├─kubepods-burstable.slice 
+│ ├─kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice 
+│ │ ├─cri-containerd-2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5.scope …
+│ │ │ └─2236 /usr/local/bin/frpc -c /etc/frp/frpc.toml
+│ │ └─cri-containerd-01db65bd5fbb602cd4205986d3775f481f43a4f1b6a6fcde78035cb239989ca6.scope …
+│ │   └─2028 /pause
+│ ├─kubepods-burstable-podafea0e6f_c468_49e9_b0ae_65cc49764e6a.slice 
+│ │ ├─cri-containerd-b3b530821ab83089fd992936363162770a24c056ca73911e99e5074764c2aaec.scope …
+│ │ │ ├─5793 nginx: master process nginx -g daemon off;
+│ │ │ ├─6323 nginx: worker process
+│ │ │ ├─6324 nginx: worker process
+│ │ │ ├─6325 nginx: worker process
+│ │ │ ├─6326 nginx: worker process
+│ │ │ ├─6356 nginx: worker process
+│ │ │ └─6359 nginx: worker process
+│ │ └─cri-containerd-9e7c876736492c68c39f90d2d6a72367b30cb4aebc3d2c117cdd0ce3106509e1.scope …
+│ │   └─5366 /pause
+│ ├─kubepods-burstable-podc09b8293_3549_45bc_b2f9_e5d8b1684b73.slice 
+│ │ ├─cri-containerd-c6c3e7e4b7b5f4d3c12927fd2fe5dc551900e2c9d67465ab4ea736eeb988b226.scope …
+│ │ │ └─5587 /pause
+│ │ └─cri-containerd-4b344f7ef70e22a674dc5d5c924872c1edde22eca1fa30a3012bab1bc298e1e2.scope …
+│ │   └─5806 /manager --leader-elect
+│ ├─kubepods-burstable-podeb8fba18_191d_4896_a7d1_2002713d3716.slice 
+│ │ ├─cri-containerd-f288abcbb31b0fa9a7a4055f7c9de598dbc81a2b6b970440ef4eeea5efa97389.scope …
+=== memory.max samples
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5.scope/memory.max = 67108864
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/memory.max = 67108864
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-01db65bd5fbb602cd4205986d3775f481f43a4f1b6a6fcde78035cb239989ca6.scope/memory.max = max
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podafea0e6f_c468_49e9_b0ae_65cc49764e6a.slice/cri-containerd-b3b530821ab83089fd992936363162770a24c056ca73911e99e5074764c2aaec.scope/memory.max = 67108864
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podafea0e6f_c468_49e9_b0ae_65cc49764e6a.slice/cri-containerd-9e7c876736492c68c39f90d2d6a72367b30cb4aebc3d2c117cdd0ce3106509e1.scope/memory.max = max
+=== memory.current samples
+/sys/fs/cgroup/kubepods.slice/memory.current = 5068775424
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5.scope/memory.current = 18026496
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/memory.current = 18288640
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-01db65bd5fbb602cd4205986d3775f481f43a4f1b6a6fcde78035cb239989ca6.scope/memory.current = 225280
+/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podafea0e6f_c468_49e9_b0ae_65cc49764e6a.slice/cri-containerd-b3b530821ab83089fd992936363162770a24c056ca73911e99e5074764c2aaec.scope/memory.current = 13238272

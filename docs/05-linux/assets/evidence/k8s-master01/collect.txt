@@ -1,0 +1,1252 @@
+Warning: Permanently added '10.0.0.121' (ED25519) to the list of known hosts.
+
+
+===== 0. 采集元信息 =====
+
+$ date -Is; hostname; hostname -f 2>/dev/null; whoami; id; uptime
+2026-11-10T22:25:44+08:00
+master01
+master01
+root
+uid=0(root) gid=0(root) groups=0(root)
+ 22:25:44 up 1 day,  1:34,  0 users,  load average: 0.42, 0.47, 0.53
+
+$ cat /etc/os-release 2>/dev/null | head -8
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04.5 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+
+
+===== 1. 内核 =====
+
+$ uname -a
+Linux master01 5.15.0-202-generic #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+$ cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-5.15.0-202-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+
+$ cat /proc/version
+Linux version 5.15.0-202-generic (buildd@lcy02-amd64-106) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026
+
+$ cat /proc/sys/kernel/osrelease; cat /proc/sys/kernel/version
+5.15.0-202-generic
+#212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026
+
+$ ls -1 /boot 2>/dev/null | head -30
+config-5.15.0-179-generic
+config-5.15.0-202-generic
+grub
+initrd.img
+initrd.img-5.15.0-179-generic
+initrd.img-5.15.0-202-generic
+initrd.img.old
+lost+found
+System.map-5.15.0-179-generic
+System.map-5.15.0-202-generic
+vmlinuz
+vmlinuz-5.15.0-179-generic
+vmlinuz-5.15.0-202-generic
+vmlinuz.old
+
+$ cat /etc/default/grub 2>/dev/null | grep -v "^#" | head -20
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX=""
+
+
+
+
+
+
+
+$ lsmod 2>/dev/null | head -40
+Module                  Size  Used by
+tls                   114688  0
+nft_chain_nat          16384  3
+nf_nat                 49152  1 nft_chain_nat
+xt_CT                  16384  3
+xt_mark                16384  2
+cls_bpf                24576  8
+sch_ingress            16384  6
+veth                   32768  0
+xt_socket              16384  1
+nf_socket_ipv4         16384  1 xt_socket
+nf_socket_ipv6         20480  1 xt_socket
+ip_set                 53248  0
+udp_diag               16384  0
+geneve                 45056  0
+ip6_udp_tunnel         20480  1 geneve
+udp_tunnel             28672  1 geneve
+xfrm_user              49152  3
+xfrm_algo              16384  1 xfrm_user
+tcp_diag               16384  0
+inet_diag              24576  2 tcp_diag,udp_diag
+xt_conntrack           16384  1
+nf_conntrack          172032  3 xt_conntrack,nf_nat,xt_CT
+nf_defrag_ipv6         24576  2 nf_conntrack,xt_socket
+nf_defrag_ipv4         16384  2 nf_conntrack,xt_socket
+xt_comment             16384  23
+nft_compat             20480  30
+nft_counter            16384  25
+nf_tables             274432  80 nft_compat,nft_counter,nft_chain_nat
+nfnetlink              20480  6 nft_compat,nf_tables,ip_set
+isofs                  53248  0
+sunrpc                585728  1
+binfmt_misc            24576  1
+input_leds             16384  0
+joydev                 32768  0
+serio_raw              20480  0
+mac_hid                16384  0
+qemu_fw_cfg            20480  0
+sch_fq_codel           20480  3
+dm_multipath           40960  0
+
+$ cat /proc/sys/kernel/pid_max; cat /proc/sys/kernel/threads-max; cat /proc/sys/kernel/randomize_va_space
+4194304
+46435
+2
+
+$ cat /proc/sys/kernel/kptr_restrict; cat /proc/sys/kernel/dmesg_restrict; cat /proc/sys/kernel/perf_event_paranoid
+1
+1
+4
+
+$ cat /sys/kernel/security/lsm 2>/dev/null; cat /sys/module/apparmor/parameters/enabled 2>/dev/null
+lockdown,capability,landlock,yama,apparmorY
+
+$ journalctl -k -b --no-pager 2>/dev/null | tail -40
+Nov 09 20:51:13 master01 kernel: rdac: device handler registered
+Nov 09 20:51:13 master01 kernel: random: systemd: uninitialized urandom read (16 bytes read)
+Nov 09 20:51:13 master01 kernel: random: systemd-journal: uninitialized urandom read (16 bytes read)
+Nov 09 20:51:13 master01 kernel: random: systemd: uninitialized urandom read (16 bytes read)
+Nov 09 20:51:13 master01 kernel: virtio_net virtio3 eth1: renamed from ens19
+Nov 09 20:51:13 master01 kernel: virtio_net virtio2 eth0: renamed from ens18
+Nov 09 20:51:13 master01 kernel: EXT4-fs (sda2): mounted filesystem with ordered data mode. Opts: (null). Quota mode: none.
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.964:2): apparmor="STATUS" operation="profile_load" profile="unconfined" name="lsb_release" pid=583 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.968:3): apparmor="STATUS" operation="profile_load" profile="unconfined" name="nvidia_modprobe" pid=584 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.968:4): apparmor="STATUS" operation="profile_load" profile="unconfined" name="nvidia_modprobe//kmod" pid=584 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.980:5): apparmor="STATUS" operation="profile_load" profile="unconfined" name="ubuntu_pro_apt_news" pid=587 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.980:6): apparmor="STATUS" operation="profile_load" profile="unconfined" name="/usr/bin/man" pid=601 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.980:7): apparmor="STATUS" operation="profile_load" profile="unconfined" name="man_filter" pid=601 comm="apparmor_parser"
+Nov 09 20:51:13 master01 kernel: audit: type=1400 audit(1794228673.980:8): apparmor="STATUS" operation="profile_load" profile="unconfined" name="man_groff" pid=601 comm="apparmor_parser"
+Nov 09 20:51:14 master01 kernel: audit: type=1400 audit(1794228673.996:9): apparmor="STATUS" operation="profile_load" profile="unconfined" name="/usr/lib/NetworkManager/nm-dhcp-client.action" pid=586 comm="apparmor_parser"
+Nov 09 20:51:14 master01 kernel: audit: type=1400 audit(1794228673.996:10): apparmor="STATUS" operation="profile_load" profile="unconfined" name="/usr/lib/NetworkManager/nm-dhcp-helper" pid=586 comm="apparmor_parser"
+Nov 09 20:51:14 master01 kernel: audit: type=1400 audit(1794228673.996:11): apparmor="STATUS" operation="profile_load" profile="unconfined" name="/usr/lib/connman/scripts/dhclient-script" pid=586 comm="apparmor_parser"
+Nov 09 20:51:14 master01 kernel: RPC: Registered named UNIX socket transport module.
+Nov 09 20:51:14 master01 kernel: RPC: Registered udp transport module.
+Nov 09 20:51:14 master01 kernel: RPC: Registered tcp transport module.
+Nov 09 20:51:14 master01 kernel: RPC: Registered tcp NFSv4.1 backchannel transport module.
+Nov 09 20:51:14 master01 kernel: random: crng init done
+Nov 09 20:51:14 master01 kernel: random: 233 urandom warning(s) missed due to ratelimiting
+Nov 09 20:51:15 master01 kernel: ISO 9660 Extensions: RRIP_1991A
+Nov 09 20:51:30 master01 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 20:51:30 master01 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 20:51:41 master01 kernel: kauditd_printk_skb: 12 callbacks suppressed
+Nov 09 20:51:41 master01 kernel: audit: type=1400 audit(1794228701.732:24): apparmor="STATUS" operation="profile_load" profile="unconfined" name="cri-containerd.apparmor.d" pid=1178 comm="apparmor_parser"
+Nov 09 20:51:41 master01 kernel: audit: type=1400 audit(1794228701.749:25): apparmor="STATUS" operation="profile_replace" info="same as current profile, skipping" profile="unconfined" name="cri-containerd.apparmor.d" pid=1177 comm="apparmor_parser"
+Nov 09 20:51:41 master01 kernel: audit: type=1400 audit(1794228701.766:26): apparmor="STATUS" operation="profile_replace" info="same as current profile, skipping" profile="unconfined" name="cri-containerd.apparmor.d" pid=1184 comm="apparmor_parser"
+Nov 09 20:51:41 master01 kernel: audit: type=1400 audit(1794228701.771:27): apparmor="STATUS" operation="profile_replace" info="same as current profile, skipping" profile="unconfined" name="cri-containerd.apparmor.d" pid=1183 comm="apparmor_parser"
+Nov 09 20:51:55 master01 kernel: Initializing XFRM netlink socket
+Nov 09 20:52:00 master01 kernel: eth0: renamed from tmp75334
+Nov 09 20:52:00 master01 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:52:03 master01 kernel: cilium_net: Caught tx_queue_len zero misconfig
+Nov 09 20:52:09 master01 kernel: eth0: renamed from tmp3b62d
+Nov 09 20:52:09 master01 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 21:22:15 master01 kernel: eth0: renamed from tmp1343f
+Nov 09 21:48:07 master01 kernel: eth0: renamed from tmpaccb1
+Nov 09 21:48:07 master01 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+
+
+===== 2. 用户态 / libc / 启动 =====
+
+$ readlink -f /sbin/init; cat /proc/1/comm; cat /proc/1/cgroup
+/usr/lib/systemd/systemd
+systemd
+0::/init.scope
+
+$ systemctl --version 2>/dev/null | head -3
+systemd 249 (249.11-0ubuntu3.23)
++PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY -P11KIT -QRENCODE +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
+
+$ ldd --version 2>/dev/null | head -2; getconf GNU_LIBC_VERSION 2>/dev/null
+ldd (Ubuntu GLIBC 2.35-0ubuntu3.15) 2.35
+Copyright (C) 2022 Free Software Foundation, Inc.
+glibc 2.35
+
+$ file /bin/ls 2>/dev/null; readelf -h /bin/ls 2>/dev/null | head -12
+/bin/ls: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=a455c7d9f7e6c6530cd08f34fdf68292be95b3b6, for GNU/Linux 3.2.0, stripped
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x6aa0
+  Start of program headers:          64 (bytes into file)
+
+$ getent passwd | head -15
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+
+$ getent group | head -15
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog,hao
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+
+$ who -a 2>/dev/null | head -10; last -n 5 2>/dev/null
+           system boot  2026-11-09 20:51
+           run-level 5  2026-11-09 20:51
+LOGIN      tty1         2026-11-09 20:51               733 id=tty1
+reboot   system boot  5.15.0-202-gener Mon Nov  9 20:51   still running
+reboot   system boot  5.15.0-202-gener Wed Nov  4 22:29 - 20:50 (4+22:21)
+reboot   system boot  5.15.0-202-gener Wed Nov  4 19:51 - 22:27  (02:36)
+root     pts/0        10.0.0.1         Tue Oct 13 12:25 - 12:25  (00:00)
+root     pts/0        10.0.0.61        Tue Oct 13 12:19 - 12:19  (00:00)
+
+wtmp begins Sat Nov 22 11:54:23 2025
+
+$ env | grep -E "^(PATH|LANG|SHELL|HOME|USER)=" | sort
+HOME=/root
+LANG=en_US.UTF-8
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+SHELL=/bin/bash
+USER=root
+
+
+===== 3. 文件系统与存储 =====
+
+$ lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,ROTA,SCHED 2>/dev/null
+NAME                      SIZE TYPE FSTYPE      MOUNTPOINTS ROTA SCHED
+sda                        50G disk                            0 none
+├─sda1                      1M part                            0 none
+├─sda2                      2G part ext4        /boot          0 none
+└─sda3                     48G part LVM2_member                0 none
+  └─ubuntu--vg-ubuntu--lv  48G lvm  ext4        /              0 
+sr0                         4M rom  iso9660                    1 mq-deadline
+
+$ df -hT; echo; df -i
+Filesystem                        Type     Size  Used Avail Use% Mounted on
+tmpfs                             tmpfs    593M   13M  580M   3% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv ext4      48G   21G   25G  45% /
+tmpfs                             tmpfs    2.9G     0  2.9G   0% /dev/shm
+tmpfs                             tmpfs    5.0M     0  5.0M   0% /run/lock
+tmpfs                             tmpfs    2.9G     0  2.9G   0% /run/qemu
+/dev/sda2                         ext4     2.0G  259M  1.6G  15% /boot
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/shm
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/shm
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/rootfs
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/fcc081af60c41fd56350a3004a25a9ae3f24e2e2e586ba76607a90829fa2c2c7/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f8c21f24d868a46b6d91215f2a190492dc3717b3fda24710e5d938c4e78b5cd3/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ff1e9361bc5b8d220b351967bbfb7ecc86aafa4b6f22636cb871632ea028c7e1/rootfs
+tmpfs                             tmpfs    4.6G   12K  4.6G   1% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/hubble-tls
+tmpfs                             tmpfs    4.6G     0  4.6G   0% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/clustermesh-secrets
+tmpfs                             tmpfs    4.6G   12K  4.6G   1% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/kube-api-access-mbp5h
+tmpfs                             tmpfs    512M   12K  512M   1% /var/lib/kubelet/pods/3cd0c710-0015-45fe-b5fe-0cc63b62cda4/volumes/kubernetes.io~projected/kube-api-access-ckbcn
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64/shm
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/rootfs
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/af7434dbfd01e81f927504e86c1b834851b68f3296661e7861c6498af21fed8d/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/af7434dbfd01e81f927504e86c1b834851b68f3296661e7861c6498af21fed8d/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5f5ca89ee48697e14b44b923d76c8b82b07c6129343fb29e35bc08844d68c6cc/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0430fa834520a9bb8e0cc2bbff35927d82d54367bff6871241029e089861fc0b/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/85ac078fb871e5ae4a22cee5cdb2d5c8c5634fce1241903857c906a2cbb8297c/rootfs
+tmpfs                             tmpfs    4.6G   12K  4.6G   1% /var/lib/kubelet/pods/254832bf-e0cc-4ad4-9d2a-63009dca24f0/volumes/kubernetes.io~projected/kube-api-access-4lhmp
+tmpfs                             tmpfs    170M   12K  170M   1% /var/lib/kubelet/pods/294395b6-eae3-4f7a-8f8f-2e35043333f7/volumes/kubernetes.io~projected/kube-api-access-xwg86
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/9813fa21924e62e4981986477f53d51d9ee7fc3269f4d691b4f19080e7420c8b/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9813fa21924e62e4981986477f53d51d9ee7fc3269f4d691b4f19080e7420c8b/rootfs
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3b62d7704653c3568930e0114464ad8e1f8fba424d9c54421d25c38bf1992dca/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3b62d7704653c3568930e0114464ad8e1f8fba424d9c54421d25c38bf1992dca/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/81734f207386457ea68993d0dc5093813b0f224e9720e0212a5cd2cd97dd81ef/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/91be4792e9d24f1f5f2b80ebf57252944657e825bc8a646761bb555872e8348f/rootfs
+tmpfs                             tmpfs    320M   12K  320M   1% /var/lib/kubelet/pods/ec33c77e-c3a6-4e38-b872-8fdca8578470/volumes/kubernetes.io~projected/kube-api-access-vmq97
+shm                               tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1343feeb4aa45dcfe43898dcc81eae2b17f4fdd68dd3e181fb4b175ec857b0b0/shm
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1343feeb4aa45dcfe43898dcc81eae2b17f4fdd68dd3e181fb4b175ec857b0b0/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0c5064d1a87cb30085c8c59ea45dadeb0dffb509d807ef9203cea1f8fa0a83a0/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cac25bc1d91f4770577feaa0bfc25b3110914ec63156f1d21ac528f233fca6fb/rootfs
+overlay                           overlay   48G   21G   25G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/af0b28051fedd195cc46050db3ff0dbcceaa439852ef2094476f0789da518ecd/rootfs
+tmpfs                             tmpfs    593M     0  593M   0% /run/user/0
+
+Filesystem                         Inodes  IUsed   IFree IUse% Mounted on
+tmpfs                              757925   1410  756515    1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv 3145728 223998 2921730    8% /
+tmpfs                              757925      1  757924    1% /dev/shm
+tmpfs                              757925      3  757922    1% /run/lock
+tmpfs                              757925      1  757924    1% /run/qemu
+/dev/sda2                          131072    320  130752    1% /boot
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/shm
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/shm
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/rootfs
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/fcc081af60c41fd56350a3004a25a9ae3f24e2e2e586ba76607a90829fa2c2c7/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f8c21f24d868a46b6d91215f2a190492dc3717b3fda24710e5d938c4e78b5cd3/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ff1e9361bc5b8d220b351967bbfb7ecc86aafa4b6f22636cb871632ea028c7e1/rootfs
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/hubble-tls
+tmpfs                              757925      3  757922    1% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/clustermesh-secrets
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/1055f743-9b14-4280-ac65-1f102ef5ae60/volumes/kubernetes.io~projected/kube-api-access-mbp5h
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/3cd0c710-0015-45fe-b5fe-0cc63b62cda4/volumes/kubernetes.io~projected/kube-api-access-ckbcn
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64/shm
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/rootfs
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/af7434dbfd01e81f927504e86c1b834851b68f3296661e7861c6498af21fed8d/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/af7434dbfd01e81f927504e86c1b834851b68f3296661e7861c6498af21fed8d/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5f5ca89ee48697e14b44b923d76c8b82b07c6129343fb29e35bc08844d68c6cc/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0430fa834520a9bb8e0cc2bbff35927d82d54367bff6871241029e089861fc0b/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/85ac078fb871e5ae4a22cee5cdb2d5c8c5634fce1241903857c906a2cbb8297c/rootfs
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/254832bf-e0cc-4ad4-9d2a-63009dca24f0/volumes/kubernetes.io~projected/kube-api-access-4lhmp
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/294395b6-eae3-4f7a-8f8f-2e35043333f7/volumes/kubernetes.io~projected/kube-api-access-xwg86
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/9813fa21924e62e4981986477f53d51d9ee7fc3269f4d691b4f19080e7420c8b/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9813fa21924e62e4981986477f53d51d9ee7fc3269f4d691b4f19080e7420c8b/rootfs
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3b62d7704653c3568930e0114464ad8e1f8fba424d9c54421d25c38bf1992dca/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3b62d7704653c3568930e0114464ad8e1f8fba424d9c54421d25c38bf1992dca/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/81734f207386457ea68993d0dc5093813b0f224e9720e0212a5cd2cd97dd81ef/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/91be4792e9d24f1f5f2b80ebf57252944657e825bc8a646761bb555872e8348f/rootfs
+tmpfs                              757925      9  757916    1% /var/lib/kubelet/pods/ec33c77e-c3a6-4e38-b872-8fdca8578470/volumes/kubernetes.io~projected/kube-api-access-vmq97
+shm                                757925      1  757924    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1343feeb4aa45dcfe43898dcc81eae2b17f4fdd68dd3e181fb4b175ec857b0b0/shm
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1343feeb4aa45dcfe43898dcc81eae2b17f4fdd68dd3e181fb4b175ec857b0b0/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0c5064d1a87cb30085c8c59ea45dadeb0dffb509d807ef9203cea1f8fa0a83a0/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cac25bc1d91f4770577feaa0bfc25b3110914ec63156f1d21ac528f233fca6fb/rootfs
+overlay                           3145728 223998 2921730    8% /run/containerd/io.containerd.runtime.v2.task/k8s.io/af0b28051fedd195cc46050db3ff0dbcceaa439852ef2094476f0789da518ecd/rootfs
+tmpfs                              151585     21  151564    1% /run/user/0
+
+$ findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS 2>/dev/null | head -40
+TARGET                                                                                                                           SOURCE                            FSTYPE      OPTIONS
+/                                                                                                                                /dev/mapper/ubuntu--vg-ubuntu--lv ext4        rw,relatime
+├─/sys                                                                                                                           sysfs                             sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                                                                                         securityfs                        securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                                                                                               cgroup2                           cgroup2     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/pstore                                                                                                               pstore                            pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                                                                                                  bpf                               bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                                                                                            debugfs                           debugfs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                                                                                          tracefs                           tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/fuse/connections                                                                                                     fusectl                           fusectl     rw,nosuid,nodev,noexec,relatime
+│ └─/sys/kernel/config                                                                                                           configfs                          configfs    rw,nosuid,nodev,noexec,relatime
+├─/proc                                                                                                                          proc                              proc        rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                                                                     systemd-1                         autofs      rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=20149
+│   └─/proc/sys/fs/binfmt_misc                                                                                                   binfmt_misc                       binfmt_misc rw,nosuid,nodev,noexec,relatime
+├─/dev                                                                                                                           udev                              devtmpfs    rw,nosuid,relatime,size=2971856k,nr_inodes=742964,mode=755,inode64
+│ ├─/dev/pts                                                                                                                     devpts                            devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                                                                                                                     tmpfs                             tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/hugepages                                                                                                               hugetlbfs                         hugetlbfs   rw,relatime,pagesize=2M
+│ └─/dev/mqueue                                                                                                                  mqueue                            mqueue      rw,nosuid,nodev,noexec,relatime
+├─/run                                                                                                                           tmpfs                             tmpfs       rw,nosuid,nodev,noexec,relatime,size=606340k,mode=755,inode64
+│ ├─/run/lock                                                                                                                    tmpfs                             tmpfs       rw,nosuid,nodev,noexec,relatime,size=5120k,inode64
+│ ├─/run/credentials/systemd-sysusers.service                                                                                    none                              ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/qemu                                                                                                                    tmpfs                             tmpfs       rw,nosuid,nodev,relatime,mode=755,inode64
+│ ├─/run/rpc_pipefs                                                                                                              sunrpc                            rpc_pipefs  rw,relatime
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7274/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7274/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7275/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7275/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7276/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7276/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7277/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7277/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/fcc081af60c41fd56350a3004a25a9ae3f24e2e2e586ba76607a90829fa2c2c7/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6893/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6891/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6890/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6889/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6888/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6887/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6886/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6885/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6884/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6883/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6882/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6881/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6880/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6879/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7278/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7278/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/af0b28051fedd195cc46050db3ff0dbcceaa439852ef2094476f0789da518ecd/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6892/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6891/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6890/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6889/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6888/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6887/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6886/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6885/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6884/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6883/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6882/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6881/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6880/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6879/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7311/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7311/work,nouserxattr
+│ ├─/run/user/0                                                                                                                  tmpfs                             tmpfs       rw,nosuid,nodev,relatime,size=606340k,nr_inodes=151585,mode=700,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/f8c21f24d868a46b6d91215f2a190492dc3717b3fda24710e5d938c4e78b5cd3/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6901/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6900/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6899/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6838/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6837/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6836/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6835/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6834/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6833/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6832/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6831/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6830/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6829/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6828/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7280/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7280/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/ff1e9361bc5b8d220b351967bbfb7ecc86aafa4b6f22636cb871632ea028c7e1/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6894/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6891/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6890/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6889/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6888/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6887/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6886/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6885/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6884/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6883/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6882/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6881/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6880/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6879/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7281/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7281/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/shm     shm                               tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2/rootfs overlay                           overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7283/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7283/work,nouserxattr
+
+$ cat /etc/fstab 2>/dev/null | grep -v "^#" | sed "/^$/d"
+/dev/disk/by-id/dm-uuid-LVM-mTwTwfpmda5fAdDi3CZdwvQdPwu2ntJ9LU4rXWKAmOIaQTd1aTb2yUPYH57lPviv / ext4 defaults 0 1
+/dev/disk/by-uuid/c3aea270-9cc8-4be0-a547-e3215847cf43 /boot ext4 defaults 0 1
+
+$ mount | head -30
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+udev on /dev type devtmpfs (rw,nosuid,relatime,size=2971856k,nr_inodes=742964,mode=755,inode64)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,noexec,relatime,size=606340k,mode=755,inode64)
+/dev/mapper/ubuntu--vg-ubuntu--lv on / type ext4 (rw,relatime)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,inode64)
+tmpfs on /run/lock type tmpfs (rw,nosuid,nodev,noexec,relatime,size=5120k,inode64)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime,mode=700)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=20149)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime,pagesize=2M)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+tracefs on /sys/kernel/tracing type tracefs (rw,nosuid,nodev,noexec,relatime)
+fusectl on /sys/fs/fuse/connections type fusectl (rw,nosuid,nodev,noexec,relatime)
+configfs on /sys/kernel/config type configfs (rw,nosuid,nodev,noexec,relatime)
+none on /run/credentials/systemd-sysusers.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+tmpfs on /run/qemu type tmpfs (rw,nosuid,nodev,relatime,mode=755,inode64)
+/dev/sda2 on /boot type ext4 (rw,relatime)
+binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,nosuid,nodev,noexec,relatime)
+sunrpc on /run/rpc_pipefs type rpc_pipefs (rw,relatime)
+shm on /run/containerd/io.containerd.grpc.v1.cri/sandboxes/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k,inode64)
+shm on /run/containerd/io.containerd.grpc.v1.cri/sandboxes/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k,inode64)
+shm on /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k,inode64)
+overlay on /run/containerd/io.containerd.runtime.v2.task/k8s.io/75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc/rootfs type overlay (rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7274/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7274/work,nouserxattr)
+shm on /run/containerd/io.containerd.grpc.v1.cri/sandboxes/138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k,inode64)
+overlay on /run/containerd/io.containerd.runtime.v2.task/k8s.io/988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db/rootfs type overlay (rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6501/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7275/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7275/work,nouserxattr)
+
+$ cat /proc/diskstats | head -20
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       4 loop4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       5 loop5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       6 loop6 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       7 loop7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  11       0 sr0 95 0 669 59 0 0 0 0 0 92 59 0 0 0 0 0 0
+   8       0 sda 28646 6044 4230042 9560 6590236 870621 48360496 1357403 0 5978284 1610684 0 0 0 0 2412656 243720
+   8       1 sda1 143 0 1144 18 0 0 0 0 0 76 18 0 0 0 0 0 0
+   8       2 sda2 155 29 11074 29 26 13 232 3 0 156 33 0 0 0 0 0 0
+   8       3 sda3 28257 6015 4214224 9499 6590210 870608 48360264 1357399 0 5978164 1366898 0 0 0 0 0 0
+ 253       0 dm-0 34221 0 4209554 13104 7459946 0 48360264 1434412 0 5988464 1447516 0 0 0 0 0 0
+
+$ stat -f / 2>/dev/null
+  File: "/"
+    ID: 9643c394c0a6252d Namelen: 255     Type: ext2/ext3
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 12338380   Free: 7048320    Available: 6491201
+Inodes: Total: 3145728    Free: 2921730
+
+$ df -h / /var /var/lib/containerd /var/lib/kubelet 2>/dev/null
+Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   21G   25G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   21G   25G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   21G   25G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   21G   25G  45% /
+
+$ losetup -a 2>/dev/null | head
+
+$ pvs 2>/dev/null; vgs 2>/dev/null; lvs -a -o lv_name,vg_name,lv_size,segtype,pool_lv,data_percent,metadata_percent 2>/dev/null
+  PV         VG        Fmt  Attr PSize   PFree
+  /dev/sda3  ubuntu-vg lvm2 a--  <48.00g    0 
+  VG        #PV #LV #SN Attr   VSize   VFree
+  ubuntu-vg   1   1   0 wz--n- <48.00g    0 
+  LV        VG        LSize   Type   Pool Data%  Meta% 
+  ubuntu-lv ubuntu-vg <48.00g linear                   
+
+$ tune2fs -l $(findmnt -n -o SOURCE /) 2>/dev/null | grep -E "Filesystem volume name|Filesystem features|Block count|Inode count|Reserved block count|Mount count|Last checked|Errors behavior"
+Filesystem volume name:   <none>
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype needs_recovery extent 64bit flex_bg sparse_super large_file huge_file dir_nlink extra_isize metadata_csum
+Errors behavior:          Continue
+Inode count:              3145728
+Block count:              12581888
+Reserved block count:     553023
+Mount count:              109
+Last checked:             Sun Nov 16 21:55:11 2025
+
+$ xfs_info / 2>/dev/null | head -20
+
+$ du -xhd1 / 2>/dev/null | sort -h | tail -15
+4.0K	/cdrom
+4.0K	/media
+4.0K	/mnt
+4.0K	/srv
+16K	/lost+found
+36K	/home
+64K	/tmp
+41M	/opt
+1.3G	/root
+3.7G	/etc
+4.3G	/usr
+7.2G	/var
+21G	/
+
+
+===== 4. 权限模型 =====
+
+$ umask; id; ls -ld / /root /tmp /etc/shadow /usr/bin/passwd /usr/bin/sudo 2>/dev/null
+0022
+uid=0(root) gid=0(root) groups=0(root)
+drwxr-xr-x 19 root root     4096 Nov 10 22:25 /
+-rw-r-----  1 root shadow   1236 Jan 16  2026 /etc/shadow
+drwx------ 33 root root     4096 Nov  9 08:04 /root
+drwxrwxrwt 12 root root     4096 Nov 10 21:01 /tmp
+-rwsr-xr-x  1 root root    59976 Feb  6  2024 /usr/bin/passwd
+-rwsr-xr-x  1 root root   232416 Oct  6 22:05 /usr/bin/sudo
+
+$ ls -l /usr/bin/passwd /usr/bin/sudo /usr/bin/ping /usr/bin/su 2>/dev/null
+-rwsr-xr-x 1 root root  59976 Feb  6  2024 /usr/bin/passwd
+-rwxr-xr-x 1 root root  76680 Jul 24  2025 /usr/bin/ping
+-rwsr-xr-x 1 root root  55680 Aug 20 01:43 /usr/bin/su
+-rwsr-xr-x 1 root root 232416 Oct  6 22:05 /usr/bin/sudo
+
+$ find / -xdev -perm -4000 -type f 2>/dev/null | head -60
+/usr/libexec/polkit-agent-helper-1
+/usr/bin/chsh
+/usr/bin/umount
+/usr/bin/mount
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/su
+/usr/bin/pkexec
+/usr/bin/sudo
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/fusermount3
+/usr/sbin/mount.nfs
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6423/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7124/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/chage
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/sbin/unix_chkpwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7302/fs/usr/sbin/pam_timestamp_check
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/bin/ping
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7304/fs/usr/bin/fusermount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7304/fs/usr/sbin/mount.nfs
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6424/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6424/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6424/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7177/fs/usr/bin/ksu
+
+$ getcap -r / 2>/dev/null | head -80
+/usr/bin/ping cap_net_raw=ep
+/usr/bin/mtr-packet cap_net_raw=ep
+/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper cap_net_bind_service,cap_net_admin=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/af0b28051fedd195cc46050db3ff0dbcceaa439852ef2094476f0789da518ecd/rootfs/usr/local/bin/kube-apiserver cap_net_bind_service=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/81734f207386457ea68993d0dc5093813b0f224e9720e0212a5cd2cd97dd81ef/rootfs/coredns cap_net_bind_service=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6898/fs/coredns cap_net_bind_service=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/6892/fs/usr/local/bin/kube-apiserver cap_net_bind_service=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/usr/sbin/mtr-packet cap_net_raw=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/7181/fs/usr/sbin/fping cap_net_raw=ep
+
+$ capsh --print 2>/dev/null
+Current: =ep
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+Current IAB: 
+Securebits: 00/0x0/1'b0
+ secure-noroot: no (unlocked)
+ secure-no-suid-fixup: no (unlocked)
+ secure-keep-caps: no (unlocked)
+ secure-no-ambient-raise: no (unlocked)
+uid=0(root) euid=0(root)
+gid=0(root)
+groups=0(root)
+Guessed mode: UNCERTAIN (0)
+
+$ grep -E "^(Uid|Gid|Groups|Cap|NoNewPrivs|Seccomp|Speculation)" /proc/self/status
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+Groups:	0 
+CapInh:	0000000000000000
+CapPrm:	000001ffffffffff
+CapEff:	000001ffffffffff
+CapBnd:	000001ffffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Seccomp_filters:	0
+Speculation_Store_Bypass:	vulnerable
+SpeculationIndirectBranch:	always enabled
+
+
+===== 5. 进程 =====
+
+$ ps -eo pid,ppid,user,stat,ni,pri,pcpu,pmem,rss,vsz,comm --sort=-rss | head -25
+    PID    PPID USER     STAT  NI PRI %CPU %MEM   RSS    VSZ COMMAND
+   3428    1015 root     Ssl    0  19 17.2 33.6 2041216 3602088 kube-apiserver
+   1242    1055 root     Ssl    0  19  9.5  4.2 259452 11874424 etcd
+   1861    1396 root     Ssl    0  19  4.3  3.9 239004 1534232 cilium-agent
+   3092    3044 root     Ssl    0  19  0.8  3.7 225612 6675352 alloy
+   1198    1009 root     Ssl    0  19  2.7  3.3 205712 1469560 kube-controller
+   2495    2276 root     Ssl    0  19  0.1  1.8 113080 1386788 cilium-operator
+    947       1 root     Ssl    0  19  4.0  1.6 99672 2350408 kubelet
+   1254    1054 root     Ssl    0  19  1.0  1.3 79880 1375600 kube-scheduler
+    693       1 root     Ssl    0  19  1.5  1.2 73264 2784376 containerd
+   2422    2361 65532    Ssl    0  19  0.3  1.1 68608 1302656 coredns
+   1505    1358 root     Ssl    0  19  0.0  0.7 46628 1320372 kube-vip
+   3117    3044 nobody   Ssl    0  19  0.0  0.4 29596 1301288 prometheus-conf
+    447       1 root     SLsl   - 139  0.0  0.4 27248 289468 multipathd
+   1537    1346 nobody   Ssl    0  19  0.1  0.3 23056 1276952 node_exporter
+    748       1 root     Ssl    0  19  0.0  0.3 21232 109808 unattended-upgr
+    671       1 root     Ss     0  19  0.0  0.3 19532  32876 networkd-dispat
+   8935       1 root     Ssl    0  19  0.0  0.3 18400 295644 packagekitd
+    638       1 systemd+ Ss     0  19  0.0  0.2 12972  25692 systemd-resolve
+    692       1 root     Ssl    0  19  0.0  0.2 12668 392648 udisksd
+   1015       1 root     Sl     0  19  0.2  0.2 12384 1268268 containerd-shim
+   2276       1 root     Sl     0  19  0.2  0.2 12376 1268524 containerd-shim
+    711       1 root     Ssl    0  19  0.0  0.2 12220 317976 ModemManager
+   1396       1 root     Sl     0  19  0.2  0.1 12032 1268268 containerd-shim
+   2361       1 root     Sl     0  19  0.2  0.1 11984 1268268 containerd-shim
+
+$ ps -eLf 2>/dev/null | wc -l; cat /proc/loadavg; cat /proc/pressure/cpu 2>/dev/null; cat /proc/pressure/memory 2>/dev/null; cat /proc/pressure/io 2>/dev/null
+428
+0.55 0.49 0.54 1/426 15724
+some avg10=3.20 avg60=2.86 avg300=3.00 total=3317891247
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+some avg10=0.32 avg60=0.08 avg300=0.01 total=330172
+full avg10=0.14 avg60=0.05 avg300=0.01 total=319307
+some avg10=3.03 avg60=1.29 avg300=0.30 total=173854264
+full avg10=2.97 avg60=1.27 avg300=0.30 total=150190123
+
+$ cat /proc/1/status 2>/dev/null | head -30
+Name:	systemd
+Umask:	0000
+State:	S (sleeping)
+Tgid:	1
+Ngid:	0
+Pid:	1
+PPid:	0
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	128
+Groups:	 
+NStgid:	1
+NSpid:	1
+NSpgid:	1
+NSsid:	1
+VmPeak:	  231588 kB
+VmSize:	  166712 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   11820 kB
+VmRSS:	   11820 kB
+RssAnon:	    3716 kB
+RssFile:	    8104 kB
+RssShmem:	       0 kB
+VmData:	   19824 kB
+VmStk:	     132 kB
+VmExe:	     896 kB
+VmLib:	    9064 kB
+VmPTE:	      92 kB
+
+$ ls -l /proc/1/exe /proc/1/cwd /proc/1/root 2>/dev/null
+lrwxrwxrwx 1 root root 0 Nov 10 22:26 /proc/1/cwd -> /
+lrwxrwxrwx 1 root root 0 Nov  9 20:51 /proc/1/exe -> /usr/lib/systemd/systemd
+lrwxrwxrwx 1 root root 0 Nov  9 20:51 /proc/1/root -> /
+
+$ lsns 2>/dev/null | head -20
+        NS TYPE   NPROCS   PID USER            COMMAND
+4026531834 time      162     1 root            /sbin/init
+4026531835 cgroup    150     1 root            /sbin/init
+4026531836 pid       142     1 root            /sbin/init
+4026531837 user      161     1 root            /sbin/init
+4026531838 uts       153     1 root            /sbin/init
+4026531839 ipc       140     1 root            /sbin/init
+4026531840 net       156     1 root            /sbin/init
+4026531841 mnt       130     1 root            /sbin/init
+4026531862 mnt         1    37 root            kdevtmpfs
+4026532293 mnt         1   451 root            /lib/systemd/systemd-udevd
+4026532294 uts         1   451 root            /lib/systemd/systemd-udevd
+4026532313 mnt         1   636 systemd-network /lib/systemd/systemd-networkd
+4026532314 mnt         1   638 systemd-resolve /lib/systemd/systemd-resolved
+4026532315 mnt         2   729 _chrony         /usr/sbin/chronyd -F 1
+4026532316 uts         1   685 root            /lib/systemd/systemd-logind
+4026532317 mnt         1  1107 65535           /pause
+4026532318 ipc         2  1107 65535           /pause
+4026532319 pid         1  1107 65535           /pause
+4026532320 mnt         1  1122 65535           /pause
+
+$ systemctl list-units --type=service --state=running --no-pager 2>/dev/null | head -30
+  UNIT                        LOAD   ACTIVE SUB     DESCRIPTION
+  chrony.service              loaded active running chrony, an NTP client/server
+  containerd.service          loaded active running containerd container runtime
+  cron.service                loaded active running Regular background program processing daemon
+  dbus.service                loaded active running D-Bus System Message Bus
+  getty@tty1.service          loaded active running Getty on tty1
+  irqbalance.service          loaded active running irqbalance daemon
+  kubelet.service             loaded active running kubelet: The Kubernetes Node Agent
+  ModemManager.service        loaded active running Modem Manager
+  multipathd.service          loaded active running Device-Mapper Multipath Device Controller
+  networkd-dispatcher.service loaded active running Dispatcher daemon for systemd-networkd
+  packagekit.service          loaded active running PackageKit Daemon
+  polkit.service              loaded active running Authorization Manager
+  qemu-guest-agent.service    loaded active running QEMU Guest Agent
+  rpcbind.service             loaded active running RPC bind portmap service
+  rsyslog.service             loaded active running System Logging Service
+  ssh.service                 loaded active running OpenBSD Secure Shell server
+  systemd-journald.service    loaded active running Journal Service
+  systemd-logind.service      loaded active running User Login Management
+  systemd-networkd.service    loaded active running Network Configuration
+  systemd-resolved.service    loaded active running Network Name Resolution
+  systemd-udevd.service       loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service             loaded active running Disk Manager
+  unattended-upgrades.service loaded active running Unattended Upgrades Shutdown
+  upower.service              loaded active running Daemon for power management
+  user@0.service              loaded active running User Manager for UID 0
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+
+===== 6. 内存 =====
+
+$ cat /proc/meminfo
+MemTotal:        6063400 kB
+MemFree:          254148 kB
+MemAvailable:    2728792 kB
+Buffers:          312716 kB
+Cached:          2067732 kB
+SwapCached:            0 kB
+Active:          1188972 kB
+Inactive:        3923868 kB
+Active(anon):       4748 kB
+Inactive(anon):  2749952 kB
+Active(file):    1184224 kB
+Inactive(file):  1173916 kB
+Unevictable:       27768 kB
+Mlocked:           27768 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:               216 kB
+Writeback:             4 kB
+AnonPages:       2760052 kB
+Mapped:           950656 kB
+Shmem:             13384 kB
+KReclaimable:     413752 kB
+Slab:             493464 kB
+SReclaimable:     413752 kB
+SUnreclaim:        79712 kB
+KernelStack:        6904 kB
+PageTables:        13396 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     3031700 kB
+Committed_AS:    5551624 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      109652 kB
+VmallocChunk:          0 kB
+Percpu:             7424 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:      2048 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:      282472 kB
+DirectMap2M:     6008832 kB
+
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           5.8Gi       2.9Gi       248Mi        13Mi       2.7Gi       2.6Gi
+Swap:             0B          0B          0B
+
+$ vmstat 1 3
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 254148 312716 2481632    0    0     6    68   90  100  7  4 89  0  0
+ 3  0      0 252524 312716 2481976    0    0   272   236 11283 19266 15  5 80  0  0
+ 0  0      0 251780 312716 2481980    0    0     0   108 10682 17953  5  5 90  0  0
+
+$ cat /proc/vmstat | grep -E "^(pgscan|pgsteal|pgmajfault|oom_kill|compact|nr_free_pages|nr_slab)" | head -30
+nr_free_pages 62882
+nr_slab_reclaimable 103427
+nr_slab_unreclaimable 19874
+pgmajfault 12012
+pgsteal_kswapd 308125
+pgsteal_direct 0
+pgscan_kswapd 749351
+pgscan_direct 0
+pgscan_direct_throttle 0
+pgscan_anon 0
+pgscan_file 749351
+pgsteal_anon 0
+pgsteal_file 308125
+oom_kill 0
+compact_migrate_scanned 151690
+compact_free_scanned 964280
+compact_isolated 189998
+compact_stall 0
+compact_fail 0
+compact_success 0
+compact_daemon_wake 30
+compact_daemon_migrate_scanned 24637
+compact_daemon_free_scanned 20458
+
+$ cat /proc/sys/vm/overcommit_memory; cat /proc/sys/vm/overcommit_ratio; cat /proc/sys/vm/swappiness; cat /proc/sys/vm/min_free_kbytes; cat /proc/sys/vm/dirty_ratio; cat /proc/sys/vm/dirty_background_ratio; cat /proc/sys/vm/vfs_cache_pressure
+1
+50
+60
+67584
+20
+10
+100
+
+$ cat /proc/buddyinfo; cat /proc/pagetypeinfo 2>/dev/null | head -20
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      0      1      3 
+Node 0, zone    DMA32   5772   3055   3060    709    326     66     21      2      4      1      0 
+Node 0, zone   Normal   2580    701    179    271    123     73     27      9      5      5      1 
+Page block order: 9
+Pages per block:  512
+
+Free pages count per migrate type at order       0      1      2      3      4      5      6      7      8      9     10 
+Node    0, zone      DMA, type    Unmovable      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type      Movable      0      0      0      0      0      0      0      0      0      1      3 
+Node    0, zone      DMA, type  Reclaimable      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type    Unmovable      0      1      0      1      1      1      1      1      0      0      0 
+Node    0, zone    DMA32, type      Movable   5428   2907   2870    549    224     25      8      2      3      1      0 
+Node    0, zone    DMA32, type  Reclaimable    343    148    190    159    101     40     13      0      0      0      0 
+Node    0, zone    DMA32, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone   Normal, type    Unmovable      0      1      1    117     39     26     12      5      1      0      0 
+Node    0, zone   Normal, type      Movable   2511    651    153     51     27     16     10      3      4      4      1 
+Node    0, zone   Normal, type  Reclaimable      1      1      0      0      0      0      0      0      0      1      0 
+Node    0, zone   Normal, type   HighAtomic     68     48     25    103     57     31      5      1      0      0      0 
+Node    0, zone   Normal, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+
+
+$ slabtop -o 2>/dev/null | head -25
+ Active / Total Objects (% used)    : 1494684 / 1514585 (98.7%)
+ Active / Total Slabs (% used)      : 45327 / 45327 (100.0%)
+ Active / Total Caches (% used)     : 123 / 172 (71.5%)
+ Active / Total Size (% used)       : 462505.77K / 468240.14K (98.8%)
+ Minimum / Average / Maximum Object : 0.01K / 0.31K / 8.00K
+
+  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
+315735 313479  99%    0.19K  15035       21     60140K dentry                 
+300815 299077  99%    0.05K   3539       85     14156K ftrace_event_field     
+282945 275901  97%    0.10K   7255       39     29020K buffer_head            
+224316 224316 100%    1.15K   8308       27    265856K ext4_inode_cache       
+ 43554  43554 100%    0.04K    427      102      1708K ext4_extent_status     
+ 43392  42318  97%    0.03K    339      128      1356K kmalloc-32             
+ 33216  33216 100%    0.06K    519       64      2076K kmalloc-64             
+ 30496  30465  99%    0.12K    953       32      3812K kernfs_node_cache      
+ 26275  24964  95%    0.62K   1051       25     16816K inode_cache            
+ 22880  22880 100%    0.71K   1040       22     16640K ovl_inode              
+ 19089  18562  97%    0.19K    909       21      3636K kmalloc-192            
+ 18620  18469  99%    0.57K    665       28     10640K radix_tree_node        
+ 15111  15111 100%    0.70K    657       23     10512K proc_inode_cache       
+ 11680  10272  87%    0.50K    730       16      5840K kmalloc-512            
+ 11424  11382  99%    0.25K    714       16      2856K kmalloc-256            
+  9664   9664 100%    0.06K    151       64       604K vmap_area              
+  9472   9472 100%    0.02K     37      256       148K kmalloc-16             
+  7680   7680 100%    0.01K     15      512        60K kmalloc-8              
+
+$ systemd-cgtop -b -n 1 2>/dev/null | head -20
+/                                                                                                              427      -     3.1G        -        -
+dev-hugepages.mount                                                                                              -      -    56.0K        -        -
+dev-mqueue.mount                                                                                                 -      -     4.0K        -        -
+init.scope                                                                                                       1      -     6.8M        -        -
+kubepods.slice                                                                                                 129      -     3.6G        -        -
+kubepods.slice/kubepods-besteffort.slice                                                                        17      -   145.9M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod254832bf_e0cc_4ad4_9d2a_63009dca24f0.slice      11      -   121.6M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-podc5db2969_c669_4cec_ac9e_32bffae30f45.slice       6      -    24.2M        -        -
+kubepods.slice/kubepods-burstable.slice                                                                        112      -     3.5G        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod1055f743_9b14_4280_ac65_1f102ef5ae60.slice        26      -   459.6M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod1a848230f029426796a2203d2fdc0273.slice            13      -     1.9G        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod294395b6_eae3_4f7a_8f8f_2e35043333f7.slice        11      -    72.8M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod3cd0c710_0015_45fe_b5fe_0cc63b62cda4.slice        11      -    50.8M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod4860998703a7d522ccccae510be7fe59.slice             8      -   206.6M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod53360e5628948d8e365bb74e13dbd135.slice            12      -    82.2M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod99e8faae988d38ac7c8f1f372bb2083c.slice            13      -   462.1M        -        -
+kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podec33c77e_c3a6_4e38_b872_8fdca8578470.slice        18      -    67.6M        -        -
+proc-sys-fs-binfmt_misc.mount                                                                                    -      -     4.0K        -        -
+sys-fs-fuse-connections.mount                                                                                    -      -     8.0K        -        -
+sys-kernel-config.mount                                                                                          -      -     4.0K        -        -
+
+$ cat /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.events 2>/dev/null
+[exit=1]
+
+
+===== 7. systemd 与启动 =====
+
+$ systemd-analyze time 2>/dev/null; systemd-analyze blame 2>/dev/null | head -20; systemd-analyze critical-chain 2>/dev/null | head -30
+Startup finished in 4.958s (kernel) + 18.734s (userspace) = 23.693s 
+graphical.target reached after 18.115s in userspace
+35.165s apt-daily.service
+13.826s systemd-networkd-wait-online.service
+ 5.498s apt-daily-upgrade.service
+ 1.749s systemd-random-seed.service
+ 1.678s motd-news.service
+ 1.402s cloud-init-local.service
+  888ms dev-mapper-ubuntu\x2d\x2dvg\x2dubuntu\x2d\x2dlv.device
+  791ms cloud-config.service
+  755ms containerd.service
+  731ms cloud-init.service
+  685ms man-db.service
+  635ms fwupd-refresh.service
+  586ms cloud-final.service
+  312ms networkd-dispatcher.service
+  252ms user@0.service
+  241ms udisks2.service
+  191ms systemd-udev-trigger.service
+  182ms chrony.service
+  173ms ModemManager.service
+  171ms upower.service
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @18.115s
+└─multi-user.target @18.114s
+  └─containerd.service @17.357s +755ms
+    └─dbus.service @17.352s
+      └─basic.target @17.343s
+        └─sockets.target @17.342s
+          └─uuidd.socket @17.341s
+            └─sysinit.target @17.334s
+              └─cloud-init.service @16.600s +731ms
+                └─systemd-networkd-wait-online.service @2.771s +13.826s
+                  └─systemd-networkd.service @2.708s +59ms
+                    └─network-pre.target @2.705s
+                      └─cloud-init-local.service @1.301s +1.402s
+                        └─systemd-remount-fs.service @433ms +37ms
+                          └─systemd-journald.socket @368ms
+                            └─-.mount @321ms
+                              └─-.slice @321ms
+
+$ systemctl list-unit-files --state=enabled --no-pager 2>/dev/null | head -35
+UNIT FILE                            STATE   VENDOR PRESET
+run-qemu.mount                       enabled enabled
+apport-autoreport.path               enabled enabled
+apparmor.service                     enabled enabled
+blk-availability.service             enabled enabled
+chrony.service                       enabled enabled
+cloud-config.service                 enabled enabled
+cloud-final.service                  enabled enabled
+cloud-init-local.service             enabled enabled
+cloud-init.service                   enabled enabled
+console-setup.service                enabled enabled
+containerd.service                   enabled enabled
+cron.service                         enabled enabled
+dmesg.service                        enabled enabled
+e2scrub_reap.service                 enabled enabled
+finalrd.service                      enabled enabled
+getty@.service                       enabled enabled
+gpu-manager.service                  enabled enabled
+grub-common.service                  enabled enabled
+grub-initrd-fallback.service         enabled enabled
+irqbalance.service                   enabled enabled
+keyboard-setup.service               enabled enabled
+kubelet.service                      enabled enabled
+lvm2-monitor.service                 enabled enabled
+lxd-agent.service                    enabled enabled
+ModemManager.service                 enabled enabled
+multipathd.service                   enabled enabled
+networkd-dispatcher.service          enabled enabled
+open-iscsi.service                   enabled enabled
+open-vm-tools.service                enabled enabled
+pollinate.service                    enabled enabled
+rpcbind.service                      enabled enabled
+rsyslog.service                      enabled enabled
+secureboot-db.service                enabled enabled
+setvtrgb.service                     enabled enabled
+
+$ journalctl -b --no-pager 2>/dev/null | head -40
+Nov 09 20:51:13 master01 kernel: Linux version 5.15.0-202-generic (buildd@lcy02-amd64-106) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026 (Ubuntu 5.15.0-202.212-generic 5.15.222)
+Nov 09 20:51:13 master01 kernel: Command line: BOOT_IMAGE=/vmlinuz-5.15.0-202-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+Nov 09 20:51:13 master01 kernel: KERNEL supported cpus:
+Nov 09 20:51:13 master01 kernel:   Intel GenuineIntel
+Nov 09 20:51:13 master01 kernel:   AMD AuthenticAMD
+Nov 09 20:51:13 master01 kernel:   Hygon HygonGenuine
+Nov 09 20:51:13 master01 kernel:   Centaur CentaurHauls
+Nov 09 20:51:13 master01 kernel:   zhaoxin   Shanghai  
+Nov 09 20:51:13 master01 kernel: BIOS-provided physical RAM map:
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x0000000000100000-0x00000000bffd9fff] usable
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x00000000bffda000-0x00000000bfffffff] reserved
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+Nov 09 20:51:13 master01 kernel: BIOS-e820: [mem 0x0000000100000000-0x00000001bfffffff] usable
+Nov 09 20:51:13 master01 kernel: NX (Execute Disable) protection: active
+Nov 09 20:51:13 master01 kernel: SMBIOS 2.8 present.
+Nov 09 20:51:13 master01 kernel: DMI: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.3-0-ga6ed6b701f0a-prebuilt.qemu.org 04/01/2014
+Nov 09 20:51:13 master01 kernel: Hypervisor detected: KVM
+Nov 09 20:51:13 master01 kernel: kvm-clock: Using msrs 4b564d01 and 4b564d00
+Nov 09 20:51:13 master01 kernel: kvm-clock: cpu 0, msr 65001001, primary cpu clock
+Nov 09 20:51:13 master01 kernel: kvm-clock: using sched offset of 8381849110 cycles
+Nov 09 20:51:13 master01 kernel: clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
+Nov 09 20:51:13 master01 kernel: tsc: Detected 1995.311 MHz processor
+Nov 09 20:51:13 master01 kernel: e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
+Nov 09 20:51:13 master01 kernel: e820: remove [mem 0x000a0000-0x000fffff] usable
+Nov 09 20:51:13 master01 kernel: last_pfn = 0x1c0000 max_arch_pfn = 0x400000000
+Nov 09 20:51:13 master01 kernel: x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+Nov 09 20:51:13 master01 kernel: last_pfn = 0xbffda max_arch_pfn = 0x400000000
+Nov 09 20:51:13 master01 kernel: found SMP MP-table at [mem 0x000f5440-0x000f544f]
+Nov 09 20:51:13 master01 kernel: RAMDISK: [mem 0x2a70d000-0x3137dfff]
+Nov 09 20:51:13 master01 kernel: ACPI: Early table checksum verification disabled
+Nov 09 20:51:13 master01 kernel: ACPI: RSDP 0x00000000000F5240 000014 (v00 BOCHS )
+Nov 09 20:51:13 master01 kernel: ACPI: RSDT 0x00000000BFFE3D16 000038 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:51:13 master01 kernel: ACPI: FACP 0x00000000BFFE3AE8 000074 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:51:13 master01 kernel: ACPI: DSDT 0x00000000BFFDF040 004AA8 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:51:13 master01 kernel: ACPI: FACS 0x00000000BFFDF000 000040
+Nov 09 20:51:13 master01 kernel: ACPI: APIC 0x00000000BFFE3B5C 000090 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+
+$ journalctl -b -p err --no-pager 2>/dev/null | tail -30
+Nov 09 20:51:30 master01 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 20:51:30 master01 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 21:48:07 master01 networkctl[3300]: Interface "tmpaccb1" not found.
+
+$ bootctl status 2>/dev/null | head -30
+System:
+    Not booted with EFI
+
+
+
+===== 8. 内核参数与资源限制 =====
+
+$ ulimit -a
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 23217
+max locked memory           (kbytes, -l) 757924
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 1024
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 23217
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+$ cat /etc/security/limits.conf 2>/dev/null | grep -v "^#" | sed "/^$/d"
+
+$ for f in /etc/security/limits.d/*.conf; do [ -f "$f" ] && { echo "### $f"; grep -v "^#" "$f" | sed "/^$/d"; }; done 2>/dev/null
+[exit=1]
+
+$ cat /proc/sys/fs/file-nr; cat /proc/sys/fs/file-max; cat /proc/sys/fs/nr_open
+2432	0	9223372036854775807
+9223372036854775807
+1048576
+
+$ cat /proc/sys/net/core/somaxconn; cat /proc/sys/net/ipv4/ip_local_port_range; cat /proc/sys/net/ipv4/tcp_max_syn_backlog
+4096
+32768	60999
+512
+
+$ sysctl kernel.pid_max kernel.threads-max vm.overcommit_memory vm.swappiness fs.file-max net.core.somaxconn net.ipv4.ip_forward net.ipv4.conf.all.rp_filter 2>/dev/null
+kernel.pid_max = 4194304
+kernel.threads-max = 46435
+vm.overcommit_memory = 1
+vm.swappiness = 60
+fs.file-max = 9223372036854775807
+net.core.somaxconn = 4096
+net.ipv4.ip_forward = 1
+net.ipv4.conf.all.rp_filter = 0
+
+$ systemctl show containerd.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=infinity
+
+$ systemctl show kubelet.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=23217
+
+$ systemctl show sshd.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=23217
+
+$ systemctl show ssh.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=23217
+
+
+===== 9. K8s / 容器运行时（如存在） =====
+
+$ kubectl get nodes -o wide 2>/dev/null | head -10
+NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
+m01        Ready    control-plane   298d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
+master01   Ready    control-plane   298d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+master02   Ready    control-plane   298d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker01   Ready    <none>          298d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker02   Ready    <none>          298d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker03   Ready    <none>          298d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+
+$ kubectl top nodes 2>/dev/null | head -10
+NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+m01        1488m        42%      3528Mi          89%         
+master01   1388m        37%      3877Mi          82%         
+master02   1557m        42%      2874Mi          94%         
+worker01   1231m        21%      5383Mi          65%         
+worker02   1220m        21%      5533Mi          67%         
+worker03   1248m        33%      5299Mi          85%         
+
+$ crictl version 2>/dev/null; crictl info 2>/dev/null | head -40
+Version:  0.1.0
+RuntimeName:  containerd
+RuntimeVersion:  v2.3.2
+RuntimeApiVersion:  v1
+{
+  "status": {
+    "conditions": [
+      {
+        "type": "RuntimeReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "NetworkReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "ContainerdHasNoDeprecationWarnings",
+        "status": false,
+        "reason": "ContainerdHasDeprecationWarnings",
+        "message": "{\"io.containerd.deprecation/enable-cdi\":\"The `enable_cdi` property of `[plugins.\\\"io.containerd.cri.v1.runtime\\\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled.\"}"
+      }
+    ]
+  },
+  "runtimeHandlers": [
+    {
+      "features": {
+        "recursive_read_only_mounts": true,
+        "user_namespaces": true
+      }
+    },
+    {
+      "name": "runc",
+      "features": {
+        "recursive_read_only_mounts": true,
+        "user_namespaces": true
+      }
+    }
+  ],
+  "cniconfig": {
+    "PluginDirs": [
+
+$ systemctl status containerd --no-pager 2>/dev/null | head -20
+● containerd.service - containerd container runtime
+     Loaded: loaded (/etc/systemd/system/containerd.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2026-11-09 20:51:30 CST; 1 day 1h ago
+       Docs: https://containerd.io
+    Process: 664 ExecStartPre=/sbin/modprobe overlay (code=exited, status=0/SUCCESS)
+   Main PID: 693 (containerd)
+      Tasks: 132
+     Memory: 414.3M
+        CPU: 59min 35.134s
+     CGroup: /system.slice/containerd.service
+             ├─ 693 /usr/local/bin/containerd
+             ├─1009 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 75fba40c98ea61b241f7be912f939bff6405e9ea684dfa97652cd7396782f4fc -address /run/containerd/containerd.sock
+             ├─1015 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 988762a60b331a53cb190680f1221dbfe14750d9b94469246c832c43e1ca99db -address /run/containerd/containerd.sock
+             ├─1054 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id f0fb5442b9c7c4ba71664ca70656deab272d7aab0802a4c4dfbc8ed17b85c3ac -address /run/containerd/containerd.sock
+             ├─1055 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 138af9f575bb561783485d3aa2d3fc0bb809e6b7c788bea18e7553bb4b61b3dc -address /run/containerd/containerd.sock
+             ├─1346 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 023c241ff25513601dc8e1b4cef9bbc9affa69fc1e6c694b9da553adb66854a2 -address /run/containerd/containerd.sock
+             ├─1358 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id c200f145cc694f9442704aa73971cb730ed252e8fdeb1b04599503078add2d64 -address /run/containerd/containerd.sock
+             ├─1396 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id af7434dbfd01e81f927504e86c1b834851b68f3296661e7861c6498af21fed8d -address /run/containerd/containerd.sock
+             ├─2276 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 9813fa21924e62e4981986477f53d51d9ee7fc3269f4d691b4f19080e7420c8b -address /run/containerd/containerd.sock
+             ├─2361 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 3b62d7704653c3568930e0114464ad8e1f8fba424d9c54421d25c38bf1992dca -address /run/containerd/containerd.sock
+
+$ systemctl status kubelet --no-pager 2>/dev/null | head -20
+● kubelet.service - kubelet: The Kubernetes Node Agent
+     Loaded: loaded (/lib/systemd/system/kubelet.service; enabled; vendor preset: enabled)
+    Drop-In: /usr/lib/systemd/system/kubelet.service.d
+             └─10-kubeadm.conf
+     Active: active (running) since Mon 2026-11-09 20:51:40 CST; 1 day 1h ago
+       Docs: https://kubernetes.io/docs/
+   Main PID: 947 (kubelet)
+      Tasks: 14 (limit: 6965)
+     Memory: 61.1M
+        CPU: 1h 2min 29.851s
+     CGroup: /system.slice/kubelet.service
+             └─947 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml
+
+Nov 09 21:48:11 master01 kubelet[947]: E1109 21:48:11.495724     947 status_manager.go:1045] "Failed to get status for pod" err="pods \"kube-apiserver-master01\" is forbidden: User \"system:node:master01\" cannot get resource \"pods\" in API group \"\" in the namespace \"kube-system\": no relationship found between node 'master01' and this object" podUID="1a848230f029426796a2203d2fdc0273" pod="kube-system/kube-apiserver-master01"
+Nov 09 21:48:11 master01 kubelet[947]: E1109 21:48:11.501033     947 status_manager.go:1045] "Failed to get status for pod" err="pods \"apiserver-restart-master01\" is forbidden: User \"system:node:master01\" cannot get resource \"pods\" in API group \"\" in the namespace \"default\": no relationship found between node 'master01' and this object" podUID="7639c213-1c5c-4678-b01a-18a508a66dcc" pod="default/apiserver-restart-master01"
+Nov 09 21:48:21 master01 kubelet[947]: I1109 21:48:21.052554     947 pod_startup_latency_tracker.go:148] "Observed pod startup duration" pod="default/apiserver-restart-master01" podStartSLOduration=14.052512752 podStartE2EDuration="14.052512752s" totalImagesPullingTime="0s" totalInitContainerRuntime="0s" isStatefulPod=false podCreationTimestamp="2026-11-09 21:48:07 +0800 CST" imagePullSessionsCount=0 imagePullSessionsStartsCount=0 observedRunningTime="2026-11-09 21:48:21.052038508 +0800 CST m=+3400.390168030" watchObservedRunningTime="2026-11-09 21:48:21.052512752 +0800 CST m=+3400.390642265"
+Nov 09 21:48:25 master01 kubelet[947]: I1109 21:48:25.374837     947 reconciler_common.go:163] "operationExecutor.UnmountVolume started for volume \"kubernetes.io/projected/7639c213-1c5c-4678-b01a-18a508a66dcc-kube-api-access-chtmq\" (UniqueName: \"kubernetes.io/projected/7639c213-1c5c-4678-b01a-18a508a66dcc-kube-api-access-chtmq\") pod \"7639c213-1c5c-4678-b01a-18a508a66dcc\" (UID: \"7639c213-1c5c-4678-b01a-18a508a66dcc\") "
+Nov 09 21:48:25 master01 kubelet[947]: I1109 21:48:25.380284     947 operation_generator.go:780] UnmountVolume.TearDown succeeded for volume "kubernetes.io/projected/7639c213-1c5c-4678-b01a-18a508a66dcc-kube-api-access-chtmq" pod "7639c213-1c5c-4678-b01a-18a508a66dcc" (UID: "7639c213-1c5c-4678-b01a-18a508a66dcc"). InnerVolumeSpecName "kube-api-access-chtmq". PluginName "kubernetes.io/projected", VolumeGIDValue ""
+Nov 09 21:48:25 master01 kubelet[947]: I1109 21:48:25.476153     947 reconciler_common.go:299] "Volume detached for volume \"kube-api-access-chtmq\" (UniqueName: \"kubernetes.io/projected/7639c213-1c5c-4678-b01a-18a508a66dcc-kube-api-access-chtmq\") on node \"master01\" DevicePath \"\""
+Nov 09 21:48:26 master01 kubelet[947]: I1109 21:48:26.105380     947 pod_container_deletor.go:80] "Container not found in pod's containers" containerID="accb1e17e260e3ecfd9f210242aba0bc81e9b01396d9098db73048de423ce0ce"
+
+
+===== 10. Ceph 客户端（如存在） =====
+
+
+===== 11. 结束 =====
+
+$ date -Is
+2026-11-10T22:26:10+08:00

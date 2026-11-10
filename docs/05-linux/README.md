@@ -1,161 +1,133 @@
-# 05 · Linux 权限：su、sudo 与 root shell
+# 05 · Linux：内核、用户态、存储、权限、进程、内存与 systemd
+
+> 这一章不是“Linux 命令大全”，而是把 **9 台真实机器**（PVE 宿主、6 个 K8s 节点、
+> GitLab 201、Harbor 202）的内核、文件系统、权限、进程、内存、systemd 逐层拆开。
+>
+> 所有数字、日志、命令输出都来自 [`assets/evidence/`](assets/evidence/README.md)，
+> 不是教科书默认值。这里用可复制的命令 transcript 代替截图，便于检索和复现。
 
 ## 当时的情况
 
-排查“如何在不暴露 root 密码的情况下切换到 root”“为什么 `sudo` 和 `su`
-行为不同”“无密码 SSH 登录后为什么可以直接进 root”等问题。
+同一套平台，底层却不是一个模子：
 
-这类问题看似基础，但涉及：
+| 主机 | 发行版 | 内核 | init | 角色 |
+|---|---|---|---|---|
+| teacher | Debian 12 | `6.8.12-15-pve` | systemd 252 | PVE 宿主机 |
+| m01 | Rocky 9.6 | `5.14.0-570` | systemd 252 | K8s control-plane |
+| master01/02 | Ubuntu 22.04.5 | `5.15.0-202` | systemd 249 | K8s control-plane |
+| worker01/02/03 | Ubuntu 22.04.5 | `5.15.0-202` | systemd 249 | K8s worker |
+| ubuntu01（201） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | GitLab |
+| ubuntu02（202） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | Harbor |
 
-- setuid / 文件 capability；
-- PAM（pam_unix、pam_env、pam_limits 等）；
-- 登录 shell 与交互式非登录 shell 的区别；
-- SSH 公钥认证与 `authorized_keys` 的 command/环境限制；
-- `sudoers` 的最小权限设计。
+真实问题：
 
-## 主要概念与原理
+- PVE 宿主 64GB 内存只剩 622Mi `free`，但 `available` 还有 3GB；
+- m01 5.5GB 内存跑 apiserver 1.7GB，没有 swap；
+- worker01 根盘 57G 用 28G，`DiskPressure` 过；
+- 容器镜像里的 setuid 程序被 `find /` 扫出来，误判成宿主机后门；
+- Cilium/CSI 是 privileged，业务 Pod 也偷偷加 `SYS_ADMIN`；
+- PVE 启动 3 分 55 秒，worker 启动 23 秒；
+- `ulimit -n` 是 1024，`systemctl show` 却写 524288；
+- Ceph-CSI 标准镜像在旧 CPU 上 `SIGILL`。
 
-### 1. su 与 sudo 的区别
+## 怎么读
 
-| 命令 | 认证 | 环境 | 典型用途 |
-|---|---|---|---|
-| `su -` | 目标用户密码 | 登录 shell，完整环境 | 切换到 root/其他用户 |
-| `su` | 目标用户密码 | 保留部分当前环境 | 临时切换 |
-| `sudo` | 当前用户密码（或 NOPASSWD） | 默认保留环境，可 `-i` 模拟登录 | 以 root 执行单条命令 |
-| `sudo -i` | 当前用户密码 | 登录 shell | 获得 root 交互环境 |
-| `sudo -s` | 当前用户密码 | 非登录 shell | 快速 root shell |
+| 章节 | 主题 | 先解决什么问题 |
+|---|---|---|
+| [01 内核](01-kernel.md) | `/proc`、模块、LSM、namespace、cgroup | 这台机器在跑什么内核，开了什么安全机制 |
+| [02 用户态](02-userspace.md) | init、libc、ELF、登录 shell、环境 | 为什么二进制跑不起来、`ssh cmd` 环境不同 |
+| [03 文件系统与存储](03-filesystem-storage.md) | VFS、inode、ext4/xfs、LVM、overlay、RBD | `df`/`du` 对不上、空间不回收 |
+| [04 权限模型](04-permissions-ugo-to-capabilities.md) | UGO、ACL、setuid、capability、seccomp | 为什么 root 能读、容器为什么 privileged |
+| [05 进程](05-processes.md) | task_struct、fork/exec、信号、调度、cgroup | `ps` 指标、僵尸、load average、容器 PID |
+| [06 内存](06-memory.md) | 虚拟内存、page cache、overcommit、OOM、cgroup v2 | `free` 怎么看、为什么没 OOM、谁杀了容器 |
+| [07 systemd 与启动](07-systemd-boot.md) | firmware→loader→kernel→systemd | 启动慢、服务起不来、unit 依赖 |
+| [08 内核参数与限制](08-kernel-params-limits.md) | sysctl、ulimit、systemd、cgroup | 参数不生效、fd/pid/内存限制 |
+| [09 跨层案例](09-case-studies.md) | PVE/Ceph/K8s/GitLab/Harbor 8 个案例 | 把前面概念串成排障链 |
+| [labs/](labs/README.md) | 8 个实验 | 动手验证 |
 
-### 2. setuid 与 PAM
+推荐顺序：**01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09**。
+如果正在排障，直接看 09 的案例，再回到对应章节。
 
-- `su` 二进制带 setuid root，所以普通用户可以启动它；
-- `sudo` 同理；
-- 真正的认证由 PAM 完成；
-- `sudoers` 决定谁能以谁的身份执行什么命令。
+## 一条主线
 
-### 3. root shell 的几种方式
-
-- `su -`：需要 root 密码；
-- `sudo -i`：需要当前用户在 sudoers 中；
-- `ssh root@host`：需要 root 登录权限（通常禁用）；
-- 无密码 SSH：基于公钥，不是“没有密码就能 root”，而是密钥认证。
-
-## 踩坑点
-
-### 坑 1：`su` 和 `sudo` 环境变量不同
-
-`su -` 会加载目标用户的登录环境；`sudo` 默认保留当前环境。
-脚本里依赖 `PATH`、`HOME` 时容易出问题。
-
-### 坑 2：无密码 SSH ≠ 无认证
-
-无密码 SSH 是公钥认证。私钥泄露等于身份泄露。
-要限制 `authorized_keys` 的 `command=`、`from=`、`no-pty` 等选项。
-
-### 坑 3：直接允许 root SSH
-
-`PermitRootLogin yes` 风险高；建议普通用户 + sudo，或仅密钥 + 限制来源。
-
-### 坑 4：`sudo passwd` 与 `passwd`
-
-`sudo passwd` 是“以 root 身份执行 passwd”，可以改 root 密码；
-`passwd` 是改当前用户密码。两者权限和影响不同。
-
-### 坑 5：TTY 与 sudo 的 `requiretty`
-
-某些发行版/配置要求 sudo 必须在 TTY 中执行；自动化脚本会失败。
-需要看 `Defaults requiretty` 和 `sudo -n` 的行为。
-
-## 修复关键 / 安全建议
-
-1. 优先使用 `sudo`，按最小权限配置 `sudoers`；
-2. 禁止 root 密码登录和 root SSH，使用普通用户 + sudo；
-3. 无密码 SSH 只用于自动化，限制来源和命令；
-4. 不共享 root 密码；用 `visudo` 修改 sudoers；
-5. 审计 `sudo` 日志（`/var/log/auth.log` 或 journald）。
-
-## 配套脚本
-
-[`scripts/sudo_audit.py`](scripts/sudo_audit.py)
-
-```bash
-sudo python3 scripts/sudo_audit.py
+```text
+硬件 / PVE / KVM
+  ↓
+内核（调度、内存、VFS、网络、LSM、cgroup）
+  ↓
+用户态（systemd、libc、shell、服务）
+  ↓
+文件系统（ext4/xfs/overlay/RBD）+ 权限（UGO/ACL/capability）
+  ↓
+进程（fork/exec/信号/cgroup）+ 内存（page cache/anon/swap）
+  ↓
+K8s（kubelet/containerd/Cilium/Pod）
+  ↓
+应用（GitLab/Harbor/业务）
 ```
 
-只读检查：
+排障时不要跳层。一个“Pod OOM”可能是：
 
-- UID 0 账户；
-- `sudoers` / `sudoers.d` 的 `NOPASSWD`；
-- `sshd_config` 的 `PermitRootLogin` / `PasswordAuthentication`；
-- `authorized_keys` 的 `command=` / `from=` / `restrict` 限制。
+```text
+应用泄漏 → cgroup memory.max → 节点 MemAvailable → PVE thin pool/内存 → 物理机
+```
 
-## 文档列表
+## 真机证据
+
+| 证据 | 内容 |
+|---|---|
+| [`assets/evidence/pve-host/`](assets/evidence/pve-host/collect.txt) | PVE 宿主 11 节完整输出 |
+| [`assets/evidence/k8s-m01/`](assets/evidence/k8s-m01/collect.txt) | m01（Rocky + SELinux） |
+| [`assets/evidence/k8s-worker01/`](assets/evidence/k8s-worker01/collect.txt) | worker01（Ubuntu + RBD + overlay） |
+| `k8s-master01/02`、`k8s-worker02/03` | 其余 K8s 节点 |
+| [`assets/evidence/gitlab-201/`](assets/evidence/gitlab-201/collect.txt) | GitLab 宿主机 |
+| [`assets/evidence/harbor-202/`](assets/evidence/harbor-202/collect.txt) | Harbor 宿主机 |
+| [`assets/evidence/experiments/linux-lab.txt`](assets/evidence/experiments/linux-lab.txt) | umask/ACL/setuid/capability/稀疏文件/页缓存/僵尸/systemd 限制 |
+| [`assets/evidence/k8s-security/pod-security-summary.txt`](assets/evidence/k8s-security/pod-security-summary.txt) | 138 个 Pod 的 hostNetwork/privileged/capabilities/seccomp |
+| [`assets/evidence/limits/`](assets/evidence/limits/) | ulimit soft/hard、systemd 限制、fs.nr_open |
+| [`assets/evidence/cgroup/`](assets/evidence/cgroup/) | worker01 Pod cgroup v2 样本 |
+
+采集脚本：
+
+```bash
+bash docs/05-linux/scripts/collect_linux_evidence.sh > evidence.txt
+ssh root@10.0.0.61 'bash -s' < docs/05-linux/scripts/collect_linux_evidence.sh > m01.txt
+```
+
+## 原有内容
 
 | 文档 | 内容 |
 |---|---|
 | [sudo-su-详解.md](sudo-su-详解.md) | su/sudo、PAM、setuid、无密码 SSH、直接进 root 的原理与实验 |
-| [worker-disk-expansion-20261028.md](notes/worker-disk-expansion-20261028.md) | PVE 虚拟盘在线扩容：分区/LVM/ext4 全链路，不停机 |
-| [memory-analysis-m01.md](notes/memory-analysis-m01.md) | m01 节点内存构成、进程 TOP、Pod/容器内存拆解 |
-| [app-removal-record.md](notes/app-removal-record.md) | 宿主机 Zabbix/MariaDB/nginx/php-fpm 下线记录 |
+| [notes/worker-disk-expansion-20261028.md](notes/worker-disk-expansion-20261028.md) | PVE 虚拟盘在线扩容：分区/LVM/ext4 全链路 |
+| [notes/memory-analysis-m01.md](notes/memory-analysis-m01.md) | m01 节点内存构成、进程 TOP、Pod/容器内存拆解 |
+| [notes/app-removal-record.md](notes/app-removal-record.md) | 宿主机 Zabbix/MariaDB/nginx/php-fpm 下线记录 |
 
-## 补充：主机层运维（磁盘 / 内存 / 旧服务下线）
+## 配套脚本
 
-### 1. 在线扩容不是“加盘再重启”
-
-本集群 worker 的系统盘是 PVE 的 virtio-scsi 虚拟盘，扩容分两层：
-
-```text
-PVE:   qm resize <vmid> scsi0 +10G
-Guest: rescan → growpart → pvresize → lvextend → resize2fs
-```
-
-关键点：
-
-- `qm resize` 对运行中的 virtio-scsi 磁盘生效，**不需要关机**；
-- `growpart` 对已挂载分区安全，会自动搬移 GPT 备份头；
-- LVM 和 ext4 都支持在线扩容；
-- 扩容后要验证 `df -hT /`、`dmesg` 无 I/O 错误、节点 `uptime` 未变。
-
-### 2. 内存分析要看 cgroup，不只看 `free`
-
-节点内存由这些部分组成：
-
-- 内核/页缓存/ slab；
-- kubelet、containerd、Cilium、监控 agent 等系统进程；
-- Pod 的 cgroup 内存（`container_memory_working_set_bytes`）；
-- 未计入 cgroup 的 host 进程。
-
-`memory-analysis-m01.md` 里把 RSS、cgroup、Pod 内存逐层拆开，避免把“页缓存”误判成泄漏。
-
-### 3. 旧服务下线要先证明“没人用”
-
-Zabbix/MariaDB/nginx/php-fpm 下线前做了 4 项确认：
-
-1. 端口/进程是否仍被监控或业务引用；
-2. Prometheus exporter 是否依赖该服务；
-3. 是否有 systemd 依赖/定时任务；
-4. 备份配置和数据，保留回滚路径。
-
-**踩坑**：`mysqld_exporter` 依赖已停止的 MariaDB，直接删服务会让 exporter 持续报错；
-要先改/停 exporter，再删数据库。
-
-## 配套资产
-
-| 资产 | 说明 |
+| 脚本 | 说明 |
 |---|---|
-| [scripts/grow-lvm.sh](scripts/grow-lvm.sh) | LVM 在线扩容辅助脚本（按实际设备名调整） |
+| [scripts/collect_linux_evidence.sh](scripts/collect_linux_evidence.sh) | 只读采集 11 类证据，输出 Markdown 风格文本 |
+| [scripts/linux_lab_experiments.sh](scripts/linux_lab_experiments.sh) | 在 `/tmp` 做权限/ACL/capability/页缓存/僵尸/systemd 限制实验 |
 | [scripts/sudo_audit.py](scripts/sudo_audit.py) | 只读 sudo/SSH 权限审计 |
+| [scripts/grow-lvm.sh](scripts/grow-lvm.sh) | LVM 在线扩容辅助脚本 |
 | [scripts/change_repo.sh](scripts/change_repo.sh) | Rocky Linux 仓库切换 |
 | [scripts/change_epel.sh](scripts/change_epel.sh) | EPEL 仓库配置 |
-| [scripts/dnf.sh](scripts/dnf.sh) | 常用包安装（ipvsadm/cowsay/sl） |
+| [scripts/dnf.sh](scripts/dnf.sh) | 常用包安装 |
 | [scripts/kata-manager.sh](scripts/kata-manager.sh) | Kata Containers 安装/管理工具 |
 
 ```bash
 # 只读审计
 sudo python3 docs/05-linux/scripts/sudo_audit.py
 
-# 扩容前先确认布局（不要直接跑脚本）
-lsblk -f
-vgs; lvs; df -hT /
+# 真实实验（只在 /tmp，退出清理）
+sudo bash docs/05-linux/scripts/linux_lab_experiments.sh
 ```
 
-> 生产环境请遵循组织的权限管理制度；本文只用于原理学习和排障。
+## 三个最容易犯的错
+
+1. **用 `free` 的 `free` 判断内存**：看 `available` 和 cgroup `memory.current`；
+2. **用 `df` 判断 thin pool/RBD**：`lvs`、`pvesm`、`ceph df`、`rbd du`；
+3. **把容器镜像里的 setuid 程序当宿主机后门**：`find` 要排除 `/var/lib/docker`、`/var/lib/containerd`。
+
+> 生产环境请遵循组织的权限/变更制度；本章实验只用于学习和排障。

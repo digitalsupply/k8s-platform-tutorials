@@ -1,0 +1,1647 @@
+Warning: Permanently added '10.0.0.124' (ED25519) to the list of known hosts.
+
+
+===== 0. 采集元信息 =====
+
+$ date -Is; hostname; hostname -f 2>/dev/null; whoami; id; uptime
+2026-11-10T22:25:44+08:00
+worker03
+worker03
+root
+uid=0(root) gid=0(root) groups=0(root)
+ 22:25:44 up 1 day,  2:08,  0 users,  load average: 0.87, 1.17, 1.06
+
+$ cat /etc/os-release 2>/dev/null | head -8
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04.5 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+
+
+===== 1. 内核 =====
+
+$ uname -a
+Linux worker03 5.15.0-202-generic #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+$ cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-5.15.0-202-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+
+$ cat /proc/version
+Linux version 5.15.0-202-generic (buildd@lcy02-amd64-106) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026
+
+$ cat /proc/sys/kernel/osrelease; cat /proc/sys/kernel/version
+5.15.0-202-generic
+#212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026
+
+$ ls -1 /boot 2>/dev/null | head -30
+config-5.15.0-179-generic
+config-5.15.0-202-generic
+grub
+initrd.img
+initrd.img-5.15.0-179-generic
+initrd.img-5.15.0-202-generic
+initrd.img.old
+lost+found
+System.map-5.15.0-179-generic
+System.map-5.15.0-202-generic
+vmlinuz
+vmlinuz-5.15.0-179-generic
+vmlinuz-5.15.0-202-generic
+vmlinuz.old
+
+$ cat /etc/default/grub 2>/dev/null | grep -v "^#" | head -20
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX=""
+
+
+
+
+
+
+
+$ lsmod 2>/dev/null | head -40
+Module                  Size  Used by
+tls                   114688  0
+rpcsec_gss_krb5        36864  0
+auth_rpcgss           139264  1 rpcsec_gss_krb5
+nfsv4                 847872  1
+nfs                   405504  2 nfsv4
+lockd                 110592  1 nfs
+grace                  16384  1 lockd
+fscache               389120  1 nfs
+netfs                  45056  1 fscache
+nbd                    57344  0
+rbd                   114688  10
+libceph               454656  1 rbd
+nft_chain_nat          16384  3
+nf_nat                 49152  1 nft_chain_nat
+xt_CT                  16384  3
+xt_mark                16384  2
+cls_bpf                24576  50
+sch_ingress            16384  48
+veth                   32768  0
+xt_socket              16384  1
+nf_socket_ipv4         16384  1 xt_socket
+nf_socket_ipv6         20480  1 xt_socket
+ip_set                 53248  0
+udp_diag               16384  0
+inet_diag              24576  1 udp_diag
+geneve                 45056  0
+ip6_udp_tunnel         20480  1 geneve
+udp_tunnel             28672  1 geneve
+xfrm_user              49152  3
+xfrm_algo              16384  1 xfrm_user
+xt_conntrack           16384  1
+nf_conntrack          172032  3 xt_conntrack,nf_nat,xt_CT
+nf_defrag_ipv6         24576  2 nf_conntrack,xt_socket
+nf_defrag_ipv4         16384  2 nf_conntrack,xt_socket
+xt_comment             16384  23
+nft_compat             20480  30
+nft_counter            16384  25
+nf_tables             274432  80 nft_compat,nft_counter,nft_chain_nat
+nfnetlink              20480  6 nft_compat,nf_tables,ip_set
+
+$ cat /proc/sys/kernel/pid_max; cat /proc/sys/kernel/threads-max; cat /proc/sys/kernel/randomize_va_space
+4194304
+62563
+2
+
+$ cat /proc/sys/kernel/kptr_restrict; cat /proc/sys/kernel/dmesg_restrict; cat /proc/sys/kernel/perf_event_paranoid
+1
+1
+4
+
+$ cat /sys/kernel/security/lsm 2>/dev/null; cat /sys/module/apparmor/parameters/enabled 2>/dev/null
+lockdown,capability,landlock,yama,apparmorY
+
+$ journalctl -k -b --no-pager 2>/dev/null | tail -40
+Nov 09 20:22:01 worker03 kernel: eth0: renamed from tmpe01ef
+Nov 09 20:22:02 worker03 kernel: eth0: renamed from tmpab71e
+Nov 09 20:22:02 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:02 worker03 kernel: eth0: renamed from tmpd8738
+Nov 09 20:22:02 worker03 kernel: eth0: renamed from tmpce254
+Nov 09 20:22:02 worker03 kernel: eth0: renamed from tmp7dfde
+Nov 09 20:22:03 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:03 worker03 kernel: eth0: renamed from tmp6f8f4
+Nov 09 20:22:04 worker03 kernel: eth0: renamed from tmp76810
+Nov 09 20:22:04 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:04 worker03 kernel: eth0: renamed from tmp67006
+Nov 09 20:22:10 worker03 kernel: eth0: renamed from tmp051dd
+Nov 09 20:22:10 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:15 worker03 kernel: rbd: rbd2: capacity 2147483648 features 0x1
+Nov 09 20:22:15 worker03 kernel: rbd: rbd3: capacity 32212254720 features 0x1
+Nov 09 20:22:15 worker03 kernel: EXT4-fs (rbd2): mounted filesystem with ordered data mode. Opts: discard. Quota mode: none.
+Nov 09 20:22:15 worker03 kernel: EXT4-fs (rbd3): mounted filesystem with ordered data mode. Opts: discard. Quota mode: none.
+Nov 09 20:22:16 worker03 kernel: eth0: renamed from tmp2ca34
+Nov 09 20:22:16 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:18 worker03 kernel: eth0: renamed from tmp3c00f
+Nov 09 20:22:18 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:39 worker03 kernel: eth0: renamed from tmpe5f30
+Nov 09 20:22:39 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:22:49 worker03 kernel: eth0: renamed from tmp47a82
+Nov 09 20:22:49 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:27:12 worker03 kernel: rbd: rbd4: capacity 21474836480 features 0x1
+Nov 09 20:27:12 worker03 kernel: EXT4-fs (rbd4): mounted filesystem with ordered data mode. Opts: discard. Quota mode: none.
+Nov 09 20:27:13 worker03 kernel: eth0: renamed from tmp8443f
+Nov 09 20:27:13 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:28:02 worker03 kernel: eth0: renamed from tmp20c95
+Nov 09 20:28:02 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:33:09 worker03 kernel: eth0: renamed from tmp1e8cd
+Nov 09 20:33:09 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:33:18 worker03 kernel: eth0: renamed from tmpb44b5
+Nov 09 20:33:18 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:33:37 worker03 kernel: eth0: renamed from tmpf01d3
+Nov 09 20:33:37 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 20:34:02 worker03 kernel: eth0: renamed from tmpf6101
+Nov 09 20:34:02 worker03 kernel: IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+Nov 09 21:23:04 worker03 kernel: eth0: renamed from tmp636ca
+
+
+===== 2. 用户态 / libc / 启动 =====
+
+$ readlink -f /sbin/init; cat /proc/1/comm; cat /proc/1/cgroup
+/usr/lib/systemd/systemd
+systemd
+0::/init.scope
+
+$ systemctl --version 2>/dev/null | head -3
+systemd 249 (249.11-0ubuntu3.23)
++PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY -P11KIT -QRENCODE +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
+
+$ ldd --version 2>/dev/null | head -2; getconf GNU_LIBC_VERSION 2>/dev/null
+ldd (Ubuntu GLIBC 2.35-0ubuntu3.15) 2.35
+Copyright (C) 2022 Free Software Foundation, Inc.
+glibc 2.35
+
+$ file /bin/ls 2>/dev/null; readelf -h /bin/ls 2>/dev/null | head -12
+/bin/ls: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=a455c7d9f7e6c6530cd08f34fdf68292be95b3b6, for GNU/Linux 3.2.0, stripped
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x6aa0
+  Start of program headers:          64 (bytes into file)
+
+$ getent passwd | head -15
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+
+$ getent group | head -15
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog,hao
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+
+$ who -a 2>/dev/null | head -10; last -n 5 2>/dev/null
+           system boot  2026-11-09 20:17
+           run-level 5  2026-11-09 20:17
+LOGIN      tty1         2026-11-09 20:17               723 id=tty1
+reboot   system boot  5.15.0-202-gener Mon Nov  9 20:17   still running
+reboot   system boot  5.15.0-202-gener Wed Nov  4 22:02 - 20:16 (4+22:14)
+reboot   system boot  5.15.0-202-gener Wed Nov  4 19:51 - 22:02  (02:10)
+root     pts/0        10.0.0.61        Wed Oct 28 08:46 - 08:46  (00:00)
+root     pts/0        10.0.0.61        Tue Oct 13 12:19 - 12:19  (00:00)
+
+wtmp begins Sat Nov 22 11:54:23 2025
+
+$ env | grep -E "^(PATH|LANG|SHELL|HOME|USER)=" | sort
+HOME=/root
+LANG=en_US.UTF-8
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+SHELL=/bin/bash
+USER=root
+
+
+===== 3. 文件系统与存储 =====
+
+$ lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,ROTA,SCHED 2>/dev/null
+NAME                      SIZE TYPE FSTYPE      MOUNTPOINTS                                                                                                                                                                                                                                   ROTA SCHED
+sda                        60G disk                                                                                                                                                                                                                                                              0 none
+├─sda1                      1M part                                                                                                                                                                                                                                                              0 none
+├─sda2                      2G part ext4        /boot                                                                                                                                                                                                                                            0 none
+└─sda3                     58G part LVM2_member                                                                                                                                                                                                                                                  0 none
+  └─ubuntu--vg-ubuntu--lv  58G lvm  ext4        /                                                                                                                                                                                                                                                0 
+sr0                         4M rom  iso9660                                                                                                                                                                                                                                                      1 mq-deadline
+nbd0                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd1                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd2                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd3                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd4                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd5                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd6                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd7                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+rbd0                       10G disk             /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-312f456c-85da-4c85-b6a4-3aa2a682900a/mount                                                                                                              0 none
+                                                /var/lib/kubelet/plugins/kubernetes.io/csi/rbd.csi.ceph.com/1f25caad7d8149d3eb312b78209f92309a9ab49d02563b3386ec172e7f849cf2/globalmount/0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-0a6cc9fb-1001-41bd-bf9c-f8f206b8c13e      
+rbd1                        5G disk             /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-6b229b52-650d-4edc-aa53-dbf57b90b044/mount                                                                                                              0 none
+                                                /var/lib/kubelet/plugins/kubernetes.io/csi/rbd.csi.ceph.com/654d424d033025648bfa03df5533b49ce1df67f7af8a92c70d7f04d9277c168e/globalmount/0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-32e04190-c172-47fe-b116-1ebe1cfafddf      
+rbd2                        2G disk             /var/lib/kubelet/pods/a992030e-5b35-4cb2-acd7-e7282c3e11df/volumes/kubernetes.io~csi/pvc-b0b33b5d-3d00-4726-aa5f-4694f16036c7/mount                                                                                                              0 none
+                                                /var/lib/kubelet/plugins/kubernetes.io/csi/rbd.csi.ceph.com/8e992b1b8b9732494485c8ca69dc8ee901f6683d0e0ecb68b63b4683ad3ddcaa/globalmount/0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-5d351d6f-62d8-487d-9246-0dcb5790fc20      
+rbd3                       30G disk             /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volume-subpaths/pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60/deeptutor/1                                                                                                                  0 none
+                                                /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volumes/kubernetes.io~csi/pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60/mount                                                                                                                
+                                                /var/lib/kubelet/plugins/kubernetes.io/csi/rbd.csi.ceph.com/d97e3021f264e2fa5323e8e358dcd6fff9d9b3490f0bce413a5c271dda6b648f/globalmount/0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-e99018f7-6eca-40bb-bc3a-0ec9faafc0c6      
+rbd4                       20G disk             /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~csi/pvc-e6337758-28f8-49e1-9672-5b4e751c118f/mount                                                                                                              0 none
+                                                /var/lib/kubelet/plugins/kubernetes.io/csi/rbd.csi.ceph.com/0dd6b9cc10d6d98909a5c9f6052627bb1fb5be470d418a88faba86327578ffb4/globalmount/0001-0024-594e535e-d82c-11f0-afa7-bc24112b746f-000000000000002c-cdfecb4f-0acb-442b-a845-fa28cd25f2eb      
+nbd8                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd9                        0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd10                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd11                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd12                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd13                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd14                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+nbd15                       0B disk                                                                                                                                                                                                                                                              0 mq-deadline
+
+$ df -hT; echo; df -i
+Filesystem                                                                                            Type     Size  Used Avail Use% Mounted on
+tmpfs                                                                                                 tmpfs    794M   22M  773M   3% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv                                                                     ext4      57G   25G   31G  45% /
+tmpfs                                                                                                 tmpfs    3.9G     0  3.9G   0% /dev/shm
+tmpfs                                                                                                 tmpfs    5.0M     0  5.0M   0% /run/lock
+tmpfs                                                                                                 tmpfs    3.9G     0  3.9G   0% /run/qemu
+/dev/sda2                                                                                             ext4     2.0G  259M  1.6G  15% /boot
+tmpfs                                                                                                 tmpfs    6.1G     0  6.1G   0% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/clustermesh-secrets
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/hubble-tls
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/77ee78b7-003a-479e-b55d-6e8c17b481fc/volumes/kubernetes.io~projected/kube-api-access-fcfpf
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/kube-api-access-vdk75
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/51dac12cb8f602dae1006a74cc444e2d51d01812f832b219def118d58c633371/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/80cbf86bdc65228dc92dc065539fcc9589975f9d7504e03ed877c9fb22dfe391/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b6c745bb89d5430d80b6511fd3ae992af315be3c278966d8ab6a94706d29680a/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b6c745bb89d5430d80b6511fd3ae992af315be3c278966d8ab6a94706d29680a/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a829fb55a9a076e259de147cd9dec8a9ea33a923ba28ac9a3af196607582d003/rootfs
+tmpfs                                                                                                 tmpfs    6.1G  1.1M  6.1G   1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~empty-dir/shm
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~projected/kube-api-access-x59lb
+/dev/rbd0                                                                                             ext4     9.8G   65M  9.7G   1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-312f456c-85da-4c85-b6a4-3aa2a682900a/mount
+/dev/rbd1                                                                                             ext4     4.9G  593M  4.3G  12% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-6b229b52-650d-4edc-aa53-dbf57b90b044/mount
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b2a372fa2ea2ade6bc39d97ffa5674bf28b00f6a697b532e9151c571758a33f4/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b2a372fa2ea2ade6bc39d97ffa5674bf28b00f6a697b532e9151c571758a33f4/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/acb8b1ed5977b3043ce0681d2d3c92fdcc8ee3d928503dee850017d5f03031fc/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e945fe975b2232dfbac1a866af3433517c4e82d1b8fa4be9379955ffefb0e124/rootfs
+tmpfs                                                                                                 tmpfs    6.1G     0  6.1G   0% /var/lib/kubelet/pods/9cb67911-8067-47e4-a970-cf84340b7656/volumes/kubernetes.io~secret/argocd-dex-server-tls
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/9cb67911-8067-47e4-a970-cf84340b7656/volumes/kubernetes.io~projected/kube-api-access-fz2hv
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/82fece87-3dad-4cd9-9181-6f2054830eba/volumes/kubernetes.io~projected/kube-api-access-8vxsh
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volumes/kubernetes.io~projected/kube-api-access-wp6lz
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/7805a52f-076c-4958-a268-0661a400782a/volumes/kubernetes.io~projected/kube-api-access-pglvh
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/5370b644-f179-4339-850f-904d6a1821ea/volumes/kubernetes.io~projected/kube-api-access-z97cq
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/942b0f3e-be4e-493f-8d27-470773678d36/volumes/kubernetes.io~projected/kube-api-access-l2f8j
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/93437e3a-c1fe-44ac-b3d2-339d5831b5c0/volumes/kubernetes.io~projected/kube-api-access-c9v7l
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/cd8804de-6ff8-49e6-b48a-19acff08e95a/volumes/kubernetes.io~projected/kube-api-access-7pm29
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a93225a4b50d853d5cf00c4ef0339506d0ba450b200d1aec7796a86a67cf1f58/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a93225a4b50d853d5cf00c4ef0339506d0ba450b200d1aec7796a86a67cf1f58/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ecf90719c7bb5b2677213b0bcd3cb0695a0138c23a2739a7f3e79c659f8a2bc2/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ecf90719c7bb5b2677213b0bcd3cb0695a0138c23a2739a7f3e79c659f8a2bc2/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/de524948-b688-46b5-94e5-fa87949bf670/volumes/kubernetes.io~projected/tls
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ea3a5c460f30b3ab65a48c9dc451c410c494557b6735038707ca182665de5016/shm
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1ecf954dc737c13fddb30c727fd208f251ec3e70dde5a8d6823f19d95295e0f4/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1ecf954dc737c13fddb30c727fd208f251ec3e70dde5a8d6823f19d95295e0f4/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ea3a5c460f30b3ab65a48c9dc451c410c494557b6735038707ca182665de5016/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5185be444fd4eeedd6daa6173df38fba0424be145926811d6d0522a5857ebf0c/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5185be444fd4eeedd6daa6173df38fba0424be145926811d6d0522a5857ebf0c/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/c19cf73f-a0d3-4024-bec2-45ad239e11d3/volumes/kubernetes.io~projected/kube-api-access-f4j8k
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/79f7748678438222e1cb5ae60704ae698e01409314f9201e7c2315a426e3db7d/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6c5be9b0627537dacadeab04c02a2c4a3cd930cd9690f5282fe27f6578bae8de/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/d0eea601-5e08-42cf-b9cb-d85f50c5857e/volumes/kubernetes.io~projected/kube-api-access-m487j
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/dea9d809-9cc7-4787-8f26-b12b6a7df293/volumes/kubernetes.io~projected/kube-api-access-wkh9h
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5cec151c2c8b745aea9db62e5d146e5a2a139906e3dbb3bf1b3ea9215cd08c34/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5cec151c2c8b745aea9db62e5d146e5a2a139906e3dbb3bf1b3ea9215cd08c34/rootfs
+tmpfs                                                                                                 tmpfs    512M   12K  512M   1% /var/lib/kubelet/pods/aac458e4-bc77-45d4-bf8f-4354408260a3/volumes/kubernetes.io~projected/kube-api-access-ct2q6
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5e0c8a71fcf09503a8a985a864bb60f5ac6b2ad062da776e730e6ae68f3c5cf3/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5e0c8a71fcf09503a8a985a864bb60f5ac6b2ad062da776e730e6ae68f3c5cf3/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/03a04fe4-fcd6-4031-ac34-35af843ed360/volumes/kubernetes.io~projected/kube-api-access-gg7fp
+tmpfs                                                                                                 tmpfs    4.0G   12K  4.0G   1% /var/lib/kubelet/pods/12c5423a-08eb-4caf-9d7d-7cbeeec745fc/volumes/kubernetes.io~projected/kube-api-access-cz9bd
+10.0.0.1:/data/nfs/china-study-free-china-study-free-assets-pvc-ca401649-424e-436a-9253-31375c373f07  nfs4      94G   28G   62G  32% /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-ca401649-424e-436a-9253-31375c373f07
+10.0.0.1:/data/nfs/china-study-free-china-study-free-reports-pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af nfs4      94G   28G   62G  32% /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5eb5552a24b05a79ff999a5ae581103a348695070c063755bce36830a1e53dee/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5eb5552a24b05a79ff999a5ae581103a348695070c063755bce36830a1e53dee/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0282561d04329c7d6c1d7cf4fa24e664c2dd13f53630303ede5796039d56a9c2/rootfs
+tmpfs                                                                                                 tmpfs    512M   12K  512M   1% /var/lib/kubelet/pods/27524d7e-4f19-443a-8af1-5a2859899411/volumes/kubernetes.io~projected/kube-api-access-5448t
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/43764e8d07eb932f932b71a9065d920f66d09a001f26f907cc33d7d38123f105/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/43764e8d07eb932f932b71a9065d920f66d09a001f26f907cc33d7d38123f105/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a6ac4dcf57f3a2213995fcdda0b5d19337b030a0a015ff8a7d1b097b49fa7057/shm
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/4aa8a7da-e4fb-4cff-b597-1227c0333af4/volumes/kubernetes.io~projected/kube-api-access-7z5wd
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a6ac4dcf57f3a2213995fcdda0b5d19337b030a0a015ff8a7d1b097b49fa7057/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/66a8fc57-a93f-4972-aeaa-3dc3874e028d/volumes/kubernetes.io~projected/kube-api-access-45cqj
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/733a4f20c9f49e111c0c719d7d87b16aea9f121211e785bbf0d1592b51d6afbd/shm
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/beced8a356e30762c404e40204032f9c2e954966d10eac2043aa27b7465a4b11/shm
+10.0.0.1:/data/nfs                                                                                    nfs4      94G   28G   62G  32% /var/lib/kubelet/pods/66a8fc57-a93f-4972-aeaa-3dc3874e028d/volumes/kubernetes.io~nfs/nfs-volume
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/733a4f20c9f49e111c0c719d7d87b16aea9f121211e785bbf0d1592b51d6afbd/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/beced8a356e30762c404e40204032f9c2e954966d10eac2043aa27b7465a4b11/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6cb571a0572f41b5d6c6695074a0dd7a934ae635bab8e2399d979fc578326854/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a0f58dcd075385eab7a84f8a0179e176bd3418428ec5c40dc45d1082e7e9ef6a/shm
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5ca8af1673b2a08e401807d3573461322b8d601b4857f6d18f4178f224d8639a/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a0f58dcd075385eab7a84f8a0179e176bd3418428ec5c40dc45d1082e7e9ef6a/rootfs
+tmpfs                                                                                                 tmpfs    1.0M  140K  884K  14% /var/lib/kubelet/pods/7fd368cd-4db4-4879-abaf-98d92b7d4ac8/volumes/kubernetes.io~empty-dir/strimzi-tmp
+tmpfs                                                                                                 tmpfs    384M   12K  384M   1% /var/lib/kubelet/pods/7fd368cd-4db4-4879-abaf-98d92b7d4ac8/volumes/kubernetes.io~projected/kube-api-access-xcv2h
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b16186299d6af89c22b3365c82c243533732d9bd699b31c7b2d36ceb077ea843/rootfs
+tmpfs                                                                                                 tmpfs    200M  8.0K  200M   1% /var/lib/kubelet/pods/ba813e93-ebc0-44c1-a8e2-95cb49df1f11/volumes/kubernetes.io~secret/webhook-certificates
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5ca8af1673b2a08e401807d3573461322b8d601b4857f6d18f4178f224d8639a/rootfs
+tmpfs                                                                                                 tmpfs    200M   12K  200M   1% /var/lib/kubelet/pods/ba813e93-ebc0-44c1-a8e2-95cb49df1f11/volumes/kubernetes.io~projected/kube-api-access-tc2g9
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/74a731f6727a5287dbe5f8d24d7c2bf3cf9a31626b3b68f837c97c92d9ef5ff4/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/74a731f6727a5287dbe5f8d24d7c2bf3cf9a31626b3b68f837c97c92d9ef5ff4/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/0f6ef9a45b494ee047c1fa1a44f799032db52a0c34023d31deb7e9100ecfe80d/shm
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/09fbe2a7-3325-4936-956c-03ba88e3090f/volumes/kubernetes.io~projected/kube-api-access-qmsxm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0f6ef9a45b494ee047c1fa1a44f799032db52a0c34023d31deb7e9100ecfe80d/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ae697ef51169d640bfa572d40b46497ecae637a880cae17d32f67c3e526cf5ce/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/21531c770c2fbe4df749644f94bea683103a4743cc88ff284623c5692949c5c9/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/d0223a6648bfe3dc19559ec735dea02913a520906df84fe34cbed1e95d422c1a/shm
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/26c01d268c331817a269aa5f61d1e39a28e074f392cdca701a8be50709b4ee0f/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ae697ef51169d640bfa572d40b46497ecae637a880cae17d32f67c3e526cf5ce/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d0223a6648bfe3dc19559ec735dea02913a520906df84fe34cbed1e95d422c1a/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f3df43803d106b0ebf8e69b0517fc862937a8a63b8cd042a02461f1f48332b80/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/26c01d268c331817a269aa5f61d1e39a28e074f392cdca701a8be50709b4ee0f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f3df43803d106b0ebf8e69b0517fc862937a8a63b8cd042a02461f1f48332b80/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ab1dc5c9a16b00f44e6201b0f6083c99ea5336de40193a8f942f221d2194877f/shm
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3473e2945f6cd703f848fc040f84a6cb25fd58fe808019141553213f37495eed/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e447d07510f580c262982472548ddbae471c5ac10b857b27731f6985825c3022/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3473e2945f6cd703f848fc040f84a6cb25fd58fe808019141553213f37495eed/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/dde410565c7966b74fc84d3fcc998f98b8e402dd8f2241daed2eba570cb7e986/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9d814ab6f7dad7776d926ddfbb64407368c1e211eb36ff1b8adbdd0f08ee9baf/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/dde410565c7966b74fc84d3fcc998f98b8e402dd8f2241daed2eba570cb7e986/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cb205c8080146392a9aa2e5cec10b4c01a796ecf6d8198e7328afd33daa784d2/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ab1dc5c9a16b00f44e6201b0f6083c99ea5336de40193a8f942f221d2194877f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/77ba8b8b6f74aaaf13e000959b7c919441fd8ae16c4041eff2d008491c32d51f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ed8874d4e41388585c47c60f13898407f81362c3cff85d3858e36a677a1f2015/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/504e2022-c3f1-4f95-b2dd-3198484d7bdf/volumes/kubernetes.io~projected/kube-api-access-dvllj
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/e01ef6368bfba05e60cf7be0b2dbcc9b15330c3620841de18d19ad7c70b920a8/shm
+tmpfs                                                                                                 tmpfs    1.0G   12K  1.0G   1% /var/lib/kubelet/pods/67fdab32-836e-4b24-9784-2267cfc6296e/volumes/kubernetes.io~projected/kube-api-access-n78zp
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e01ef6368bfba05e60cf7be0b2dbcc9b15330c3620841de18d19ad7c70b920a8/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/c0ec0b00-a771-4937-a8ce-5b9d1bcdf247/volumes/kubernetes.io~projected/kube-api-access-657mv
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0602f3a2297e212f8e6424b4858bc530c9bab55ba94b85e508b5818992b6d5f6/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ab71e27d97fabbda06e4afc0b40cae0b01cd9549f7fdd41e084b178e0d0c77b9/shm
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/74cfee27-0d44-4015-8b6f-8c2c042351be/volumes/kubernetes.io~projected/kube-api-access-tg57m
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ab71e27d97fabbda06e4afc0b40cae0b01cd9549f7fdd41e084b178e0d0c77b9/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/d87386c9bc4e07aa8c4861b4dafb85e27b4bd1be80eff026b6c0d121f030e8c4/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d87386c9bc4e07aa8c4861b4dafb85e27b4bd1be80eff026b6c0d121f030e8c4/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/b4451111-9d62-4788-aefc-067857c26c4f/volumes/kubernetes.io~secret/tls-secret
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/b4451111-9d62-4788-aefc-067857c26c4f/volumes/kubernetes.io~projected/kube-api-access-hn28f
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/415834de49417fdf2068f6707378e252ebe21ba70dd3a1944dd02dbe9fd13ef5/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ce254171544acabf91bafbf25f93eacf6c2ee6f90e32c8853eb6374283325936/shm
+tmpfs                                                                                                 tmpfs    512M   12K  512M   1% /var/lib/kubelet/pods/a992030e-5b35-4cb2-acd7-e7282c3e11df/volumes/kubernetes.io~projected/kube-api-access-fcsqw
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/7dfdeb4b39bfcd334f73bc9e34cf420435b7899c1a7baddd6df4b67827b37077/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ce254171544acabf91bafbf25f93eacf6c2ee6f90e32c8853eb6374283325936/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7dfdeb4b39bfcd334f73bc9e34cf420435b7899c1a7baddd6df4b67827b37077/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/6f8f46d5d368fc914450fa38aca749afbfc2d98ec41d8cd4ba99f9374f7e85a3/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1febab9928bce10981cf074c13dd9324af1da6b54c0f2bc6e17841dabffc4eb4/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6f8f46d5d368fc914450fa38aca749afbfc2d98ec41d8cd4ba99f9374f7e85a3/rootfs
+tmpfs                                                                                                 tmpfs    500M   12K  500M   1% /var/lib/kubelet/pods/d0f137c7-8de1-45df-8e38-e718c788a6f6/volumes/kubernetes.io~projected/kube-api-access-lh9rh
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/670066b0355cff09a1651882e962fd7c2bd2acfb2de27256a6b88812698ebd7f/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/670066b0355cff09a1651882e962fd7c2bd2acfb2de27256a6b88812698ebd7f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5299d79971a120db2a63531f7a4b1955be32b4397f36d7a6f2b796d10368c2a1/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cd2d5f31b18ce8289d8ee5e725737718ba21b3e3ef531ee8a5f9cf3566362316/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/051dd5792aa33f4a0594d7b33ba536dc53ae4c4136d2549f332cca1333fff0d6/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/051dd5792aa33f4a0594d7b33ba536dc53ae4c4136d2549f332cca1333fff0d6/rootfs
+/dev/rbd2                                                                                             ext4     2.0G   57M  1.9G   3% /var/lib/kubelet/pods/a992030e-5b35-4cb2-acd7-e7282c3e11df/volumes/kubernetes.io~csi/pvc-b0b33b5d-3d00-4726-aa5f-4694f16036c7/mount
+/dev/rbd3                                                                                             ext4      30G  727M   29G   3% /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volumes/kubernetes.io~csi/pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60/mount
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/2ca3408a2945bbe61c59f814f9c6e382382d32cdb49a9ba0ac0333736f951bef/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/2ca3408a2945bbe61c59f814f9c6e382382d32cdb49a9ba0ac0333736f951bef/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b25b14be38959fbf8f3977658ce3c54cb478975c09ff63677b255b3f51d89e4a/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3c00fcacc5846d9c6a6555217fd5aa3601b9393b94f16373a1e249d7703479d6/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3c00fcacc5846d9c6a6555217fd5aa3601b9393b94f16373a1e249d7703479d6/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9c2c60a3050a1aee8c73e46a5813dba20788769b56525a94a43a1c3a6bdc3b77/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7c07954caa3a2f8c90600bbb1b588cca895e8757a8e179b533548f1f60769099/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7d26a544dcdac773ad6d3a35bac3ec3d996a2819fd30c68724899685e3a698da/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/e5f304710175dcfe76bc3f89a0c858a3f067478a42a294c0ca3e82dbab5d9d36/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e5f304710175dcfe76bc3f89a0c858a3f067478a42a294c0ca3e82dbab5d9d36/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ba5a287d4e35cd2245b64b38c28aec82ee94a56668cbe893f9a9f680ee27613d/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/01e49930-c698-4edf-ad18-fd26f744437d/volumes/kubernetes.io~secret/tls-certs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/01e49930-c698-4edf-ad18-fd26f744437d/volumes/kubernetes.io~projected/kube-api-access-gcfhz
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/47a824f3ab4e541246c535a8a4331f53e02954ff40f262fb566ed047463bbdaf/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/47a824f3ab4e541246c535a8a4331f53e02954ff40f262fb566ed047463bbdaf/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/fc888b72d3bd82539bb3a036886ef2eb9ca9c56559df95d8c38138956832e136/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a78a0b3abd46bfd1b502f12c2420933de9e4e3cd296222ef5cbaca80c2832e3b/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1cc4d1f84b3c65ea0e912b7dbefe23bf0c483a5d8e48c1998d04f56494b9b14e/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e4c59d5daa87b666d60b4f38a175f425d87309b3c6902371961d08ebcd55c324/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a80db3145e7747d9c697a03ea00b417e9f210b773e33a47780ae0bcfeea07e99/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/486e5285cb2a9272d01456b682a7b8cb1b7d8f9e4e37a471b4aa452f892e86b7/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5dc7d553d856c0c0e64a4f40c28a3a7f2d8cb35ddac37400d40888a470a48055/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3b57e1414dc3aeac74c5713728a99cee60ce38901ace5259ea13720322101f48/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a68ddd98926569a0fcc0bc2ba0f4da237788cd97da1e90a40cc3bbea0b68000b/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9828a8ab8b28239032c1419632e0044fa0400ab16df1e7e677436bd3705cb23f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f7f0e7812b370d7dd3b087ba0540a7d50b9c3b39467c0f68d8cddd500b047df6/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/656c4a372dfa4a4affffdfc24ae15a4da76b07f1ee02fa409ce3ddbde3065c56/rootfs
+tmpfs                                                                                                 tmpfs    4.0K     0  4.0K   0% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~empty-dir/ready-files
+tmpfs                                                                                                 tmpfs    5.0M  316K  4.7M   7% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~empty-dir/strimzi-tmp
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~projected/kube-api-access-pmhlc
+/dev/rbd4                                                                                             ext4      20G  231M   20G   2% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~csi/pvc-e6337758-28f8-49e1-9672-5b4e751c118f/mount
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/8443fdce3606b6490259c5a26ecc216aa71b10f99b2555da3a703b20a70bf015/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/8443fdce3606b6490259c5a26ecc216aa71b10f99b2555da3a703b20a70bf015/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a2a73cb6abfe8b9297e3790dfd4974bdb71b916eb140d5142e1db84a7faf08a7/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/60dcded9068a3c1013244ce5d43ffe6b8558950d611aab6380e4c077e1234677/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/13377a106c89d767a2a8181a76cbb7a96d88d0f436d58618303ea15192f858aa/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/20c95183c751e74cf1f329f5224d2720ffcf9bf2ac1dafe987fec60981ab0b1b/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/20c95183c751e74cf1f329f5224d2720ffcf9bf2ac1dafe987fec60981ab0b1b/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1bfdad0f6801d7799d1583ca9faa7037b6ac9d7f8a8e9fb58aec6fd9010b6457/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/5df1a696-db56-4368-85db-a0a1dd2c2b70/volumes/kubernetes.io~projected/kube-api-access-94w54
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1e8cd875e58f223152e30e50a01fe0502b782122971cf6caaaa6b9e432138eea/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1e8cd875e58f223152e30e50a01fe0502b782122971cf6caaaa6b9e432138eea/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/42bba666735fba1fe03e1dcba4d75367537b40f1df02486bc5b592ad2289565c/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/bcd51ee390d73a066a5d0904a34d4435b50f179d7cf5403b9d0e60f74fed817b/rootfs
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~secret/client
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~secret/server
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~projected/kube-api-access-72kjr
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b44b5cc8a50102dced456e92c970d50c137609202724a43a158a896be4bc7536/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b44b5cc8a50102dced456e92c970d50c137609202724a43a158a896be4bc7536/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f01d337f86f64d6a940d689e3e8c03d9fd69d26595863363ea085b18dafb483a/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f01d337f86f64d6a940d689e3e8c03d9fd69d26595863363ea085b18dafb483a/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f2454e699e51404e2e77f8c16fe0bc5ffc4bd98aad3ad37d1bb5386cc45ef51a/rootfs
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f6101bbf8d58b360119ed589931dcf2b9d6d6f8ae0f8151be8f09f0fd18b7d5f/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f6101bbf8d58b360119ed589931dcf2b9d6d6f8ae0f8151be8f09f0fd18b7d5f/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/91b3ec85b012dedfb1bc9d36f69acd1e01ae5c39d4278bdf347366b3dc3a28b6/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b0dbc3592a655414302e53dfa06d09490638130488ede8c24438c9ee05259108/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/704cbde81c12726aa9f672421e64eba49f1d18b791b92262358bdf251fbd80be/rootfs
+tmpfs                                                                                                 tmpfs    6.1G     0  6.1G   0% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~empty-dir/keys-tmp-dir
+tmpfs                                                                                                 tmpfs    6.1G   12K  6.1G   1% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~projected/kube-api-access-xmp9j
+tmpfs                                                                                                 tmpfs    6.1G  4.0K  6.1G   1% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~projected/oidc-token
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ea432a78b688c043a5dca9f193f1a7055d6bab0e4bc5996a966c3ee0e477679c/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1c53efea76dfae63f6a20a750666cc0f053e7d5367cb4aa67335a28191d18c2b/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/8e7496f526663098f0357c67006d59629a67480aef877806f3c0b8c3dd5639af/rootfs
+tmpfs                                                                                                 tmpfs    320M   12K  320M   1% /var/lib/kubelet/pods/e91d7d83-9813-4623-909b-6e8189621df6/volumes/kubernetes.io~projected/kube-api-access-q744z
+shm                                                                                                   tmpfs     64M     0   64M   0% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/shm
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/18068a16866fbd9fea96a94c7e12ba53c10e8b58912b893526f58d1d5491abf8/rootfs
+overlay                                                                                               overlay   57G   25G   31G  45% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d13c3513d931922b4e125805f71769d315c196455f0a3feb0f7dfe2536cc4b9c/rootfs
+tmpfs                                                                                                 tmpfs    794M     0  794M   0% /run/user/0
+
+Filesystem                                                                                             Inodes  IUsed   IFree IUse% Mounted on
+tmpfs                                                                                                 1015973   4053 1011920    1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv                                                                     3801088 386050 3415038   11% /
+tmpfs                                                                                                 1015973      1 1015972    1% /dev/shm
+tmpfs                                                                                                 1015973      3 1015970    1% /run/lock
+tmpfs                                                                                                 1015973      1 1015972    1% /run/qemu
+/dev/sda2                                                                                              131072    320  130752    1% /boot
+tmpfs                                                                                                 1015973      3 1015970    1% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/clustermesh-secrets
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/hubble-tls
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/77ee78b7-003a-479e-b55d-6e8c17b481fc/volumes/kubernetes.io~projected/kube-api-access-fcfpf
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/kube-api-access-vdk75
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/51dac12cb8f602dae1006a74cc444e2d51d01812f832b219def118d58c633371/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/80cbf86bdc65228dc92dc065539fcc9589975f9d7504e03ed877c9fb22dfe391/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b6c745bb89d5430d80b6511fd3ae992af315be3c278966d8ab6a94706d29680a/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b6c745bb89d5430d80b6511fd3ae992af315be3c278966d8ab6a94706d29680a/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a829fb55a9a076e259de147cd9dec8a9ea33a923ba28ac9a3af196607582d003/rootfs
+tmpfs                                                                                                 1015973      3 1015970    1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~empty-dir/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~projected/kube-api-access-x59lb
+/dev/rbd0                                                                                              655360   2588  652772    1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-312f456c-85da-4c85-b6a4-3aa2a682900a/mount
+/dev/rbd1                                                                                              327680    123  327557    1% /var/lib/kubelet/pods/32aaafb8-a93c-40a2-98d5-8fcb239a006a/volumes/kubernetes.io~csi/pvc-6b229b52-650d-4edc-aa53-dbf57b90b044/mount
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b2a372fa2ea2ade6bc39d97ffa5674bf28b00f6a697b532e9151c571758a33f4/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b2a372fa2ea2ade6bc39d97ffa5674bf28b00f6a697b532e9151c571758a33f4/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/acb8b1ed5977b3043ce0681d2d3c92fdcc8ee3d928503dee850017d5f03031fc/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e945fe975b2232dfbac1a866af3433517c4e82d1b8fa4be9379955ffefb0e124/rootfs
+tmpfs                                                                                                 1015973      3 1015970    1% /var/lib/kubelet/pods/9cb67911-8067-47e4-a970-cf84340b7656/volumes/kubernetes.io~secret/argocd-dex-server-tls
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/9cb67911-8067-47e4-a970-cf84340b7656/volumes/kubernetes.io~projected/kube-api-access-fz2hv
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/82fece87-3dad-4cd9-9181-6f2054830eba/volumes/kubernetes.io~projected/kube-api-access-8vxsh
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volumes/kubernetes.io~projected/kube-api-access-wp6lz
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/7805a52f-076c-4958-a268-0661a400782a/volumes/kubernetes.io~projected/kube-api-access-pglvh
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/5370b644-f179-4339-850f-904d6a1821ea/volumes/kubernetes.io~projected/kube-api-access-z97cq
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/942b0f3e-be4e-493f-8d27-470773678d36/volumes/kubernetes.io~projected/kube-api-access-l2f8j
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/93437e3a-c1fe-44ac-b3d2-339d5831b5c0/volumes/kubernetes.io~projected/kube-api-access-c9v7l
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/cd8804de-6ff8-49e6-b48a-19acff08e95a/volumes/kubernetes.io~projected/kube-api-access-7pm29
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a93225a4b50d853d5cf00c4ef0339506d0ba450b200d1aec7796a86a67cf1f58/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a93225a4b50d853d5cf00c4ef0339506d0ba450b200d1aec7796a86a67cf1f58/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ecf90719c7bb5b2677213b0bcd3cb0695a0138c23a2739a7f3e79c659f8a2bc2/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ecf90719c7bb5b2677213b0bcd3cb0695a0138c23a2739a7f3e79c659f8a2bc2/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/de524948-b688-46b5-94e5-fa87949bf670/volumes/kubernetes.io~projected/tls
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ea3a5c460f30b3ab65a48c9dc451c410c494557b6735038707ca182665de5016/shm
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1ecf954dc737c13fddb30c727fd208f251ec3e70dde5a8d6823f19d95295e0f4/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1ecf954dc737c13fddb30c727fd208f251ec3e70dde5a8d6823f19d95295e0f4/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ea3a5c460f30b3ab65a48c9dc451c410c494557b6735038707ca182665de5016/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5185be444fd4eeedd6daa6173df38fba0424be145926811d6d0522a5857ebf0c/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5185be444fd4eeedd6daa6173df38fba0424be145926811d6d0522a5857ebf0c/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/c19cf73f-a0d3-4024-bec2-45ad239e11d3/volumes/kubernetes.io~projected/kube-api-access-f4j8k
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/79f7748678438222e1cb5ae60704ae698e01409314f9201e7c2315a426e3db7d/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6c5be9b0627537dacadeab04c02a2c4a3cd930cd9690f5282fe27f6578bae8de/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/d0eea601-5e08-42cf-b9cb-d85f50c5857e/volumes/kubernetes.io~projected/kube-api-access-m487j
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/dea9d809-9cc7-4787-8f26-b12b6a7df293/volumes/kubernetes.io~projected/kube-api-access-wkh9h
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5cec151c2c8b745aea9db62e5d146e5a2a139906e3dbb3bf1b3ea9215cd08c34/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5cec151c2c8b745aea9db62e5d146e5a2a139906e3dbb3bf1b3ea9215cd08c34/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/aac458e4-bc77-45d4-bf8f-4354408260a3/volumes/kubernetes.io~projected/kube-api-access-ct2q6
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5e0c8a71fcf09503a8a985a864bb60f5ac6b2ad062da776e730e6ae68f3c5cf3/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5e0c8a71fcf09503a8a985a864bb60f5ac6b2ad062da776e730e6ae68f3c5cf3/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/03a04fe4-fcd6-4031-ac34-35af843ed360/volumes/kubernetes.io~projected/kube-api-access-gg7fp
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/12c5423a-08eb-4caf-9d7d-7cbeeec745fc/volumes/kubernetes.io~projected/kube-api-access-cz9bd
+10.0.0.1:/data/nfs/china-study-free-china-study-free-assets-pvc-ca401649-424e-436a-9253-31375c373f07  6291456 393846 5897610    7% /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-ca401649-424e-436a-9253-31375c373f07
+10.0.0.1:/data/nfs/china-study-free-china-study-free-reports-pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af 6291456 393846 5897610    7% /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5eb5552a24b05a79ff999a5ae581103a348695070c063755bce36830a1e53dee/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5eb5552a24b05a79ff999a5ae581103a348695070c063755bce36830a1e53dee/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0282561d04329c7d6c1d7cf4fa24e664c2dd13f53630303ede5796039d56a9c2/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/27524d7e-4f19-443a-8af1-5a2859899411/volumes/kubernetes.io~projected/kube-api-access-5448t
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/43764e8d07eb932f932b71a9065d920f66d09a001f26f907cc33d7d38123f105/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/43764e8d07eb932f932b71a9065d920f66d09a001f26f907cc33d7d38123f105/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a6ac4dcf57f3a2213995fcdda0b5d19337b030a0a015ff8a7d1b097b49fa7057/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/4aa8a7da-e4fb-4cff-b597-1227c0333af4/volumes/kubernetes.io~projected/kube-api-access-7z5wd
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a6ac4dcf57f3a2213995fcdda0b5d19337b030a0a015ff8a7d1b097b49fa7057/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/66a8fc57-a93f-4972-aeaa-3dc3874e028d/volumes/kubernetes.io~projected/kube-api-access-45cqj
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/733a4f20c9f49e111c0c719d7d87b16aea9f121211e785bbf0d1592b51d6afbd/shm
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/beced8a356e30762c404e40204032f9c2e954966d10eac2043aa27b7465a4b11/shm
+10.0.0.1:/data/nfs                                                                                    6291456 393846 5897610    7% /var/lib/kubelet/pods/66a8fc57-a93f-4972-aeaa-3dc3874e028d/volumes/kubernetes.io~nfs/nfs-volume
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/733a4f20c9f49e111c0c719d7d87b16aea9f121211e785bbf0d1592b51d6afbd/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/beced8a356e30762c404e40204032f9c2e954966d10eac2043aa27b7465a4b11/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6cb571a0572f41b5d6c6695074a0dd7a934ae635bab8e2399d979fc578326854/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/a0f58dcd075385eab7a84f8a0179e176bd3418428ec5c40dc45d1082e7e9ef6a/shm
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/5ca8af1673b2a08e401807d3573461322b8d601b4857f6d18f4178f224d8639a/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a0f58dcd075385eab7a84f8a0179e176bd3418428ec5c40dc45d1082e7e9ef6a/rootfs
+tmpfs                                                                                                 1015973      5 1015968    1% /var/lib/kubelet/pods/7fd368cd-4db4-4879-abaf-98d92b7d4ac8/volumes/kubernetes.io~empty-dir/strimzi-tmp
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/7fd368cd-4db4-4879-abaf-98d92b7d4ac8/volumes/kubernetes.io~projected/kube-api-access-xcv2h
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b16186299d6af89c22b3365c82c243533732d9bd699b31c7b2d36ceb077ea843/rootfs
+tmpfs                                                                                                 1015973      7 1015966    1% /var/lib/kubelet/pods/ba813e93-ebc0-44c1-a8e2-95cb49df1f11/volumes/kubernetes.io~secret/webhook-certificates
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5ca8af1673b2a08e401807d3573461322b8d601b4857f6d18f4178f224d8639a/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/ba813e93-ebc0-44c1-a8e2-95cb49df1f11/volumes/kubernetes.io~projected/kube-api-access-tc2g9
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/74a731f6727a5287dbe5f8d24d7c2bf3cf9a31626b3b68f837c97c92d9ef5ff4/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/74a731f6727a5287dbe5f8d24d7c2bf3cf9a31626b3b68f837c97c92d9ef5ff4/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/0f6ef9a45b494ee047c1fa1a44f799032db52a0c34023d31deb7e9100ecfe80d/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/09fbe2a7-3325-4936-956c-03ba88e3090f/volumes/kubernetes.io~projected/kube-api-access-qmsxm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0f6ef9a45b494ee047c1fa1a44f799032db52a0c34023d31deb7e9100ecfe80d/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ae697ef51169d640bfa572d40b46497ecae637a880cae17d32f67c3e526cf5ce/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/21531c770c2fbe4df749644f94bea683103a4743cc88ff284623c5692949c5c9/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/d0223a6648bfe3dc19559ec735dea02913a520906df84fe34cbed1e95d422c1a/shm
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/26c01d268c331817a269aa5f61d1e39a28e074f392cdca701a8be50709b4ee0f/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ae697ef51169d640bfa572d40b46497ecae637a880cae17d32f67c3e526cf5ce/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d0223a6648bfe3dc19559ec735dea02913a520906df84fe34cbed1e95d422c1a/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f3df43803d106b0ebf8e69b0517fc862937a8a63b8cd042a02461f1f48332b80/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/26c01d268c331817a269aa5f61d1e39a28e074f392cdca701a8be50709b4ee0f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f3df43803d106b0ebf8e69b0517fc862937a8a63b8cd042a02461f1f48332b80/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ab1dc5c9a16b00f44e6201b0f6083c99ea5336de40193a8f942f221d2194877f/shm
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3473e2945f6cd703f848fc040f84a6cb25fd58fe808019141553213f37495eed/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e447d07510f580c262982472548ddbae471c5ac10b857b27731f6985825c3022/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3473e2945f6cd703f848fc040f84a6cb25fd58fe808019141553213f37495eed/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/dde410565c7966b74fc84d3fcc998f98b8e402dd8f2241daed2eba570cb7e986/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9d814ab6f7dad7776d926ddfbb64407368c1e211eb36ff1b8adbdd0f08ee9baf/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/dde410565c7966b74fc84d3fcc998f98b8e402dd8f2241daed2eba570cb7e986/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cb205c8080146392a9aa2e5cec10b4c01a796ecf6d8198e7328afd33daa784d2/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ab1dc5c9a16b00f44e6201b0f6083c99ea5336de40193a8f942f221d2194877f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/77ba8b8b6f74aaaf13e000959b7c919441fd8ae16c4041eff2d008491c32d51f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ed8874d4e41388585c47c60f13898407f81362c3cff85d3858e36a677a1f2015/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/504e2022-c3f1-4f95-b2dd-3198484d7bdf/volumes/kubernetes.io~projected/kube-api-access-dvllj
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/e01ef6368bfba05e60cf7be0b2dbcc9b15330c3620841de18d19ad7c70b920a8/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/67fdab32-836e-4b24-9784-2267cfc6296e/volumes/kubernetes.io~projected/kube-api-access-n78zp
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e01ef6368bfba05e60cf7be0b2dbcc9b15330c3620841de18d19ad7c70b920a8/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/c0ec0b00-a771-4937-a8ce-5b9d1bcdf247/volumes/kubernetes.io~projected/kube-api-access-657mv
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/0602f3a2297e212f8e6424b4858bc530c9bab55ba94b85e508b5818992b6d5f6/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ab71e27d97fabbda06e4afc0b40cae0b01cd9549f7fdd41e084b178e0d0c77b9/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/74cfee27-0d44-4015-8b6f-8c2c042351be/volumes/kubernetes.io~projected/kube-api-access-tg57m
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ab71e27d97fabbda06e4afc0b40cae0b01cd9549f7fdd41e084b178e0d0c77b9/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/d87386c9bc4e07aa8c4861b4dafb85e27b4bd1be80eff026b6c0d121f030e8c4/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d87386c9bc4e07aa8c4861b4dafb85e27b4bd1be80eff026b6c0d121f030e8c4/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/b4451111-9d62-4788-aefc-067857c26c4f/volumes/kubernetes.io~secret/tls-secret
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/b4451111-9d62-4788-aefc-067857c26c4f/volumes/kubernetes.io~projected/kube-api-access-hn28f
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/415834de49417fdf2068f6707378e252ebe21ba70dd3a1944dd02dbe9fd13ef5/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/ce254171544acabf91bafbf25f93eacf6c2ee6f90e32c8853eb6374283325936/shm
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/a992030e-5b35-4cb2-acd7-e7282c3e11df/volumes/kubernetes.io~projected/kube-api-access-fcsqw
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/7dfdeb4b39bfcd334f73bc9e34cf420435b7899c1a7baddd6df4b67827b37077/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ce254171544acabf91bafbf25f93eacf6c2ee6f90e32c8853eb6374283325936/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7dfdeb4b39bfcd334f73bc9e34cf420435b7899c1a7baddd6df4b67827b37077/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/6f8f46d5d368fc914450fa38aca749afbfc2d98ec41d8cd4ba99f9374f7e85a3/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1febab9928bce10981cf074c13dd9324af1da6b54c0f2bc6e17841dabffc4eb4/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/6f8f46d5d368fc914450fa38aca749afbfc2d98ec41d8cd4ba99f9374f7e85a3/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/d0f137c7-8de1-45df-8e38-e718c788a6f6/volumes/kubernetes.io~projected/kube-api-access-lh9rh
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/670066b0355cff09a1651882e962fd7c2bd2acfb2de27256a6b88812698ebd7f/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/670066b0355cff09a1651882e962fd7c2bd2acfb2de27256a6b88812698ebd7f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5299d79971a120db2a63531f7a4b1955be32b4397f36d7a6f2b796d10368c2a1/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/cd2d5f31b18ce8289d8ee5e725737718ba21b3e3ef531ee8a5f9cf3566362316/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/051dd5792aa33f4a0594d7b33ba536dc53ae4c4136d2549f332cca1333fff0d6/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/051dd5792aa33f4a0594d7b33ba536dc53ae4c4136d2549f332cca1333fff0d6/rootfs
+/dev/rbd2                                                                                              131072     16  131056    1% /var/lib/kubelet/pods/a992030e-5b35-4cb2-acd7-e7282c3e11df/volumes/kubernetes.io~csi/pvc-b0b33b5d-3d00-4726-aa5f-4694f16036c7/mount
+/dev/rbd3                                                                                             1966080   7094 1958986    1% /var/lib/kubelet/pods/313988f2-8bf2-4088-9f7b-f785a3b590df/volumes/kubernetes.io~csi/pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60/mount
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/2ca3408a2945bbe61c59f814f9c6e382382d32cdb49a9ba0ac0333736f951bef/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/2ca3408a2945bbe61c59f814f9c6e382382d32cdb49a9ba0ac0333736f951bef/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b25b14be38959fbf8f3977658ce3c54cb478975c09ff63677b255b3f51d89e4a/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/3c00fcacc5846d9c6a6555217fd5aa3601b9393b94f16373a1e249d7703479d6/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3c00fcacc5846d9c6a6555217fd5aa3601b9393b94f16373a1e249d7703479d6/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9c2c60a3050a1aee8c73e46a5813dba20788769b56525a94a43a1c3a6bdc3b77/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7c07954caa3a2f8c90600bbb1b588cca895e8757a8e179b533548f1f60769099/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/7d26a544dcdac773ad6d3a35bac3ec3d996a2819fd30c68724899685e3a698da/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/e5f304710175dcfe76bc3f89a0c858a3f067478a42a294c0ca3e82dbab5d9d36/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e5f304710175dcfe76bc3f89a0c858a3f067478a42a294c0ca3e82dbab5d9d36/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ba5a287d4e35cd2245b64b38c28aec82ee94a56668cbe893f9a9f680ee27613d/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/01e49930-c698-4edf-ad18-fd26f744437d/volumes/kubernetes.io~secret/tls-certs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/01e49930-c698-4edf-ad18-fd26f744437d/volumes/kubernetes.io~projected/kube-api-access-gcfhz
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/47a824f3ab4e541246c535a8a4331f53e02954ff40f262fb566ed047463bbdaf/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/47a824f3ab4e541246c535a8a4331f53e02954ff40f262fb566ed047463bbdaf/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/fc888b72d3bd82539bb3a036886ef2eb9ca9c56559df95d8c38138956832e136/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a78a0b3abd46bfd1b502f12c2420933de9e4e3cd296222ef5cbaca80c2832e3b/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1cc4d1f84b3c65ea0e912b7dbefe23bf0c483a5d8e48c1998d04f56494b9b14e/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/e4c59d5daa87b666d60b4f38a175f425d87309b3c6902371961d08ebcd55c324/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a80db3145e7747d9c697a03ea00b417e9f210b773e33a47780ae0bcfeea07e99/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/486e5285cb2a9272d01456b682a7b8cb1b7d8f9e4e37a471b4aa452f892e86b7/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/5dc7d553d856c0c0e64a4f40c28a3a7f2d8cb35ddac37400d40888a470a48055/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/3b57e1414dc3aeac74c5713728a99cee60ce38901ace5259ea13720322101f48/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a68ddd98926569a0fcc0bc2ba0f4da237788cd97da1e90a40cc3bbea0b68000b/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/9828a8ab8b28239032c1419632e0044fa0400ab16df1e7e677436bd3705cb23f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f7f0e7812b370d7dd3b087ba0540a7d50b9c3b39467c0f68d8cddd500b047df6/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/656c4a372dfa4a4affffdfc24ae15a4da76b07f1ee02fa409ce3ddbde3065c56/rootfs
+tmpfs                                                                                                 1015973      1 1015972    1% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~empty-dir/ready-files
+tmpfs                                                                                                 1015973      7 1015966    1% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~empty-dir/strimzi-tmp
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~projected/kube-api-access-pmhlc
+/dev/rbd4                                                                                             1310720    482 1310238    1% /var/lib/kubelet/pods/a531d86a-ce75-453e-b0a3-0bb13f84ce1c/volumes/kubernetes.io~csi/pvc-e6337758-28f8-49e1-9672-5b4e751c118f/mount
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/8443fdce3606b6490259c5a26ecc216aa71b10f99b2555da3a703b20a70bf015/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/8443fdce3606b6490259c5a26ecc216aa71b10f99b2555da3a703b20a70bf015/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/a2a73cb6abfe8b9297e3790dfd4974bdb71b916eb140d5142e1db84a7faf08a7/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/60dcded9068a3c1013244ce5d43ffe6b8558950d611aab6380e4c077e1234677/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/13377a106c89d767a2a8181a76cbb7a96d88d0f436d58618303ea15192f858aa/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/20c95183c751e74cf1f329f5224d2720ffcf9bf2ac1dafe987fec60981ab0b1b/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/20c95183c751e74cf1f329f5224d2720ffcf9bf2ac1dafe987fec60981ab0b1b/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1bfdad0f6801d7799d1583ca9faa7037b6ac9d7f8a8e9fb58aec6fd9010b6457/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/5df1a696-db56-4368-85db-a0a1dd2c2b70/volumes/kubernetes.io~projected/kube-api-access-94w54
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/1e8cd875e58f223152e30e50a01fe0502b782122971cf6caaaa6b9e432138eea/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1e8cd875e58f223152e30e50a01fe0502b782122971cf6caaaa6b9e432138eea/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/42bba666735fba1fe03e1dcba4d75367537b40f1df02486bc5b592ad2289565c/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/bcd51ee390d73a066a5d0904a34d4435b50f179d7cf5403b9d0e60f74fed817b/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~secret/client
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~secret/server
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/f47ee2b2-6201-4989-a531-93bada07b50c/volumes/kubernetes.io~projected/kube-api-access-72kjr
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/b44b5cc8a50102dced456e92c970d50c137609202724a43a158a896be4bc7536/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b44b5cc8a50102dced456e92c970d50c137609202724a43a158a896be4bc7536/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f01d337f86f64d6a940d689e3e8c03d9fd69d26595863363ea085b18dafb483a/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f01d337f86f64d6a940d689e3e8c03d9fd69d26595863363ea085b18dafb483a/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f2454e699e51404e2e77f8c16fe0bc5ffc4bd98aad3ad37d1bb5386cc45ef51a/rootfs
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/f6101bbf8d58b360119ed589931dcf2b9d6d6f8ae0f8151be8f09f0fd18b7d5f/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/f6101bbf8d58b360119ed589931dcf2b9d6d6f8ae0f8151be8f09f0fd18b7d5f/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/91b3ec85b012dedfb1bc9d36f69acd1e01ae5c39d4278bdf347366b3dc3a28b6/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/b0dbc3592a655414302e53dfa06d09490638130488ede8c24438c9ee05259108/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/704cbde81c12726aa9f672421e64eba49f1d18b791b92262358bdf251fbd80be/rootfs
+tmpfs                                                                                                 1015973      1 1015972    1% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~empty-dir/keys-tmp-dir
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~projected/kube-api-access-xmp9j
+tmpfs                                                                                                 1015973      5 1015968    1% /var/lib/kubelet/pods/4b731be9-8e6f-446f-8712-44f847b03181/volumes/kubernetes.io~projected/oidc-token
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/ea432a78b688c043a5dca9f193f1a7055d6bab0e4bc5996a966c3ee0e477679c/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/1c53efea76dfae63f6a20a750666cc0f053e7d5367cb4aa67335a28191d18c2b/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/8e7496f526663098f0357c67006d59629a67480aef877806f3c0b8c3dd5639af/rootfs
+tmpfs                                                                                                 1015973      9 1015964    1% /var/lib/kubelet/pods/e91d7d83-9813-4623-909b-6e8189621df6/volumes/kubernetes.io~projected/kube-api-access-q744z
+shm                                                                                                   1015973      1 1015972    1% /run/containerd/io.containerd.grpc.v1.cri/sandboxes/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/shm
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/18068a16866fbd9fea96a94c7e12ba53c10e8b58912b893526f58d1d5491abf8/rootfs
+overlay                                                                                               3801088 386050 3415038   11% /run/containerd/io.containerd.runtime.v2.task/k8s.io/d13c3513d931922b4e125805f71769d315c196455f0a3feb0f7dfe2536cc4b9c/rootfs
+tmpfs                                                                                                  203194     21  203173    1% /run/user/0
+
+$ findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS 2>/dev/null | head -40
+TARGET                                                                                                                                                                                                                                          SOURCE                                                                                                FSTYPE      OPTIONS
+/                                                                                                                                                                                                                                               /dev/mapper/ubuntu--vg-ubuntu--lv                                                                     ext4        rw,relatime
+├─/sys                                                                                                                                                                                                                                          sysfs                                                                                                 sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                                                                                                                                                                                                        securityfs                                                                                            securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                                                                                                                                                                                                              cgroup2                                                                                               cgroup2     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/pstore                                                                                                                                                                                                                              pstore                                                                                                pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                                                                                                                                                                                                                 bpf                                                                                                   bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                                                                                                                                                                                                           debugfs                                                                                               debugfs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                                                                                                                                                                                                         tracefs                                                                                               tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/fuse/connections                                                                                                                                                                                                                    fusectl                                                                                               fusectl     rw,nosuid,nodev,noexec,relatime
+│ └─/sys/kernel/config                                                                                                                                                                                                                          configfs                                                                                              configfs    rw,nosuid,nodev,noexec,relatime
+├─/proc                                                                                                                                                                                                                                         proc                                                                                                  proc        rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                                                                                                                                                                                    systemd-1                                                                                             autofs      rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=19762
+│   └─/proc/sys/fs/binfmt_misc                                                                                                                                                                                                                  binfmt_misc                                                                                           binfmt_misc rw,nosuid,nodev,noexec,relatime
+├─/dev                                                                                                                                                                                                                                          udev                                                                                                  devtmpfs    rw,nosuid,relatime,size=4004056k,nr_inodes=1001014,mode=755,inode64
+│ ├─/dev/pts                                                                                                                                                                                                                                    devpts                                                                                                devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                                                                                                                                                                                                                                    tmpfs                                                                                                 tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/hugepages                                                                                                                                                                                                                              hugetlbfs                                                                                             hugetlbfs   rw,relatime,pagesize=2M
+│ └─/dev/mqueue                                                                                                                                                                                                                                 mqueue                                                                                                mqueue      rw,nosuid,nodev,noexec,relatime
+├─/run                                                                                                                                                                                                                                          tmpfs                                                                                                 tmpfs       rw,nosuid,nodev,noexec,relatime,size=812780k,mode=755,inode64
+│ ├─/run/lock                                                                                                                                                                                                                                   tmpfs                                                                                                 tmpfs       rw,nosuid,nodev,noexec,relatime,size=5120k,inode64
+│ ├─/run/credentials/systemd-sysusers.service                                                                                                                                                                                                   none                                                                                                  ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/qemu                                                                                                                                                                                                                                   tmpfs                                                                                                 tmpfs       rw,nosuid,nodev,relatime,mode=755,inode64
+│ ├─/run/rpc_pipefs                                                                                                                                                                                                                             sunrpc                                                                                                rpc_pipefs  rw,relatime
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/80cbf86bdc65228dc92dc065539fcc9589975f9d7504e03ed877c9fb22dfe391/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28314/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28313/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28312/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28311/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28310/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28725/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28725/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/shm                                                                                                                    shm                                                                                                   tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9933/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28712/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28712/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/shm                                                                                                                    shm                                                                                                   tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/01435c14fe091ff7cdff925e04fe1c6b82361c05906750ce824a161f3d751f11/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9933/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28893/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28893/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/shm                                                                                                                    shm                                                                                                   tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/ea432a78b688c043a5dca9f193f1a7055d6bab0e4bc5996a966c3ee0e477679c/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28668/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28667/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28666/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28665/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28894/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28894/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9933/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28714/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28714/work,nouserxattr
+│ ├─/run/netns/cni-0f70365b-cdee-bfb9-88f7-7baab8c2f723                                                                                                                                                                                         nsfs[net:[4026532405]]                                                                                nsfs        rw
+│ ├─/run/cilium/cgroupv2                                                                                                                                                                                                                        none                                                                                                  cgroup2     rw,relatime
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/1c53efea76dfae63f6a20a750666cc0f053e7d5367cb4aa67335a28191d18c2b/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28669/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28347/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28346/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28345/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28344/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28343/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28342/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28341/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28340/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28339/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28338/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28337/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28336/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28335/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28895/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28895/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/8e7496f526663098f0357c67006d59629a67480aef877806f3c0b8c3dd5639af/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28668/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28667/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28666/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28665/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28896/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28896/work,nouserxattr
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/51dac12cb8f602dae1006a74cc444e2d51d01812f832b219def118d58c633371/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/8235/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/8234/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/8233/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28715/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28715/work,nouserxattr
+│ ├─/run/containerd/io.containerd.grpc.v1.cri/sandboxes/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/shm                                                                                                                    shm                                                                                                   tmpfs       rw,nosuid,nodev,noexec,relatime,size=65536k,inode64
+│ ├─/run/containerd/io.containerd.runtime.v2.task/k8s.io/636cae0cd90d6a74571c720d8dc2370551d60d8526772f3b5166f574bb18b907/rootfs                                                                                                                overlay                                                                                               overlay     rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9933/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28897/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28897/work,nouserxattr
+│ ├─/run/netns/cni-df6ffeeb-f019-22d9-b2b2-1a86a2169bdd                                                                                                                                                                                         nsfs[net:[4026532458]]                                                                                nsfs        rw
+
+$ cat /etc/fstab 2>/dev/null | grep -v "^#" | sed "/^$/d"
+/dev/disk/by-id/dm-uuid-LVM-mTwTwfpmda5fAdDi3CZdwvQdPwu2ntJ9LU4rXWKAmOIaQTd1aTb2yUPYH57lPviv / ext4 defaults 0 1
+/dev/disk/by-uuid/c3aea270-9cc8-4be0-a547-e3215847cf43 /boot ext4 defaults 0 1
+
+$ mount | head -30
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+udev on /dev type devtmpfs (rw,nosuid,relatime,size=4004056k,nr_inodes=1001014,mode=755,inode64)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,noexec,relatime,size=812780k,mode=755,inode64)
+/dev/mapper/ubuntu--vg-ubuntu--lv on / type ext4 (rw,relatime)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,inode64)
+tmpfs on /run/lock type tmpfs (rw,nosuid,nodev,noexec,relatime,size=5120k,inode64)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime,mode=700)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=19762)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime,pagesize=2M)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+tracefs on /sys/kernel/tracing type tracefs (rw,nosuid,nodev,noexec,relatime)
+fusectl on /sys/fs/fuse/connections type fusectl (rw,nosuid,nodev,noexec,relatime)
+configfs on /sys/kernel/config type configfs (rw,nosuid,nodev,noexec,relatime)
+none on /run/credentials/systemd-sysusers.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+tmpfs on /run/qemu type tmpfs (rw,nosuid,nodev,relatime,mode=755,inode64)
+/dev/sda2 on /boot type ext4 (rw,relatime)
+binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,nosuid,nodev,noexec,relatime)
+sunrpc on /run/rpc_pipefs type rpc_pipefs (rw,relatime)
+tmpfs on /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/clustermesh-secrets type tmpfs (rw,relatime,size=6350120k,inode64)
+tmpfs on /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/hubble-tls type tmpfs (rw,relatime,size=6350120k,inode64)
+tmpfs on /var/lib/kubelet/pods/77ee78b7-003a-479e-b55d-6e8c17b481fc/volumes/kubernetes.io~projected/kube-api-access-fcfpf type tmpfs (rw,relatime,size=6350120k,inode64)
+tmpfs on /var/lib/kubelet/pods/fc4045bb-9220-4613-9d7b-e55eff19cd0f/volumes/kubernetes.io~projected/kube-api-access-vdk75 type tmpfs (rw,relatime,size=6350120k,inode64)
+shm on /run/containerd/io.containerd.grpc.v1.cri/sandboxes/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k,inode64)
+overlay on /run/containerd/io.containerd.runtime.v2.task/k8s.io/348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de/rootfs type overlay (rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9933/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28712/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28712/work,nouserxattr)
+
+$ cat /proc/diskstats | head -20
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       4 loop4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       5 loop5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       6 loop6 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       7 loop7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  11       0 sr0 95 0 669 58 0 0 0 0 0 100 58 0 0 0 0 0 0
+   8       0 sda 163253 39703 8953468 39517 374660 755422 17495712 210598 0 338500 254881 0 0 0 0 43059 4765
+   8       1 sda1 143 0 1144 19 0 0 0 0 0 76 19 0 0 0 0 0 0
+   8       2 sda2 155 30 11082 28 36 13 232 5 0 160 33 0 0 0 0 0 0
+   8       3 sda3 162864 39673 8937642 39455 374624 755409 17495480 210593 0 338356 250048 0 0 0 0 0 0
+ 253       0 dm-0 202485 0 8932972 57624 1128023 0 17495480 308160 0 338668 365784 0 0 0 0 0 0
+  43       0 nbd0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      32 nbd1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      64 nbd2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      96 nbd3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43     128 nbd4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43     160 nbd5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+$ stat -f / 2>/dev/null
+  File: "/"
+    ID: 9643c394c0a6252d Namelen: 255     Type: ext2/ext3
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 14918700   Free: 8593940    Available: 7932007
+Inodes: Total: 3801088    Free: 3415039
+
+$ df -h / /var /var/lib/containerd /var/lib/kubelet 2>/dev/null
+Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv   57G   25G   31G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   57G   25G   31G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   57G   25G   31G  45% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   57G   25G   31G  45% /
+
+$ losetup -a 2>/dev/null | head
+
+$ pvs 2>/dev/null; vgs 2>/dev/null; lvs -a -o lv_name,vg_name,lv_size,segtype,pool_lv,data_percent,metadata_percent 2>/dev/null
+  PV         VG        Fmt  Attr PSize   PFree
+  /dev/sda3  ubuntu-vg lvm2 a--  <58.00g    0 
+  VG        #PV #LV #SN Attr   VSize   VFree
+  ubuntu-vg   1   1   0 wz--n- <58.00g    0 
+  LV        VG        LSize   Type   Pool Data%  Meta% 
+  ubuntu-lv ubuntu-vg <58.00g linear                   
+
+$ tune2fs -l $(findmnt -n -o SOURCE /) 2>/dev/null | grep -E "Filesystem volume name|Filesystem features|Block count|Inode count|Reserved block count|Mount count|Last checked|Errors behavior"
+Filesystem volume name:   <none>
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype needs_recovery extent 64bit flex_bg sparse_super large_file huge_file dir_nlink extra_isize metadata_csum
+Errors behavior:          Continue
+Inode count:              3801088
+Block count:              15203328
+Reserved block count:     657837
+Mount count:              105
+Last checked:             Sun Nov 16 21:55:11 2025
+
+$ xfs_info / 2>/dev/null | head -20
+
+$ du -xhd1 / 2>/dev/null | sort -h | tail -15
+4.0K	/cdrom
+4.0K	/media
+4.0K	/mnt
+4.0K	/srv
+16K	/lost+found
+36K	/home
+72K	/tmp
+5.8M	/etc
+212M	/root
+358M	/opt
+3.7G	/usr
+17G	/var
+25G	/
+
+
+===== 4. 权限模型 =====
+
+$ umask; id; ls -ld / /root /tmp /etc/shadow /usr/bin/passwd /usr/bin/sudo 2>/dev/null
+0022
+uid=0(root) gid=0(root) groups=0(root)
+drwxr-xr-x 19 root root     4096 Nov 10 22:25 /
+-rw-r-----  1 root shadow   1204 Oct  7 06:27 /etc/shadow
+drwx------ 12 root root     4096 Nov  9 08:04 /root
+drwxrwxrwt 13 root root     4096 Nov 10 22:25 /tmp
+-rwsr-xr-x  1 root root    59976 Feb  6  2024 /usr/bin/passwd
+-rwsr-xr-x  1 root root   232416 Oct  6 22:05 /usr/bin/sudo
+
+$ ls -l /usr/bin/passwd /usr/bin/sudo /usr/bin/ping /usr/bin/su 2>/dev/null
+-rwsr-xr-x 1 root root  59976 Feb  6  2024 /usr/bin/passwd
+-rwxr-xr-x 1 root root  76680 Jul 24  2025 /usr/bin/ping
+-rwsr-xr-x 1 root root  55680 Aug 20 01:43 /usr/bin/su
+-rwsr-xr-x 1 root root 232416 Oct  6 22:05 /usr/bin/sudo
+
+$ find / -xdev -perm -4000 -type f 2>/dev/null | head -60
+/usr/libexec/polkit-agent-helper-1
+/usr/bin/chsh
+/usr/bin/umount
+/usr/bin/mount
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/su
+/usr/bin/pkexec
+/usr/bin/sudo
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/fusermount3
+/usr/sbin/mount.nfs
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/26553/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27931/fs/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9346/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28667/fs/usr/bin/fusermount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28667/fs/usr/sbin/mount.nfs
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9347/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9347/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9347/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28444/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28444/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28444/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28444/fs/usr/sbin/unix_chkpwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28444/fs/usr/sbin/pam_timestamp_check
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/umount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/mount
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/gpasswd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/su
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/newgrp
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28268/fs/usr/bin/passwd
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28273/fs/usr/bin/chsh
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28273/fs/usr/bin/chfn
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28273/fs/usr/bin/gpasswd
+
+$ getcap -r / 2>/dev/null | head -80
+/usr/bin/ping cap_net_raw=ep
+/usr/bin/mtr-packet cap_net_raw=ep
+/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper cap_net_bind_service,cap_net_admin=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/a2a73cb6abfe8b9297e3790dfd4974bdb71b916eb140d5142e1db84a7faf08a7/rootfs/usr/bin/newgidmap cap_setgid=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/a2a73cb6abfe8b9297e3790dfd4974bdb71b916eb140d5142e1db84a7faf08a7/rootfs/usr/bin/newuidmap cap_setuid=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/9c2c60a3050a1aee8c73e46a5813dba20788769b56525a94a43a1c3a6bdc3b77/rootfs/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper cap_net_bind_service,cap_net_admin,cap_sys_nice=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/0602f3a2297e212f8e6424b4858bc530c9bab55ba94b85e508b5818992b6d5f6/rootfs/usr/bin/newgidmap cap_setgid=ep
+/run/containerd/io.containerd.runtime.v2.task/k8s.io/0602f3a2297e212f8e6424b4858bc530c9bab55ba94b85e508b5818992b6d5f6/rootfs/usr/bin/newuidmap cap_setuid=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28175/fs/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper cap_net_bind_service,cap_net_admin,cap_sys_nice=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27792/fs/usr/bin/newgidmap cap_setgid=ep
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27792/fs/usr/bin/newuidmap cap_setuid=ep
+
+$ capsh --print 2>/dev/null
+Current: =ep
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+Current IAB: 
+Securebits: 00/0x0/1'b0
+ secure-noroot: no (unlocked)
+ secure-no-suid-fixup: no (unlocked)
+ secure-keep-caps: no (unlocked)
+ secure-no-ambient-raise: no (unlocked)
+uid=0(root) euid=0(root)
+gid=0(root)
+groups=0(root)
+Guessed mode: UNCERTAIN (0)
+
+$ grep -E "^(Uid|Gid|Groups|Cap|NoNewPrivs|Seccomp|Speculation)" /proc/self/status
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+Groups:	0 
+CapInh:	0000000000000000
+CapPrm:	000001ffffffffff
+CapEff:	000001ffffffffff
+CapBnd:	000001ffffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Seccomp_filters:	0
+Speculation_Store_Bypass:	vulnerable
+SpeculationIndirectBranch:	always enabled
+
+
+===== 5. 进程 =====
+
+$ ps -eo pid,ppid,user,stat,ni,pri,pcpu,pmem,rss,vsz,comm --sort=-rss | head -25
+    PID    PPID USER     STAT  NI PRI %CPU %MEM   RSS    VSZ COMMAND
+   9795    9139 1001     Sl     0  19  1.8  8.0 653196 7141320 java
+   7016    6784 hao      Sl     0  19  1.7  5.4 442924 673188 python
+   5729    5573 1001     Sl     0  19  1.1  3.8 316900 1828780 java
+  41334   41282 root     Ssl    0  19  1.6  3.0 245108 6823520 alloy
+   1519    1076 root     Ssl    0  19 10.5  2.7 224932 1535320 cilium-agent
+  11162   11112 hao      Ssl    0  19  0.5  1.7 138744 1503044 tempo
+    915       1 root     Rsl    0  19 10.8  1.6 132308 2565784 kubelet
+  10506    7148 hao      Ssl    0  19  0.5  1.5 129412 1503300 tempo
+    681       1 root     Ssl    0  19  4.6  1.3 111404 3051036 containerd
+   3510    3320 hao      Ssl    0  19  0.1  1.1 97496 1331316 cainjector
+  16229   16178 hao      Ssl    0  19  0.5  1.1 91856 1634028 tempo
+   7017    6784 hao      Sl     0  19  0.1  1.1 91728 11376932 next-server (v1
+   5212    4755 hao      Ssl    0  19  0.3  1.1 91340 1501656 tempo
+   8374    5864 65532    Ssl    0  19  0.3  1.0 88772 1403616 operator
+   7881    5036 10001    Ssl    0  19  0.7  1.0 85080 1392648 manager
+  10560    4793 hao      Ssl    0  19  0.3  1.0 84892 1370040 tempo
+  16500   16425 hao      Ssl    0  19  0.3  1.0 83808 1370040 tempo
+   5809    5425 hao      Ssl    0  19  0.0  0.9 76988 1435152 tempo
+   8405    5864 65532    Ssl    0  19  0.0  0.9 73308 1402400 operator
+   2843    2691 26       Ssl    0  19  0.3  0.8 70088 1326080 manager
+   8307    5923 nobody   Ssl    0  19  0.3  0.8 68404 1295176 operator
+   7248    3126 1001     Ssl    0  19  0.0  0.8 65424 1511432 argocd-dex
+   6198    3215 nobody   Ssl    0  19  0.4  0.6 54732 1355888 kube-state-metr
+  28168   28119 root     Ssl    0  19  0.0  0.6 52864 1926268 cephcsi
+
+$ ps -eLf 2>/dev/null | wc -l; cat /proc/loadavg; cat /proc/pressure/cpu 2>/dev/null; cat /proc/pressure/memory 2>/dev/null; cat /proc/pressure/io 2>/dev/null
+1527
+1.84 1.39 1.14 2/1525 737706
+some avg10=7.57 avg60=6.55 avg300=5.36 total=4549373710
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+some avg10=0.79 avg60=0.44 avg300=0.12 total=4253554
+full avg10=0.60 avg60=0.33 avg300=0.08 total=3969925
+some avg10=1.20 avg60=2.20 avg300=1.09 total=545835091
+full avg10=1.14 avg60=1.95 avg300=0.89 total=444226455
+
+$ cat /proc/1/status 2>/dev/null | head -30
+Name:	systemd
+Umask:	0000
+State:	S (sleeping)
+Tgid:	1
+Ngid:	0
+Pid:	1
+PPid:	0
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	256
+Groups:	 
+NStgid:	1
+NSpid:	1
+NSpgid:	1
+NSsid:	1
+VmPeak:	  234552 kB
+VmSize:	  169016 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   14360 kB
+VmRSS:	   14300 kB
+RssAnon:	    5972 kB
+RssFile:	    8328 kB
+RssShmem:	       0 kB
+VmData:	   22128 kB
+VmStk:	     132 kB
+VmExe:	     896 kB
+VmLib:	    9064 kB
+VmPTE:	     100 kB
+
+$ ls -l /proc/1/exe /proc/1/cwd /proc/1/root 2>/dev/null
+lrwxrwxrwx 1 root root 0 Nov 10 22:26 /proc/1/cwd -> /
+lrwxrwxrwx 1 root root 0 Nov  9 20:17 /proc/1/exe -> /usr/lib/systemd/systemd
+lrwxrwxrwx 1 root root 0 Nov  9 20:17 /proc/1/root -> /
+
+$ lsns 2>/dev/null | head -20
+        NS TYPE   NPROCS    PID USER             COMMAND
+4026531834 time      341      1 root             /sbin/init
+4026531835 cgroup    268      1 root             /sbin/init
+4026531836 pid       224      1 root             /sbin/init
+4026531837 user      340      1 root             /sbin/init
+4026531838 uts       226      1 root             /sbin/init
+4026531839 ipc       217      1 root             /sbin/init
+4026531840 net       228      1 root             /sbin/init
+4026531841 mnt       207      1 root             /sbin/init
+4026531862 mnt         1     37 root             kdevtmpfs
+4026532294 mnt         1    444 root             /lib/systemd/systemd-udevd
+4026532295 uts         1    444 root             /lib/systemd/systemd-udevd
+4026532305 mnt         1    558 systemd-timesync /lib/systemd/systemd-timesyncd
+4026532315 uts         1    558 systemd-timesync /lib/systemd/systemd-timesyncd
+4026532316 mnt         1    633 systemd-network  /lib/systemd/systemd-networkd
+4026532317 mnt         1    635 systemd-resolve  /lib/systemd/systemd-resolved
+4026532318 mnt         1    713 root             /usr/sbin/ModemManager
+4026532319 uts         1    677 root             /lib/systemd/systemd-logind
+4026532320 mnt         1   1014 nobody           /pause
+4026532321 ipc         2   1014 nobody           /pause
+
+$ systemctl list-units --type=service --state=running --no-pager 2>/dev/null | head -30
+  UNIT                        LOAD   ACTIVE SUB     DESCRIPTION
+  containerd.service          loaded active running containerd container runtime
+  cron.service                loaded active running Regular background program processing daemon
+  dbus.service                loaded active running D-Bus System Message Bus
+  fwupd.service               loaded active running Firmware update daemon
+  getty@tty1.service          loaded active running Getty on tty1
+  irqbalance.service          loaded active running irqbalance daemon
+  kubelet.service             loaded active running kubelet: The Kubernetes Node Agent
+  ModemManager.service        loaded active running Modem Manager
+  multipathd.service          loaded active running Device-Mapper Multipath Device Controller
+  networkd-dispatcher.service loaded active running Dispatcher daemon for systemd-networkd
+  packagekit.service          loaded active running PackageKit Daemon
+  polkit.service              loaded active running Authorization Manager
+  qemu-guest-agent.service    loaded active running QEMU Guest Agent
+  rpcbind.service             loaded active running RPC bind portmap service
+  rsyslog.service             loaded active running System Logging Service
+  ssh.service                 loaded active running OpenBSD Secure Shell server
+  systemd-journald.service    loaded active running Journal Service
+  systemd-logind.service      loaded active running User Login Management
+  systemd-networkd.service    loaded active running Network Configuration
+  systemd-resolved.service    loaded active running Network Name Resolution
+  systemd-timesyncd.service   loaded active running Network Time Synchronization
+  systemd-udevd.service       loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service             loaded active running Disk Manager
+  unattended-upgrades.service loaded active running Unattended Upgrades Shutdown
+  upower.service              loaded active running Daemon for power management
+  user@0.service              loaded active running User Manager for UID 0
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+
+
+===== 6. 内存 =====
+
+$ cat /proc/meminfo
+MemTotal:        8127784 kB
+MemFree:          192676 kB
+MemAvailable:    3943004 kB
+Buffers:          721432 kB
+Cached:          2340088 kB
+SwapCached:            0 kB
+Active:          2038296 kB
+Inactive:        4333912 kB
+Active(anon):      25512 kB
+Inactive(anon):  3340640 kB
+Active(file):    2012784 kB
+Inactive(file):   993272 kB
+Unevictable:       27788 kB
+Mlocked:           27788 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:               152 kB
+Writeback:           172 kB
+AnonPages:       3338548 kB
+Mapped:          1414868 kB
+Shmem:             49072 kB
+KReclaimable:    1049420 kB
+Slab:            1277536 kB
+SReclaimable:    1049420 kB
+SUnreclaim:       228116 kB
+KernelStack:       24432 kB
+PageTables:        33488 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     4063892 kB
+Committed_AS:   12525156 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      147492 kB
+VmallocChunk:          0 kB
+Percpu:            10160 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:      546664 kB
+DirectMap2M:     7841792 kB
+
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           7.8Gi       3.6Gi       188Mi        47Mi       3.9Gi       3.8Gi
+Swap:             0B          0B          0B
+
+$ vmstat 1 3
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 192676 721432 3389508    0    0    14    49  115    4  9  6 85  0  0
+ 6  0      0 191496 721432 3389364    0    0     0    56 13310 23126  9  7 84  1  0
+ 0  0      0 191496 721444 3389364    0    0     0  1256 9356 15335  4  3 92  1  0
+
+$ cat /proc/vmstat | grep -E "^(pgscan|pgsteal|pgmajfault|oom_kill|compact|nr_free_pages|nr_slab)" | head -30
+nr_free_pages 47874
+nr_slab_reclaimable 262278
+nr_slab_unreclaimable 56989
+pgmajfault 27127
+pgsteal_kswapd 1392336
+pgsteal_direct 0
+pgscan_kswapd 22942672
+pgscan_direct 0
+pgscan_direct_throttle 0
+pgscan_anon 0
+pgscan_file 22942672
+pgsteal_anon 0
+pgsteal_file 1392336
+oom_kill 0
+compact_migrate_scanned 12512920
+compact_free_scanned 98190331
+compact_isolated 2869012
+compact_stall 0
+compact_fail 0
+compact_success 0
+compact_daemon_wake 682
+compact_daemon_migrate_scanned 290826
+compact_daemon_free_scanned 2161889
+
+$ cat /proc/sys/vm/overcommit_memory; cat /proc/sys/vm/overcommit_ratio; cat /proc/sys/vm/swappiness; cat /proc/sys/vm/min_free_kbytes; cat /proc/sys/vm/dirty_ratio; cat /proc/sys/vm/dirty_background_ratio; cat /proc/sys/vm/vfs_cache_pressure
+1
+50
+60
+67584
+20
+10
+100
+
+$ cat /proc/buddyinfo; cat /proc/pagetypeinfo 2>/dev/null | head -20
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      0      1      3 
+Node 0, zone    DMA32   2931    479    223    192    113     73     40     18      0      0      0 
+Node 0, zone   Normal   3178   1180    629    480    127     64     44     21     11      7      1 
+Page block order: 9
+Pages per block:  512
+
+Free pages count per migrate type at order       0      1      2      3      4      5      6      7      8      9     10 
+Node    0, zone      DMA, type    Unmovable      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type      Movable      0      0      0      0      0      0      0      0      0      1      3 
+Node    0, zone      DMA, type  Reclaimable      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type    Unmovable    137     69     16     26     16      9      6      0      0      0      0 
+Node    0, zone    DMA32, type      Movable   2791    409    185    165     96     64     34     16      0      0      0 
+Node    0, zone    DMA32, type  Reclaimable      3      1     22      1      1      0      0      2      0      0      0 
+Node    0, zone    DMA32, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone   Normal, type    Unmovable      0      0      0     30     14     10      9      3      1      0      0 
+Node    0, zone   Normal, type      Movable   2539    907    417    206     37     24     17     13      9      7      0 
+Node    0, zone   Normal, type  Reclaimable      9      2    110     51     20     11     13      4      1      0      0 
+Node    0, zone   Normal, type   HighAtomic    630    271    102    193     56     19      5      1      0      0      1 
+Node    0, zone   Normal, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+
+
+$ slabtop -o 2>/dev/null | head -25
+ Active / Total Objects (% used)    : 4453995 / 4529053 (98.3%)
+ Active / Total Slabs (% used)      : 124852 / 124852 (100.0%)
+ Active / Total Caches (% used)     : 128 / 178 (71.9%)
+ Active / Total Size (% used)       : 1213146.32K / 1228161.78K (98.8%)
+ Minimum / Average / Maximum Object : 0.01K / 0.27K / 8.00K
+
+  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
+932526 930336  99%    0.19K  44406       21    177624K dentry                 
+823820 820695  99%    0.05K   9692       85     38768K ftrace_event_field     
+602112 588125  97%    0.03K   4704      128     18816K kmalloc-32             
+396684 396684 100%    1.15K  14692       27    470144K ext4_inode_cache       
+378944 378944 100%    0.06K   5921       64     23684K kmalloc-64             
+314691 278761  88%    0.10K   8069       39     32276K buffer_head            
+272602 272602 100%    0.71K  12391       22    198256K ovl_inode              
+129664 129664 100%    0.06K   2026       64      8104K kmalloc-rcl-64         
+ 86790  86790 100%    1.06K   2893       30     92576K nfs_inode_cache        
+ 64533  63015  97%    0.19K   3073       21     12292K kmalloc-192            
+ 61506  59720  97%    0.04K    603      102      2412K ext4_extent_status     
+ 54816  54257  98%    0.12K   1713       32      6852K kernfs_node_cache      
+ 52808  51729  97%    0.57K   1886       28     30176K radix_tree_node        
+ 37824  36631  96%    0.06K    591       64      2364K vmap_area              
+ 35025  34206  97%    0.62K   1401       25     22416K inode_cache            
+ 26544  26544 100%    0.25K   1659       16      6636K kmalloc-256            
+ 20864  17424  83%    0.50K   1304       16     10432K kmalloc-512            
+ 16896  16896 100%    0.02K     66      256       264K kmalloc-16             
+
+$ systemd-cgtop -b -n 1 2>/dev/null | head -20
+/                                                                                                             1526      -     3.9G        -        -
+dev-hugepages.mount                                                                                              -      -    56.0K        -        -
+dev-mqueue.mount                                                                                                 -      -     4.0K        -        -
+init.scope                                                                                                       1      -    14.1M        -        -
+kubepods.slice                                                                                                 752      -     4.4G        -        -
+kubepods.slice/kubepods-besteffort.slice                                                                       470      -     2.1G        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod01e49930_c698_4edf_ad18_fd26f744437d.slice       8      -    40.0M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod03a04fe4_fcd6_4031_ac34_35af843ed360.slice      11      -    41.0M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod09fbe2a7_3325_4936_956c_03ba88e3090f.slice      11      -    40.6M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod237a4cbe_48c3_40a3_9d5b_f7f129f69a95.slice      12      -    37.1M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod3fad8175_cf8e_4b96_b1fd_301203fa17c6.slice      12      -    27.8M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod4aa8a7da_e4fb_4cff_b597_1227c0333af4.slice       8      -    46.9M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod4b731be9_8e6f_446f_8712_44f847b03181.slice      20      -    78.8M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod504e2022_c3f1_4f95_b2dd_3198484d7bdf.slice       8      -    49.7M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod5370b644_f179_4339_850f_904d6a1821ea.slice      11      -    35.1M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod5757ebdc_1185_450d_a092_84aaed221e76.slice       6      -    24.6M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod66a8fc57_a93f_4972_aeaa_3dc3874e028d.slice       8      -    14.5M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod74cfee27_0d44_4015_8b6f_8c2c042351be.slice      21      -    92.6M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod77ee78b7_003a_479e_b55d_6e8c17b481fc.slice      11      -    32.8M        -        -
+kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod7805a52f_076c_4958_a268_0661a400782a.slice      11      -    45.3M        -        -
+
+$ cat /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.events 2>/dev/null
+[exit=1]
+
+
+===== 7. systemd 与启动 =====
+
+$ systemd-analyze time 2>/dev/null; systemd-analyze blame 2>/dev/null | head -20; systemd-analyze critical-chain 2>/dev/null | head -30
+Startup finished in 4.148s (kernel) + 19.083s (userspace) = 23.231s 
+graphical.target reached after 18.426s in userspace
+13.628s systemd-networkd-wait-online.service
+ 5.603s apt-daily-upgrade.service
+ 1.820s man-db.service
+ 1.622s systemd-random-seed.service
+ 1.531s motd-news.service
+ 1.304s cloud-init-local.service
+ 1.281s containerd.service
+ 1.208s apt-daily.service
+ 1.144s fwupd-refresh.service
+ 1.008s dev-mapper-ubuntu\x2d\x2dvg\x2dubuntu\x2d\x2dlv.device
+  824ms fwupd.service
+  749ms cloud-init.service
+  698ms cloud-config.service
+  684ms logrotate.service
+  651ms cloud-final.service
+  625ms upower.service
+  617ms user@0.service
+  285ms udisks2.service
+  249ms networkd-dispatcher.service
+  203ms systemd-udev-trigger.service
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @18.426s
+└─multi-user.target @18.425s
+  └─containerd.service @17.143s +1.281s
+    └─dbus.service @17.138s
+      └─basic.target @17.133s
+        └─sockets.target @17.133s
+          └─uuidd.socket @17.132s
+            └─sysinit.target @17.117s
+              └─cloud-init.service @16.364s +749ms
+                └─systemd-networkd-wait-online.service @2.733s +13.628s
+                  └─systemd-networkd.service @2.672s +59ms
+                    └─network-pre.target @2.667s
+                      └─cloud-init-local.service @1.360s +1.304s
+                        └─systemd-remount-fs.service @510ms +55ms
+                          └─systemd-journald.socket @429ms
+                            └─-.mount @371ms
+                              └─-.slice @371ms
+
+$ systemctl list-unit-files --state=enabled --no-pager 2>/dev/null | head -35
+UNIT FILE                            STATE   VENDOR PRESET
+run-qemu.mount                       enabled enabled
+apport-autoreport.path               enabled enabled
+apparmor.service                     enabled enabled
+blk-availability.service             enabled enabled
+cloud-config.service                 enabled enabled
+cloud-final.service                  enabled enabled
+cloud-init-local.service             enabled enabled
+cloud-init.service                   enabled enabled
+console-setup.service                enabled enabled
+containerd.service                   enabled enabled
+cron.service                         enabled enabled
+dmesg.service                        enabled enabled
+e2scrub_reap.service                 enabled enabled
+finalrd.service                      enabled enabled
+getty@.service                       enabled enabled
+gpu-manager.service                  enabled enabled
+grub-common.service                  enabled enabled
+grub-initrd-fallback.service         enabled enabled
+irqbalance.service                   enabled enabled
+keyboard-setup.service               enabled enabled
+kubelet.service                      enabled enabled
+lvm2-monitor.service                 enabled enabled
+lxd-agent.service                    enabled enabled
+ModemManager.service                 enabled enabled
+multipathd.service                   enabled enabled
+networkd-dispatcher.service          enabled enabled
+open-iscsi.service                   enabled enabled
+open-vm-tools.service                enabled enabled
+pollinate.service                    enabled enabled
+rbdmap.service                       enabled enabled
+rpcbind.service                      enabled enabled
+rsyslog.service                      enabled enabled
+secureboot-db.service                enabled enabled
+setvtrgb.service                     enabled enabled
+
+$ journalctl -b --no-pager 2>/dev/null | head -40
+Nov 09 20:17:31 worker03 kernel: Linux version 5.15.0-202-generic (buildd@lcy02-amd64-106) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #212-Ubuntu SMP Thu Oct 15 16:49:38 UTC 2026 (Ubuntu 5.15.0-202.212-generic 5.15.222)
+Nov 09 20:17:31 worker03 kernel: Command line: BOOT_IMAGE=/vmlinuz-5.15.0-202-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+Nov 09 20:17:31 worker03 kernel: KERNEL supported cpus:
+Nov 09 20:17:31 worker03 kernel:   Intel GenuineIntel
+Nov 09 20:17:31 worker03 kernel:   AMD AuthenticAMD
+Nov 09 20:17:31 worker03 kernel:   Hygon HygonGenuine
+Nov 09 20:17:31 worker03 kernel:   Centaur CentaurHauls
+Nov 09 20:17:31 worker03 kernel:   zhaoxin   Shanghai  
+Nov 09 20:17:31 worker03 kernel: BIOS-provided physical RAM map:
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x0000000000100000-0x00000000bffd9fff] usable
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x00000000bffda000-0x00000000bfffffff] reserved
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+Nov 09 20:17:31 worker03 kernel: BIOS-e820: [mem 0x0000000100000000-0x000000023fffffff] usable
+Nov 09 20:17:31 worker03 kernel: NX (Execute Disable) protection: active
+Nov 09 20:17:31 worker03 kernel: SMBIOS 2.8 present.
+Nov 09 20:17:31 worker03 kernel: DMI: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.3-0-ga6ed6b701f0a-prebuilt.qemu.org 04/01/2014
+Nov 09 20:17:31 worker03 kernel: Hypervisor detected: KVM
+Nov 09 20:17:31 worker03 kernel: kvm-clock: Using msrs 4b564d01 and 4b564d00
+Nov 09 20:17:31 worker03 kernel: kvm-clock: cpu 0, msr 18fe01001, primary cpu clock
+Nov 09 20:17:31 worker03 kernel: kvm-clock: using sched offset of 9410410064 cycles
+Nov 09 20:17:31 worker03 kernel: clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
+Nov 09 20:17:31 worker03 kernel: tsc: Detected 1995.311 MHz processor
+Nov 09 20:17:31 worker03 kernel: e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
+Nov 09 20:17:31 worker03 kernel: e820: remove [mem 0x000a0000-0x000fffff] usable
+Nov 09 20:17:31 worker03 kernel: last_pfn = 0x240000 max_arch_pfn = 0x400000000
+Nov 09 20:17:31 worker03 kernel: x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+Nov 09 20:17:31 worker03 kernel: last_pfn = 0xbffda max_arch_pfn = 0x400000000
+Nov 09 20:17:31 worker03 kernel: found SMP MP-table at [mem 0x000f5440-0x000f544f]
+Nov 09 20:17:31 worker03 kernel: RAMDISK: [mem 0x2a715000-0x31381fff]
+Nov 09 20:17:31 worker03 kernel: ACPI: Early table checksum verification disabled
+Nov 09 20:17:31 worker03 kernel: ACPI: RSDP 0x00000000000F5240 000014 (v00 BOCHS )
+Nov 09 20:17:31 worker03 kernel: ACPI: RSDT 0x00000000BFFE3CD8 000038 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:17:31 worker03 kernel: ACPI: FACP 0x00000000BFFE3AAA 000074 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:17:31 worker03 kernel: ACPI: DSDT 0x00000000BFFDF040 004A6A (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+Nov 09 20:17:31 worker03 kernel: ACPI: FACS 0x00000000BFFDF000 000040
+Nov 09 20:17:31 worker03 kernel: ACPI: APIC 0x00000000BFFE3B1E 000090 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+
+$ journalctl -b -p err --no-pager 2>/dev/null | tail -30
+Nov 09 20:17:49 worker03 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 20:17:49 worker03 kernel: overlayfs: idmapped layers are currently not supported
+Nov 09 20:21:55 worker03 kernel: FS-Cache: Duplicate cookie detected
+Nov 09 20:21:55 worker03 kernel: FS-Cache: O-cookie c=00000003 [p=00000002 fl=222 nc=0 na=1]
+Nov 09 20:21:55 worker03 kernel: FS-Cache: O-cookie d=00000000c81baf83{NFS.server} n=00000000525f4343
+Nov 09 20:21:55 worker03 kernel: FS-Cache: O-key=[16] '0400000002000000020008010a000001'
+Nov 09 20:21:55 worker03 kernel: FS-Cache: N-cookie c=00000004 [p=00000002 fl=2 nc=0 na=1]
+Nov 09 20:21:55 worker03 kernel: FS-Cache: N-cookie d=00000000c81baf83{NFS.server} n=0000000018b813fa
+Nov 09 20:21:55 worker03 kernel: FS-Cache: N-key=[16] '0400000002000000020008010a000001'
+Nov 09 20:54:03 worker03 systemd[26274]: Failed to create control group inotify object: Too many open files
+Nov 09 20:54:03 worker03 systemd[26274]: Failed to allocate manager object: Too many open files
+Nov 09 20:54:03 worker03 systemd[1]: Failed to start User Manager for UID 0.
+Nov 09 21:01:13 worker03 systemd[30785]: Failed to create control group inotify object: Too many open files
+Nov 09 21:01:13 worker03 systemd[30785]: Failed to allocate manager object: Too many open files
+Nov 09 21:01:13 worker03 systemd[1]: Failed to start User Manager for UID 0.
+Nov 09 21:13:19 worker03 systemd[36268]: Failed to create control group inotify object: Too many open files
+Nov 09 21:13:19 worker03 systemd[36268]: Failed to allocate manager object: Too many open files
+Nov 09 21:13:19 worker03 systemd[1]: Failed to start User Manager for UID 0.
+Nov 09 21:14:58 worker03 systemd[37113]: Failed to create control group inotify object: Too many open files
+Nov 09 21:14:58 worker03 systemd[37113]: Failed to allocate manager object: Too many open files
+Nov 09 21:14:58 worker03 systemd[1]: Failed to start User Manager for UID 0.
+
+$ bootctl status 2>/dev/null | head -30
+System:
+    Not booted with EFI
+
+
+
+===== 8. 内核参数与资源限制 =====
+
+$ ulimit -a
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 31281
+max locked memory           (kbytes, -l) 1015972
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 1024
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 31281
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+$ cat /etc/security/limits.conf 2>/dev/null | grep -v "^#" | sed "/^$/d"
+
+$ for f in /etc/security/limits.d/*.conf; do [ -f "$f" ] && { echo "### $f"; grep -v "^#" "$f" | sed "/^$/d"; }; done 2>/dev/null
+[exit=1]
+
+$ cat /proc/sys/fs/file-nr; cat /proc/sys/fs/file-max; cat /proc/sys/fs/nr_open
+5568	0	9223372036854775807
+9223372036854775807
+1048576
+
+$ cat /proc/sys/net/core/somaxconn; cat /proc/sys/net/ipv4/ip_local_port_range; cat /proc/sys/net/ipv4/tcp_max_syn_backlog
+4096
+32768	60999
+512
+
+$ sysctl kernel.pid_max kernel.threads-max vm.overcommit_memory vm.swappiness fs.file-max net.core.somaxconn net.ipv4.ip_forward net.ipv4.conf.all.rp_filter 2>/dev/null
+kernel.pid_max = 4194304
+kernel.threads-max = 62563
+vm.overcommit_memory = 1
+vm.swappiness = 60
+fs.file-max = 9223372036854775807
+net.core.somaxconn = 4096
+net.ipv4.ip_forward = 1
+net.ipv4.conf.all.rp_filter = 0
+
+$ systemctl show containerd.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=infinity
+
+$ systemctl show kubelet.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=31281
+
+$ systemctl show sshd.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=31281
+
+$ systemctl show ssh.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=31281
+
+
+===== 9. K8s / 容器运行时（如存在） =====
+
+$ kubectl get nodes -o wide 2>/dev/null | head -10
+
+$ kubectl top nodes 2>/dev/null | head -10
+
+$ crictl version 2>/dev/null; crictl info 2>/dev/null | head -40
+Version:  0.1.0
+RuntimeName:  containerd
+RuntimeVersion:  v2.3.2
+RuntimeApiVersion:  v1
+{
+  "status": {
+    "conditions": [
+      {
+        "type": "RuntimeReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "NetworkReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "ContainerdHasNoDeprecationWarnings",
+        "status": false,
+        "reason": "ContainerdHasDeprecationWarnings",
+        "message": "{\"io.containerd.deprecation/enable-cdi\":\"The `enable_cdi` property of `[plugins.\\\"io.containerd.cri.v1.runtime\\\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled.\"}"
+      }
+    ]
+  },
+  "runtimeHandlers": [
+    {
+      "features": {
+        "recursive_read_only_mounts": true,
+        "user_namespaces": true
+      }
+    },
+    {
+      "name": "runc",
+      "features": {
+        "recursive_read_only_mounts": true,
+        "user_namespaces": true
+      }
+    }
+  ],
+  "cniconfig": {
+    "PluginDirs": [
+
+$ systemctl status containerd --no-pager 2>/dev/null | head -20
+● containerd.service - containerd container runtime
+     Loaded: loaded (/etc/systemd/system/containerd.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2026-11-09 20:17:50 CST; 1 day 2h ago
+       Docs: https://containerd.io
+    Process: 659 ExecStartPre=/sbin/modprobe overlay (code=exited, status=0/SUCCESS)
+   Main PID: 681 (containerd)
+      Tasks: 561
+     Memory: 753.8M
+        CPU: 4h 23min 15.536s
+     CGroup: /system.slice/containerd.service
+             ├─  681 /usr/local/bin/containerd
+             ├─  979 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 348b6d170e55d09a3af085ee4afd827ae5b53ed3f6a76245762251d400cc99de -address /run/containerd/containerd.sock
+             ├─ 1076 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 27927a3f856644a749a506aefd6353dd087ab080c69e2f842a4690494a5372e1 -address /run/containerd/containerd.sock
+             ├─ 1814 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id b6c745bb89d5430d80b6511fd3ae992af315be3c278966d8ab6a94706d29680a -address /run/containerd/containerd.sock
+             ├─ 2691 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id b2a372fa2ea2ade6bc39d97ffa5674bf28b00f6a697b532e9151c571758a33f4 -address /run/containerd/containerd.sock
+             ├─ 3126 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id a93225a4b50d853d5cf00c4ef0339506d0ba450b200d1aec7796a86a67cf1f58 -address /run/containerd/containerd.sock
+             ├─ 3215 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id ecf90719c7bb5b2677213b0bcd3cb0695a0138c23a2739a7f3e79c659f8a2bc2 -address /run/containerd/containerd.sock
+             ├─ 3320 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id ea3a5c460f30b3ab65a48c9dc451c410c494557b6735038707ca182665de5016 -address /run/containerd/containerd.sock
+             ├─ 3322 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 1ecf954dc737c13fddb30c727fd208f251ec3e70dde5a8d6823f19d95295e0f4 -address /run/containerd/containerd.sock
+             ├─ 3384 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 5185be444fd4eeedd6daa6173df38fba0424be145926811d6d0522a5857ebf0c -address /run/containerd/containerd.sock
+
+$ systemctl status kubelet --no-pager 2>/dev/null | head -20
+● kubelet.service - kubelet: The Kubernetes Node Agent
+     Loaded: loaded (/lib/systemd/system/kubelet.service; enabled; vendor preset: enabled)
+    Drop-In: /usr/lib/systemd/system/kubelet.service.d
+             └─10-kubeadm.conf
+     Active: active (running) since Mon 2026-11-09 20:18:00 CST; 1 day 2h ago
+       Docs: https://kubernetes.io/docs/
+   Main PID: 915 (kubelet)
+      Tasks: 16 (limit: 9384)
+     Memory: 129.5M
+        CPU: 2h 50min 52.009s
+     CGroup: /system.slice/kubelet.service
+             └─915 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml
+
+Nov 10 13:41:14 worker03 kubelet[915]: I1110 13:41:14.932475     915 scope.go:122] "RemoveContainer" containerID="1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203"
+Nov 10 13:41:14 worker03 kubelet[915]: I1110 13:41:14.950230     915 scope.go:122] "RemoveContainer" containerID="f4642e9ebda37a5a1927709813fc3bef60a8874156702eb2244656d832371cef"
+Nov 10 13:41:14 worker03 kubelet[915]: I1110 13:41:14.974643     915 scope.go:122] "RemoveContainer" containerID="1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203"
+Nov 10 13:41:14 worker03 kubelet[915]: E1110 13:41:14.975612     915 log.go:32] "ContainerStatus from runtime service failed" err="rpc error: code = NotFound desc = an error occurred when try to find container \"1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203\": not found" containerID="1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203"
+Nov 10 13:41:14 worker03 kubelet[915]: I1110 13:41:14.975777     915 pod_container_deletor.go:53] "DeleteContainer returned error" containerID={"Type":"containerd","ID":"1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203"} err="failed to get container status \"1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203\": rpc error: code = NotFound desc = an error occurred when try to find container \"1061806b5ac4aa54f0ac598bfba3b2d2ab9b70347a3f6181beba0195868ac203\": not found"
+Nov 10 13:41:14 worker03 kubelet[915]: I1110 13:41:14.976003     915 scope.go:122] "RemoveContainer" containerID="f4642e9ebda37a5a1927709813fc3bef60a8874156702eb2244656d832371cef"
+Nov 10 13:41:14 worker03 kubelet[915]: E1110 13:41:14.976742     915 log.go:32] "ContainerStatus from runtime service failed" err="rpc error: code = NotFound desc = an error occurred when try to find container \"f4642e9ebda37a5a1927709813fc3bef60a8874156702eb2244656d832371cef\": not found" containerID="f4642e9ebda37a5a1927709813fc3bef60a8874156702eb2244656d832371cef"
+
+
+===== 10. Ceph 客户端（如存在） =====
+
+$ ceph -s 2>/dev/null
+[exit=1]
+
+$ ceph df detail 2>/dev/null | head -40
+
+$ ceph osd tree 2>/dev/null
+[exit=1]
+
+$ ceph versions 2>/dev/null
+[exit=1]
+
+
+===== 11. 结束 =====
+
+$ date -Is
+2026-11-10T22:26:41+08:00

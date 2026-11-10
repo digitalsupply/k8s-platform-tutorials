@@ -1,0 +1,1321 @@
+
+
+===== 0. 采集元信息 =====
+
+$ date -Is; hostname; hostname -f 2>/dev/null; whoami; id; uptime
+2026-11-10T22:25:42+08:00
+teacher
+teacher.local
+root
+uid=0(root) gid=0(root) groups=0(root)
+ 22:25:42 up 6 days,  2:35,  5 users,  load average: 5.63, 5.67, 5.33
+
+$ cat /etc/os-release 2>/dev/null | head -8
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+
+
+===== 1. 内核 =====
+
+$ uname -a
+Linux teacher 6.8.12-15-pve #1 SMP PREEMPT_DYNAMIC PMX 6.8.12-15 (2025-09-12T11:02Z) x86_64 GNU/Linux
+
+$ cat /proc/cmdline
+BOOT_IMAGE=/boot/vmlinuz-6.8.12-15-pve root=/dev/mapper/pve-root ro quiet
+
+$ cat /proc/version
+Linux version 6.8.12-15-pve (build@proxmox) (gcc (Debian 12.2.0-14+deb12u1) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40) #1 SMP PREEMPT_DYNAMIC PMX 6.8.12-15 (2025-09-12T11:02Z)
+
+$ cat /proc/sys/kernel/osrelease; cat /proc/sys/kernel/version
+6.8.12-15-pve
+#1 SMP PREEMPT_DYNAMIC PMX 6.8.12-15 (2025-09-12T11:02Z)
+
+$ ls -1 /boot 2>/dev/null | head -30
+config-6.8.12-15-pve
+config-6.8.12-9-pve
+efi
+grub
+initrd.img-6.8.12-15-pve
+initrd.img-6.8.12-9-pve
+memtest86+ia32.bin
+memtest86+ia32.efi
+memtest86+x64.bin
+memtest86+x64.efi
+pve
+System.map-6.8.12-15-pve
+System.map-6.8.12-9-pve
+vmlinuz-6.8.12-15-pve
+vmlinuz-6.8.12-9-pve
+
+$ cat /etc/default/grub 2>/dev/null | grep -v "^#" | head -20
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_CMDLINE_LINUX=""
+
+
+
+
+
+
+
+
+$ lsmod 2>/dev/null | head -40
+Module                  Size  Used by
+tcp_diag               12288  0
+inet_diag              28672  1 tcp_diag
+rpcsec_gss_krb5        36864  0
+xt_connmark            12288  6
+xt_conntrack           12288  4
+ip6table_mangle        12288  1
+iptable_mangle         12288  1
+xt_tcpudp              16384  2
+xt_mark                12288  8
+ebtable_filter         12288  0
+ebtables               45056  1 ebtable_filter
+ip_set                 61440  0
+ip6table_raw           12288  0
+iptable_raw            12288  0
+nvme_fabrics           36864  0
+nvme_keyring           20480  1 nvme_fabrics
+xt_MASQUERADE          16384  4
+nf_tables             344064  0
+ip6table_nat           12288  1
+ip6table_filter        12288  1
+ip6_tables             32768  4 ip6table_filter,ip6table_raw,ip6table_nat,ip6table_mangle
+iptable_nat            12288  1
+nf_nat                 61440  3 ip6table_nat,iptable_nat,xt_MASQUERADE
+nf_conntrack          184320  4 xt_conntrack,nf_nat,xt_connmark,xt_MASQUERADE
+bonding               233472  0
+nf_defrag_ipv6         24576  1 nf_conntrack
+nf_defrag_ipv4         12288  1 nf_conntrack
+tls                   147456  1 bonding
+iptable_filter         12288  1
+softdog                12288  2
+nfnetlink_log          24576  1
+binfmt_misc            24576  1
+nfnetlink              20480  4 nf_tables,ip_set,nfnetlink_log
+intel_rapl_msr         20480  0
+intel_rapl_common      36864  1 intel_rapl_msr
+intel_uncore_frequency    12288  0
+intel_uncore_frequency_common    16384  1 intel_uncore_frequency
+isst_if_common         24576  0
+skx_edac               12288  0
+
+$ cat /proc/sys/kernel/pid_max; cat /proc/sys/kernel/threads-max; cat /proc/sys/kernel/randomize_va_space
+4194304
+511694
+2
+
+$ cat /proc/sys/kernel/kptr_restrict; cat /proc/sys/kernel/dmesg_restrict; cat /proc/sys/kernel/perf_event_paranoid
+0
+1
+4
+
+$ cat /sys/kernel/security/lsm 2>/dev/null; cat /sys/module/apparmor/parameters/enabled 2>/dev/null
+lockdown,capability,yama,apparmorY
+
+$ journalctl -k -b --no-pager 2>/dev/null | tail -40
+Nov 09 20:49:57 teacher kernel: vmbr1: port 2(tap120i0) entered blocking state
+Nov 09 20:49:57 teacher kernel: vmbr1: port 2(tap120i0) entered forwarding state
+Nov 09 20:49:58 teacher kernel: tap120i1: entered promiscuous mode
+Nov 09 20:49:58 teacher kernel: vmbr2: port 2(tap120i1) entered blocking state
+Nov 09 20:49:58 teacher kernel: vmbr2: port 2(tap120i1) entered disabled state
+Nov 09 20:49:58 teacher kernel: tap120i1: entered allmulticast mode
+Nov 09 20:49:58 teacher kernel: vmbr2: port 2(tap120i1) entered blocking state
+Nov 09 20:49:58 teacher kernel: vmbr2: port 2(tap120i1) entered forwarding state
+Nov 09 20:50:54 teacher kernel: tap121i0: left allmulticast mode
+Nov 09 20:50:54 teacher kernel: vmbr1: port 5(tap121i0) entered disabled state
+Nov 09 20:50:54 teacher kernel: tap121i1: left allmulticast mode
+Nov 09 20:50:54 teacher kernel: vmbr2: port 3(tap121i1) entered disabled state
+Nov 09 20:51:01 teacher kernel: tap121i0: entered promiscuous mode
+Nov 09 20:51:01 teacher kernel: vmbr1: port 5(tap121i0) entered blocking state
+Nov 09 20:51:01 teacher kernel: vmbr1: port 5(tap121i0) entered disabled state
+Nov 09 20:51:01 teacher kernel: tap121i0: entered allmulticast mode
+Nov 09 20:51:01 teacher kernel: vmbr1: port 5(tap121i0) entered blocking state
+Nov 09 20:51:01 teacher kernel: vmbr1: port 5(tap121i0) entered forwarding state
+Nov 09 20:51:02 teacher kernel: tap121i1: entered promiscuous mode
+Nov 09 20:51:02 teacher kernel: vmbr2: port 3(tap121i1) entered blocking state
+Nov 09 20:51:02 teacher kernel: vmbr2: port 3(tap121i1) entered disabled state
+Nov 09 20:51:02 teacher kernel: tap121i1: entered allmulticast mode
+Nov 09 20:51:02 teacher kernel: vmbr2: port 3(tap121i1) entered blocking state
+Nov 09 20:51:02 teacher kernel: vmbr2: port 3(tap121i1) entered forwarding state
+Nov 09 20:52:35 teacher kernel: tap119i0: left allmulticast mode
+Nov 09 20:52:35 teacher kernel: vmbr1: port 1(tap119i0) entered disabled state
+Nov 09 20:52:35 teacher kernel: tap119i1: left allmulticast mode
+Nov 09 20:52:35 teacher kernel: vmbr2: port 1(tap119i1) entered disabled state
+Nov 09 20:52:42 teacher kernel: tap119i0: entered promiscuous mode
+Nov 09 20:52:42 teacher kernel: vmbr1: port 1(tap119i0) entered blocking state
+Nov 09 20:52:42 teacher kernel: vmbr1: port 1(tap119i0) entered disabled state
+Nov 09 20:52:42 teacher kernel: tap119i0: entered allmulticast mode
+Nov 09 20:52:42 teacher kernel: vmbr1: port 1(tap119i0) entered blocking state
+Nov 09 20:52:42 teacher kernel: vmbr1: port 1(tap119i0) entered forwarding state
+Nov 09 20:52:43 teacher kernel: tap119i1: entered promiscuous mode
+Nov 09 20:52:43 teacher kernel: vmbr2: port 1(tap119i1) entered blocking state
+Nov 09 20:52:43 teacher kernel: vmbr2: port 1(tap119i1) entered disabled state
+Nov 09 20:52:43 teacher kernel: tap119i1: entered allmulticast mode
+Nov 09 20:52:43 teacher kernel: vmbr2: port 1(tap119i1) entered blocking state
+Nov 09 20:52:43 teacher kernel: vmbr2: port 1(tap119i1) entered forwarding state
+
+
+===== 2. 用户态 / libc / 启动 =====
+
+$ readlink -f /sbin/init; cat /proc/1/comm; cat /proc/1/cgroup
+/usr/lib/systemd/systemd
+systemd
+0::/init.scope
+
+$ systemctl --version 2>/dev/null | head -3
+systemd 252 (252.39-1~deb12u1)
++PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
+
+$ ldd --version 2>/dev/null | head -2; getconf GNU_LIBC_VERSION 2>/dev/null
+ldd (Debian GLIBC 2.36-9+deb12u13) 2.36
+Copyright (C) 2022 Free Software Foundation, Inc.
+glibc 2.36
+
+$ file /bin/ls 2>/dev/null; readelf -h /bin/ls 2>/dev/null | head -12
+/bin/ls: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=15dfff3239aa7c3b16a71e6b2e3b6e4009dab998, for GNU/Linux 3.2.0, stripped
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x61d0
+  Start of program headers:          64 (bytes into file)
+
+$ getent passwd | head -15
+root:x:0:0:root:/root:/usr/bin/zsh
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+
+$ getent group | head -15
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+
+$ who -a 2>/dev/null | head -10; last -n 5 2>/dev/null
+           system boot  2026-11-04 19:50
+LOGIN      tty1         2026-11-04 19:50              2320 id=tty1
+           run-level 5  2026-11-04 19:51
+root     + pts/0        2026-11-05 14:19 05:46      256265 (192.168.67.120)
+root     + pts/1        2026-11-10 08:38   .       1835264 (tmux(1835264).%0)
+root     + pts/2        2026-11-10 08:38 13:46     1835311 (192.168.67.120)
+           pts/3        2026-11-07 19:24            772402 id=/3    term=0 exit=0
+root     + pts/3        2026-11-10 22:23 00:01     2042284 (100.120.190.2)
+root     + pts/4        2026-11-10 17:38   .       1976585 (100.120.190.2)
+root     pts/3        100.120.190.2    Tue Nov 10 22:23   still logged in
+root     pts/4        100.120.190.2    Tue Nov 10 17:38   still logged in
+root     pts/3        100.120.190.2    Tue Nov 10 16:59 - 21:01  (04:01)
+root     pts/3        100.120.190.2    Tue Nov 10 12:41 - 13:54  (01:12)
+root     pts/2        192.168.67.120   Tue Nov 10 08:38   still logged in
+
+wtmp begins Sat Sep 13 15:37:17 2025
+
+$ env | grep -E "^(PATH|LANG|SHELL|HOME|USER)=" | sort
+HOME=/root
+LANG=en_US.UTF-8
+PATH=/root/.opencode/bin:/opt/jdk21/bin:/root/.opencode/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+SHELL=/usr/bin/zsh
+USER=root
+
+
+===== 3. 文件系统与存储 =====
+
+$ lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,ROTA,SCHED 2>/dev/null
+NAME                              SIZE TYPE FSTYPE      MOUNTPOINTS ROTA SCHED
+nvme0n1                         931.5G disk                            0 none
+├─nvme0n1p1                      1007K part                            0 none
+├─nvme0n1p2                         1G part vfat        /boot/efi      0 none
+└─nvme0n1p3                     930.5G part LVM2_member                0 none
+  ├─pve-swap                        8G lvm  swap        [SWAP]         0 
+  ├─pve-root                       96G lvm  ext4        /              0 
+  ├─pve-data_tmeta                8.1G lvm                             0 
+  │ └─pve-data-tpool            794.3G lvm                             0 
+  │   ├─pve-data                794.3G lvm                             0 
+  │   ├─pve-vm--101--disk--1      200G lvm                             0 
+  │   ├─pve-vm--100--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--116--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--116--disk--0       80G lvm                             0 
+  │   ├─pve-vm--117--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--117--disk--0       80G lvm                             0 
+  │   ├─pve-vm--118--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--118--disk--0       80G lvm                             0 
+  │   ├─pve-vm--119--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--119--disk--0       50G lvm                             0 
+  │   ├─pve-vm--9000--cloudinit     4M lvm  iso9660                    0 
+  │   ├─pve-vm--121--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--121--disk--0       50G lvm                             0 
+  │   ├─pve-vm--122--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--122--disk--0       60G lvm                             0 
+  │   ├─pve-vm--123--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--123--disk--0       60G lvm                             0 
+  │   ├─pve-vm--124--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--124--disk--0       60G lvm                             0 
+  │   ├─pve-vm--120--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--120--disk--0       40G lvm                             0 
+  │   ├─pve-vm--118--disk--1       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--117--disk--1       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--116--disk--1       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--118--disk--2       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--116--disk--2       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--117--disk--2       30G lvm  LVM2_member                0 
+  │   ├─pve-vm--600--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--600--disk--0       40G lvm                             0 
+  │   ├─pve-vm--9010--cloudinit     4M lvm  iso9660                    0 
+  │   ├─pve-vm--125--disk--0        4M lvm                             0 
+  │   ├─pve-vm--127--disk--0        4M lvm                             0 
+  │   ├─pve-vm--126--disk--0        4M lvm                             0 
+  │   ├─pve-vm--125--disk--1       40G lvm                             0 
+  │   ├─pve-vm--127--disk--1       40G lvm                             0 
+  │   ├─pve-vm--126--disk--1       40G lvm                             0 
+  │   ├─pve-vm--125--cloudinit      4M lvm  iso9660                    0 
+  │   ├─pve-vm--127--cloudinit      4M lvm  iso9660                    0 
+  │   └─pve-vm--126--cloudinit      4M lvm  iso9660                    0 
+  └─pve-data_tdata              794.3G lvm                             0 
+    └─pve-data-tpool            794.3G lvm                             0 
+      ├─pve-data                794.3G lvm                             0 
+      ├─pve-vm--101--disk--1      200G lvm                             0 
+      ├─pve-vm--100--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--116--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--116--disk--0       80G lvm                             0 
+      ├─pve-vm--117--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--117--disk--0       80G lvm                             0 
+      ├─pve-vm--118--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--118--disk--0       80G lvm                             0 
+      ├─pve-vm--119--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--119--disk--0       50G lvm                             0 
+      ├─pve-vm--9000--cloudinit     4M lvm  iso9660                    0 
+      ├─pve-vm--121--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--121--disk--0       50G lvm                             0 
+      ├─pve-vm--122--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--122--disk--0       60G lvm                             0 
+      ├─pve-vm--123--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--123--disk--0       60G lvm                             0 
+      ├─pve-vm--124--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--124--disk--0       60G lvm                             0 
+      ├─pve-vm--120--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--120--disk--0       40G lvm                             0 
+      ├─pve-vm--118--disk--1       30G lvm  LVM2_member                0 
+      ├─pve-vm--117--disk--1       30G lvm  LVM2_member                0 
+      ├─pve-vm--116--disk--1       30G lvm  LVM2_member                0 
+      ├─pve-vm--118--disk--2       30G lvm  LVM2_member                0 
+      ├─pve-vm--116--disk--2       30G lvm  LVM2_member                0 
+      ├─pve-vm--117--disk--2       30G lvm  LVM2_member                0 
+      ├─pve-vm--600--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--600--disk--0       40G lvm                             0 
+      ├─pve-vm--9010--cloudinit     4M lvm  iso9660                    0 
+      ├─pve-vm--125--disk--0        4M lvm                             0 
+      ├─pve-vm--127--disk--0        4M lvm                             0 
+      ├─pve-vm--126--disk--0        4M lvm                             0 
+      ├─pve-vm--125--disk--1       40G lvm                             0 
+      ├─pve-vm--127--disk--1       40G lvm                             0 
+      ├─pve-vm--126--disk--1       40G lvm                             0 
+      ├─pve-vm--125--cloudinit      4M lvm  iso9660                    0 
+      ├─pve-vm--127--cloudinit      4M lvm  iso9660                    0 
+      └─pve-vm--126--cloudinit      4M lvm  iso9660                    0 
+
+$ df -hT; echo; df -i
+Filesystem           Type      Size  Used Avail Use% Mounted on
+udev                 devtmpfs   32G     0   32G   0% /dev
+tmpfs                tmpfs     6.3G  8.7M  6.3G   1% /run
+/dev/mapper/pve-root ext4       94G   28G   62G  32% /
+tmpfs                tmpfs      32G   46M   32G   1% /dev/shm
+tmpfs                tmpfs     5.0M     0  5.0M   0% /run/lock
+efivarfs             efivarfs  512K   64K  444K  13% /sys/firmware/efi/efivars
+/dev/nvme0n1p2       vfat     1022M   12M 1011M   2% /boot/efi
+/dev/fuse            fuse      128M   32K  128M   1% /etc/pve
+tmpfs                tmpfs     6.3G     0  6.3G   0% /run/user/0
+
+Filesystem            Inodes  IUsed   IFree IUse% Mounted on
+udev                 8187115    775 8186340    1% /dev
+tmpfs                8195673   1861 8193812    1% /run
+/dev/mapper/pve-root 6291456 393846 5897610    7% /
+tmpfs                8195673    106 8195567    1% /dev/shm
+tmpfs                8195673     27 8195646    1% /run/lock
+efivarfs                   0      0       0     - /sys/firmware/efi/efivars
+/dev/nvme0n1p2             0      0       0     - /boot/efi
+/dev/fuse             262144     53  262091    1% /etc/pve
+tmpfs                1639134     18 1639116    1% /run/user/0
+
+$ findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS 2>/dev/null | head -40
+TARGET                                                  SOURCE               FSTYPE      OPTIONS
+/                                                       /dev/mapper/pve-root ext4        rw,relatime,errors=remount-ro
+├─/sys                                                  sysfs                sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                securityfs           securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                      cgroup2              cgroup2     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/pstore                                      pstore               pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/firmware/efi/efivars                           efivarfs             efivarfs    rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                         bpf                  bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                   debugfs              debugfs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                 tracefs              tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/fuse/connections                            fusectl              fusectl     rw,nosuid,nodev,noexec,relatime
+│ └─/sys/kernel/config                                  configfs             configfs    rw,nosuid,nodev,noexec,relatime
+├─/proc                                                 proc                 proc        rw,relatime
+│ ├─/proc/sys/fs/binfmt_misc                            systemd-1            autofs      rw,relatime,fd=30,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=75497
+│ │ └─/proc/sys/fs/binfmt_misc                          binfmt_misc          binfmt_misc rw,nosuid,nodev,noexec,relatime
+│ └─/proc/fs/nfsd                                       nfsd                 nfsd        rw,relatime
+├─/dev                                                  udev                 devtmpfs    rw,nosuid,relatime,size=32748460k,nr_inodes=8187115,mode=755,inode64
+│ ├─/dev/pts                                            devpts               devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                                            tmpfs                tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/hugepages                                      hugetlbfs            hugetlbfs   rw,relatime,pagesize=2M
+│ └─/dev/mqueue                                         mqueue               mqueue      rw,nosuid,nodev,noexec,relatime
+├─/run                                                  tmpfs                tmpfs       rw,nosuid,nodev,noexec,relatime,size=6556540k,mode=755,inode64
+│ ├─/run/lock                                           tmpfs                tmpfs       rw,nosuid,nodev,noexec,relatime,size=5120k,inode64
+│ ├─/run/credentials/systemd-sysusers.service           ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/credentials/systemd-tmpfiles-setup-dev.service ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/rpc_pipefs                                     sunrpc               rpc_pipefs  rw,relatime
+│ ├─/run/credentials/systemd-sysctl.service             ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/credentials/systemd-tmpfiles-setup.service     ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ └─/run/user/0                                         tmpfs                tmpfs       rw,nosuid,nodev,relatime,size=6556536k,nr_inodes=1639134,mode=700,inode64
+├─/boot/efi                                             /dev/nvme0n1p2       vfat        rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro
+├─/var/lib/lxcfs                                        lxcfs                fuse.lxcfs  rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other
+└─/etc/pve                                              /dev/fuse            fuse        rw,nosuid,nodev,relatime,user_id=0,group_id=0,default_permissions,allow_other
+
+$ cat /etc/fstab 2>/dev/null | grep -v "^#" | sed "/^$/d"
+/dev/pve/root / ext4 errors=remount-ro 0 1
+UUID=D7C0-606F /boot/efi vfat defaults 0 1
+/dev/pve/swap none swap sw 0 0
+proc /proc proc defaults 0 0
+
+$ mount | head -30
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,relatime)
+udev on /dev type devtmpfs (rw,nosuid,relatime,size=32748460k,nr_inodes=8187115,mode=755,inode64)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,noexec,relatime,size=6556540k,mode=755,inode64)
+/dev/mapper/pve-root on / type ext4 (rw,relatime,errors=remount-ro)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,inode64)
+tmpfs on /run/lock type tmpfs (rw,nosuid,nodev,noexec,relatime,size=5120k,inode64)
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+efivarfs on /sys/firmware/efi/efivars type efivarfs (rw,nosuid,nodev,noexec,relatime)
+bpf on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime,mode=700)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=30,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=75497)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime,pagesize=2M)
+mqueue on /dev/mqueue type mqueue (rw,nosuid,nodev,noexec,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,nosuid,nodev,noexec,relatime)
+tracefs on /sys/kernel/tracing type tracefs (rw,nosuid,nodev,noexec,relatime)
+fusectl on /sys/fs/fuse/connections type fusectl (rw,nosuid,nodev,noexec,relatime)
+configfs on /sys/kernel/config type configfs (rw,nosuid,nodev,noexec,relatime)
+ramfs on /run/credentials/systemd-sysusers.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+ramfs on /run/credentials/systemd-tmpfiles-setup-dev.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+/dev/nvme0n1p2 on /boot/efi type vfat (rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)
+ramfs on /run/credentials/systemd-sysctl.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+ramfs on /run/credentials/systemd-tmpfiles-setup.service type ramfs (ro,nosuid,nodev,noexec,relatime,mode=700)
+binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,nosuid,nodev,noexec,relatime)
+sunrpc on /run/rpc_pipefs type rpc_pipefs (rw,relatime)
+lxcfs on /var/lib/lxcfs type fuse.lxcfs (rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other)
+/dev/fuse on /etc/pve type fuse (rw,nosuid,nodev,relatime,user_id=0,group_id=0,default_permissions,allow_other)
+
+$ cat /proc/diskstats | head -20
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       4 loop4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       5 loop5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       6 loop6 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       7 loop7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 259       0 nvme0n1 16025889 299269 799458007 3191207 171446148 11454732 4776045577 352147881 0 4786491 355396529 122998 291212 490547232 57440 0 0
+ 259       1 nvme0n1p1 96 0 3264 13 0 0 0 0 0 10 13 0 0 0 0 0 0
+ 259       2 nvme0n1p2 973 3386 24184 473 2 0 2 0 0 53 479 6 0 4138368 5 0 0
+ 259       3 nvme0n1p3 16024692 295883 799424431 3190709 171446146 11454732 4776045575 352147881 0 5464470 355396026 122992 291212 486408864 57435 0 0
+ 252       0 dm-0 1048308 0 8393480 129283 2063929 0 16936584 3642469 0 141845 3771752 0 0 0 0 0 0
+ 252       1 dm-1 656824 0 104231858 260627 9384898 0 184599616 753934 0 2133526 1016526 38497 0 121526560 1965 0 0
+ 252       2 dm-2 1532584 0 12260696 430842 2149827 0 17198616 216017 0 349426 646859 0 0 0 0 0 0
+ 252       3 dm-3 12593010 0 592504705 2303364 168769116 0 4557310759 426079987 0 5890068 428957701 375707 0 364882304 574350 0 0
+ 252       4 dm-4 12593010 0 592504705 2316800 168769116 0 4557310759 426381814 0 5848534 429273277 375707 0 364882304 574663 0 0
+ 252       5 dm-5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 252       6 dm-6 194 0 8136 9 1 0 0 0 0 7 9 0 0 0 0 0 0
+ 252       7 dm-7 108 0 2528 7 1 0 0 0 0 6 7 0 0 0 0 0 0
+
+$ stat -f / 2>/dev/null
+  File: "/"
+    ID: 2ef581a60aedad14 Namelen: 255     Type: ext2/ext3
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 24624445   Free: 17349596   Available: 16087209
+Inodes: Total: 6291456    Free: 5897610
+
+$ df -h / /var /var/lib/containerd /var/lib/kubelet 2>/dev/null
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/pve-root   94G   28G   62G  32% /
+/dev/mapper/pve-root   94G   28G   62G  32% /
+[exit=1]
+
+$ losetup -a 2>/dev/null | head
+
+$ pvs 2>/dev/null; vgs 2>/dev/null; lvs -a -o lv_name,vg_name,lv_size,segtype,pool_lv,data_percent,metadata_percent 2>/dev/null
+  PV             VG  Fmt  Attr PSize    PFree 
+  /dev/nvme0n1p3 pve lvm2 a--  <930.51g 16.00g
+  VG  #PV #LV #SN Attr   VSize    VFree 
+  pve   1  47   0 wz--n- <930.51g 16.00g
+  LV                               VG  LSize   Type      Pool Data%  Meta% 
+  base-100-disk-0                  pve  20.00g thin      data              
+  base-9000-disk-0                 pve  40.00g thin      data              
+  base-9010-disk-0                 pve   4.00m thin      data              
+  base-9010-disk-1                 pve  40.00g thin      data              
+  data                             pve 794.30g thin-pool      65.69  2.16  
+  [data_tdata]                     pve 794.30g linear                      
+  [data_tmeta]                     pve   8.10g linear                      
+  [lvol0_pmspare]                  pve   8.10g linear                      
+  root                             pve  96.00g linear                      
+  snap_vm-119-disk-0_before_resize pve  50.00g thin      data              
+  swap                             pve   8.00g linear                      
+  vm-100-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-101-disk-1                    pve 200.00g thin      data 21.78        
+  vm-116-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-116-disk-0                    pve  80.00g thin      data 28.48        
+  vm-116-disk-1                    pve  30.00g thin      data 99.99        
+  vm-116-disk-2                    pve  30.00g thin      data 99.99        
+  vm-117-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-117-disk-0                    pve  80.00g thin      data 38.80        
+  vm-117-disk-1                    pve  30.00g thin      data 99.99        
+  vm-117-disk-2                    pve  30.00g thin      data 99.99        
+  vm-118-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-118-disk-0                    pve  80.00g thin      data 22.95        
+  vm-118-disk-1                    pve  30.00g thin      data 99.99        
+  vm-118-disk-2                    pve  30.00g thin      data 99.99        
+  vm-119-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-119-disk-0                    pve  50.00g thin      data 62.15        
+  vm-120-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-120-disk-0                    pve  40.00g thin      data 39.30        
+  vm-121-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-121-disk-0                    pve  50.00g thin      data 39.33        
+  vm-122-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-122-disk-0                    pve  60.00g thin      data 77.23        
+  vm-123-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-123-disk-0                    pve  60.00g thin      data 62.53        
+  vm-124-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-124-disk-0                    pve  60.00g thin      data 67.77        
+  vm-125-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-125-disk-0                    pve   4.00m thin      data 14.06        
+  vm-125-disk-1                    pve  40.00g thin      data 6.57         
+  vm-126-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-126-disk-0                    pve   4.00m thin      data 14.06        
+  vm-126-disk-1                    pve  40.00g thin      data 6.49         
+  vm-127-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-127-disk-0                    pve   4.00m thin      data 14.06        
+  vm-127-disk-1                    pve  40.00g thin      data 6.48         
+  vm-600-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-600-disk-0                    pve  40.00g thin      data 35.88        
+  vm-9000-cloudinit                pve   4.00m thin      data 9.38         
+  vm-9010-cloudinit                pve   4.00m thin      data 9.38         
+
+$ tune2fs -l $(findmnt -n -o SOURCE /) 2>/dev/null | grep -E "Filesystem volume name|Filesystem features|Block count|Inode count|Reserved block count|Mount count|Last checked|Errors behavior"
+Filesystem volume name:   <none>
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype needs_recovery extent 64bit flex_bg sparse_super large_file huge_file dir_nlink extra_isize metadata_csum
+Errors behavior:          Continue
+Inode count:              6291456
+Block count:              25165824
+Reserved block count:     1258291
+Mount count:              157
+Last checked:             Sat Sep 13 15:30:04 2025
+
+$ xfs_info / 2>/dev/null | head -20
+
+$ du -xhd1 / 2>/dev/null | sort -h | tail -15
+4.0K	/home
+4.0K	/media
+4.0K	/srv
+16K	/lost+found
+32K	/mnt
+8.9M	/etc
+177M	/boot
+635M	/tmp
+1.4G	/opt
+2.7G	/data
+4.8G	/root
+5.2G	/usr
+14G	/var
+28G	/
+
+
+===== 4. 权限模型 =====
+
+$ umask; id; ls -ld / /root /tmp /etc/shadow /usr/bin/passwd /usr/bin/sudo 2>/dev/null
+0022
+uid=0(root) gid=0(root) groups=0(root)
+drwxr-xr-x 19 root root     4096 Nov 10 22:25 /
+-rw-r-----  1 root shadow    843 Feb 26  2026 /etc/shadow
+drwx------ 23 root root     4096 Nov 10 22:24 /root
+drwxrwxrwt 19 root root    12288 Nov 10 19:51 /tmp
+-rwsr-xr-x  1 root root    68248 Apr  7  2025 /usr/bin/passwd
+-rwsr-xr-x  1 root root   281624 Apr 11  2026 /usr/bin/sudo
+
+$ ls -l /usr/bin/passwd /usr/bin/sudo /usr/bin/ping /usr/bin/su 2>/dev/null
+-rwsr-xr-x 1 root root  68248 Apr  7  2025 /usr/bin/passwd
+-rwxr-xr-x 1 root root  90568 Sep 25  2024 /usr/bin/ping
+-rwsr-xr-x 1 root root  72000 Nov 22  2024 /usr/bin/su
+-rwsr-xr-x 1 root root 281624 Apr 11  2026 /usr/bin/sudo
+
+$ find / -xdev -perm -4000 -type f 2>/dev/null | head -60
+/usr/sbin/mount.nfs
+/usr/sbin/mount.cifs
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/openssh/ssh-keysign
+/usr/bin/chfn
+/usr/bin/proxmox-mail-forward
+/usr/bin/newuidmap
+/usr/bin/newgidmap
+/usr/bin/su
+/usr/bin/chsh
+/usr/bin/fusermount3
+/usr/bin/passwd
+/usr/bin/sudo
+/usr/bin/gpasswd
+/usr/bin/ntfs-3g
+/usr/bin/umount
+/usr/bin/procmail
+/usr/bin/newgrp
+/usr/bin/mount
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/usr/bin/chfn
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/usr/bin/chsh
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/usr/bin/passwd
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/usr/bin/gpasswd
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/usr/bin/newgrp
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/bin/su
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/bin/umount
+/var/lib/docker/overlay2/6e7d9e4b3a3c2f0e30c6fe1b7e3ca2a935fb3f37903cd011f4722b4a65594b21/diff/bin/mount
+/var/lib/docker/overlay2/d7e3c48566a7b42d6c239fcd7de6f0ba6e21466cf8afe4755c29755e4cefc6d5/diff/usr/bin/chfn
+/var/lib/docker/overlay2/d7e3c48566a7b42d6c239fcd7de6f0ba6e21466cf8afe4755c29755e4cefc6d5/diff/usr/bin/chsh
+/var/lib/docker/overlay2/d7e3c48566a7b42d6c239fcd7de6f0ba6e21466cf8afe4755c29755e4cefc6d5/diff/usr/bin/passwd
+/var/lib/docker/overlay2/d7e3c48566a7b42d6c239fcd7de6f0ba6e21466cf8afe4755c29755e4cefc6d5/diff/usr/bin/gpasswd
+/var/lib/docker/overlay2/d7e3c48566a7b42d6c239fcd7de6f0ba6e21466cf8afe4755c29755e4cefc6d5/diff/usr/bin/newgrp
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/usr/bin/chfn
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/usr/bin/chsh
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/usr/bin/passwd
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/usr/bin/gpasswd
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/usr/bin/newgrp
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/bin/su
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/bin/umount
+/var/lib/docker/overlay2/46d00151cc9e3ae4145de8c0c4aa8f09715a81b81d9592e4c311ea92bd43f007/diff/bin/mount
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/usr/bin/chfn
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/usr/bin/chsh
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/usr/bin/passwd
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/usr/bin/gpasswd
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/usr/bin/newgrp
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/bin/su
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/bin/umount
+/var/lib/docker/overlay2/73ef314adc6ffef8b0be313c284eda991d8fdffe9932c37f31fa48ea1a4512c8/diff/bin/mount
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/usr/bin/chfn
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/usr/bin/chsh
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/usr/bin/passwd
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/usr/bin/gpasswd
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/usr/bin/newgrp
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/bin/su
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/bin/umount
+/var/lib/docker/overlay2/4b07ce01edc269b3b9460464bf4ed6f4608cdebe5370ab179373c1b97ccb486e/diff/bin/mount
+/var/lib/docker/overlay2/433af50018b1b9e41692b0da713ecd0953b172ff7f08effbfb2729cd782cde1f/diff/usr/lib/openssh/ssh-keysign
+/var/lib/docker/overlay2/b3ca49c3b2817c1b4e342940df70f7e31b552cc45b7bb1c7bdc95321a8a60e92/diff/usr/bin/chfn
+/var/lib/docker/overlay2/b3ca49c3b2817c1b4e342940df70f7e31b552cc45b7bb1c7bdc95321a8a60e92/diff/usr/bin/chsh
+/var/lib/docker/overlay2/b3ca49c3b2817c1b4e342940df70f7e31b552cc45b7bb1c7bdc95321a8a60e92/diff/usr/bin/passwd
+
+$ getcap -r / 2>/dev/null | head -80
+/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper cap_net_bind_service,cap_net_admin=ep
+/usr/bin/ping cap_net_raw=ep
+
+$ getfacl -p /tmp 2>/dev/null
+# file: /tmp
+# owner: root
+# group: root
+# flags: --t
+user::rwx
+group::rwx
+other::rwx
+
+
+$ capsh --print 2>/dev/null
+Current: =ep
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+Current IAB: 
+Securebits: 00/0x0/1'b0 (no-new-privs=0)
+ secure-noroot: no (unlocked)
+ secure-no-suid-fixup: no (unlocked)
+ secure-keep-caps: no (unlocked)
+ secure-no-ambient-raise: no (unlocked)
+uid=0(root) euid=0(root)
+gid=0(root)
+groups=0(root)
+Guessed mode: HYBRID (4)
+
+$ grep -E "^(Uid|Gid|Groups|Cap|NoNewPrivs|Seccomp|Speculation)" /proc/self/status
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+Groups:	0 
+CapInh:	0000000000000000
+CapPrm:	000001ffffffffff
+CapEff:	000001ffffffffff
+CapBnd:	000001ffffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Seccomp_filters:	0
+Speculation_Store_Bypass:	thread vulnerable
+SpeculationIndirectBranch:	conditional enabled
+
+
+===== 5. 进程 =====
+
+$ ps -eo pid,ppid,user,stat,ni,pri,pcpu,pmem,rss,vsz,comm --sort=-rss | head -25
+    PID    PPID USER     STAT  NI PRI %CPU %MEM   RSS    VSZ COMMAND
+1677443       1 root     Sl     0  19 86.9 15.3 10062420 11589316 kvm
+1675010       1 root     Sl     0  19 77.9 15.1 9903632 11589312 kvm
+1670131       1 root     Sl     0  19 79.0 12.3 8070688 9342504 kvm
+   5169       1 root     Sl     0  19 15.7 10.8 7130864 11349180 kvm
+1683932       1 root     Sl     0  19 64.7  9.4 6177492 7149588 kvm
+1684961       1 root     Sl     0  19 51.3  9.2 6042376 7244244 kvm
+   5035       1 root     Sl     0  19 17.7  8.6 5670088 9135216 kvm
+   5076       1 root     Sl     0  19 17.5  8.0 5256532 9116968 kvm
+1683373       1 root     Sl     0  19 59.2  6.3 4148824 5087148 kvm
+1196451       1 root     Ssl    0  19  0.8  0.4 292896 7298124 opencode
+1835393 1835265 root     Sl+    0  19  1.3  0.4 281380 11457492 opencode
+   2641       1 www-data Ss     0  19  0.0  0.2 173440 243912 pveproxy
+2037312    2641 www-data S      0  19  0.0  0.2 152004 252676 pveproxy worker
+2037411    2641 www-data S      0  19  0.0  0.2 152004 252436 pveproxy worker
+2012044    2641 www-data S      0  19  0.0  0.2 151364 252832 pveproxy worker
+   2648       1 www-data Ss     0  19  0.0  0.0 64000  86824 spiceproxy
+   1372       1 root     Ss     0  19  0.0  0.0 60800 217496 systemd-journal
+1733148    2648 www-data S      0  19  0.0  0.0 52448  87052 spiceproxy work
+   2587    2584 root     S      0  19  0.0  0.0 50672 263760 pvedaemon worke
+   2560       1 root     Ss     0  19  1.1  0.0 49444 215248 pvestatd
+1942701       1 root     SNl    5  14  0.0  0.0 46644 1327980 kubectl
+1949453       1 root     SNl    5  14  0.0  0.0 45968 1327196 kubectl
+1949065       1 root     SNl    5  14  0.0  0.0 45960 1327460 kubectl
+1948277       1 root     SNl    5  14  0.0  0.0 45228 1393852 kubectl
+
+$ ps -eLf 2>/dev/null | wc -l; cat /proc/loadavg; cat /proc/pressure/cpu 2>/dev/null; cat /proc/pressure/memory 2>/dev/null; cat /proc/pressure/io 2>/dev/null
+1369
+8.21 6.27 5.54 17/1367 2043064
+some avg10=0.00 avg60=0.00 avg300=0.00 total=2168643894
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+some avg10=0.00 avg60=0.00 avg300=0.00 total=3558192
+full avg10=0.00 avg60=0.00 avg300=0.00 total=3512915
+some avg10=0.14 avg60=0.11 avg300=0.03 total=21767644
+full avg10=0.14 avg60=0.11 avg300=0.03 total=21292784
+
+$ cat /proc/1/status 2>/dev/null | head -30
+Name:	systemd
+Umask:	0000
+State:	S (sleeping)
+Tgid:	1
+Ngid:	0
+Pid:	1
+PPid:	0
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	128
+Groups:	 
+NStgid:	1
+NSpid:	1
+NSpgid:	1
+NSsid:	1
+Kthread:	0
+VmPeak:	  234032 kB
+VmSize:	  168904 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   10880 kB
+VmRSS:	   10880 kB
+RssAnon:	    2560 kB
+RssFile:	    8320 kB
+RssShmem:	       0 kB
+VmData:	   20072 kB
+VmStk:	     132 kB
+VmExe:	      40 kB
+VmLib:	   10692 kB
+
+$ ls -l /proc/1/exe /proc/1/cwd /proc/1/root 2>/dev/null
+lrwxrwxrwx 1 root root 0 Nov 10 22:25 /proc/1/cwd -> /
+lrwxrwxrwx 1 root root 0 Nov  4 19:50 /proc/1/exe -> /usr/lib/systemd/systemd
+lrwxrwxrwx 1 root root 0 Nov  4 19:50 /proc/1/root -> /
+
+$ lsns 2>/dev/null | head -20
+        NS TYPE   NPROCS     PID USER    COMMAND
+4026531834 time      944       1 root    /sbin/init
+4026531835 cgroup    944       1 root    /sbin/init
+4026531836 pid       944       1 root    /sbin/init
+4026531837 user      942       1 root    /sbin/init
+4026531838 uts       939       1 root    /sbin/init
+4026531839 ipc       944       1 root    /sbin/init
+4026531840 net       944       1 root    /sbin/init
+4026531841 mnt       937       1 root    /sbin/init
+4026534140 mnt         1    1400 root    ├─/lib/systemd/systemd-udevd
+4026534141 uts         1    1400 root    ├─/lib/systemd/systemd-udevd
+4026534434 uts         1    2024 root    ├─/lib/systemd/systemd-logind
+4026534435 mnt         1    2024 root    ├─/lib/systemd/systemd-logind
+4026535077 mnt         2    2335 _chrony ├─/usr/sbin/chronyd -F 1
+4026535078 mnt         1    2294 redis   ├─/usr/bin/redis-server 10.0.0.1:6379                                            
+4026535079 uts         2    2335 _chrony ├─/usr/sbin/chronyd -F 1
+4026535080 uts         1    2294 redis   ├─/usr/bin/redis-server 10.0.0.1:6379                                            
+4026535081 user        1    2294 redis   ├─/usr/bin/redis-server 10.0.0.1:6379                                            
+4026535094 mnt         1 2006150 uuidd   ├─/usr/sbin/uuidd --socket-activation
+4026535095 user        1 2006150 uuidd   └─/usr/sbin/uuidd --socket-activation
+
+$ systemctl list-units --type=service --state=running --no-pager 2>/dev/null | head -30
+  UNIT                     LOAD   ACTIVE SUB     DESCRIPTION
+  chrony.service           loaded active running chrony, an NTP client/server
+  cron.service             loaded active running Regular background program processing daemon
+  dbus.service             loaded active running D-Bus System Message Bus
+  dm-event.service         loaded active running Device-mapper event daemon
+  getty@tty1.service       loaded active running Getty on tty1
+  ksmtuned.service         loaded active running Kernel Samepage Merging (KSM) Tuning Daemon
+  lxc-monitord.service     loaded active running LXC Container Monitoring Daemon
+  lxcfs.service            loaded active running FUSE filesystem for LXC
+  nfs-blkmap.service       loaded active running pNFS block layout mapping daemon
+  nfs-idmapd.service       loaded active running NFSv4 ID-name mapping service
+  nfs-mountd.service       loaded active running NFS Mount Daemon
+  nfsdcld.service          loaded active running NFSv4 Client Tracking Daemon
+  postfix@-.service        loaded active running Postfix Mail Transport Agent (instance -)
+  proxmox-firewall.service loaded active running Proxmox nftables firewall
+  pve-cluster.service      loaded active running The Proxmox VE cluster filesystem
+  pve-firewall.service     loaded active running Proxmox VE firewall
+  pve-ha-crm.service       loaded active running PVE Cluster HA Resource Manager Daemon
+  pve-ha-lrm.service       loaded active running PVE Local HA Resource Manager Daemon
+  pve-lxc-syscalld.service loaded active running Proxmox VE LXC Syscall Daemon
+  pvedaemon.service        loaded active running PVE API Daemon
+  pvefw-logger.service     loaded active running Proxmox VE firewall logger
+  pveproxy.service         loaded active running PVE API Proxy Server
+  pvescheduler.service     loaded active running Proxmox VE scheduler
+  pvestatd.service         loaded active running PVE Status Daemon
+  qmeventd.service         loaded active running PVE Qemu Event Daemon
+  redis-server.service     loaded active running Advanced key-value store
+  rpc-statd.service        loaded active running NFS status monitor for NFSv2/3 locking.
+  rpcbind.service          loaded active running RPC bind portmap service
+  rrdcached.service        loaded active running LSB: start or stop rrdcached
+
+
+===== 6. 内存 =====
+
+$ cat /proc/meminfo
+MemTotal:       65565388 kB
+MemFree:          637916 kB
+MemAvailable:    3135164 kB
+Buffers:          381340 kB
+Cached:          1785932 kB
+SwapCached:       495836 kB
+Active:         52647264 kB
+Inactive:        4848076 kB
+Active(anon):   52010100 kB
+Inactive(anon):  3356168 kB
+Active(file):     637164 kB
+Inactive(file):  1491908 kB
+Unevictable:       36700 kB
+Mlocked:           33628 kB
+SwapTotal:       8388604 kB
+SwapFree:        4460284 kB
+Zswap:                 0 kB
+Zswapped:              0 kB
+Dirty:             44504 kB
+Writeback:             4 kB
+AnonPages:      55105400 kB
+Mapped:           260812 kB
+Shmem:             27364 kB
+KReclaimable:    1037072 kB
+Slab:            3078080 kB
+SReclaimable:    1037072 kB
+SUnreclaim:      2041008 kB
+KernelStack:       23152 kB
+PageTables:       159024 kB
+SecPageTables:    121336 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    41171296 kB
+Committed_AS:   75685328 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      321796 kB
+VmallocChunk:          0 kB
+Percpu:           205440 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:   3211264 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+Unaccepted:            0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:      411856 kB
+DirectMap2M:    10766336 kB
+DirectMap1G:    57671680 kB
+
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:            62Gi        59Gi       622Mi        26Mi       3.1Gi       3.0Gi
+Swap:          8.0Gi       3.7Gi       4.3Gi
+
+$ vmstat 1 3
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 8  0 3928320 636520 381340 2823004    0    0    10    57  594 1409  0  1 94  0  0
+15  0 3928320 636520 381340 2823004  748   40  2800  2465 67877 127317  0  2 86  0  0
+13  1 3928320 636520 381340 2823004 2984    0  5984  2041 63915 112388  0  1 83  0  0
+
+$ cat /proc/vmstat | grep -E "^(pgscan|pgsteal|pgmajfault|oom_kill|compact|nr_free_pages|nr_slab)" | head -30
+nr_free_pages 164541
+nr_slab_reclaimable 254680
+nr_slab_unreclaimable 509976
+pgmajfault 776431
+pgsteal_kswapd 17680694
+pgsteal_direct 362906
+pgsteal_khugepaged 113015
+pgscan_kswapd 19563933
+pgscan_direct 487015
+pgscan_khugepaged 142763
+pgscan_direct_throttle 0
+pgscan_anon 4162354
+pgscan_file 16031357
+pgsteal_anon 2172276
+pgsteal_file 15984339
+oom_kill 0
+compact_migrate_scanned 3741851685
+compact_free_scanned 8076567753
+compact_isolated 164255093
+compact_stall 7858
+compact_fail 7632
+compact_success 226
+compact_daemon_wake 290
+compact_daemon_migrate_scanned 3739231179
+compact_daemon_free_scanned 8073999698
+
+$ cat /proc/sys/vm/overcommit_memory; cat /proc/sys/vm/overcommit_ratio; cat /proc/sys/vm/swappiness; cat /proc/sys/vm/min_free_kbytes; cat /proc/sys/vm/dirty_ratio; cat /proc/sys/vm/dirty_background_ratio; cat /proc/sys/vm/vfs_cache_pressure
+0
+50
+10
+90112
+20
+10
+100
+
+$ cat /proc/buddyinfo; cat /proc/pagetypeinfo 2>/dev/null | head -20
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      1      1      2 
+Node 0, zone    DMA32    458    317    108    869    868    184     57     25      0      0      0 
+Node 0, zone   Normal   4458   2259    371    260     63     51      5      8      4     19      0 
+Node 1, zone   Normal   8544   5649   2312   1229    352    132     44     83     59      9     17 
+Page block order: 9
+Pages per block:  512
+
+Free pages count per migrate type at order       0      1      2      3      4      5      6      7      8      9     10 
+Node    0, zone      DMA, type    Unmovable      0      0      0      0      0      0      0      0      1      0      0 
+Node    0, zone      DMA, type      Movable      0      0      0      0      0      0      0      0      0      1      2 
+Node    0, zone      DMA, type  Reclaimable      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone      DMA, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type    Unmovable     58     72     22     97    123     34      9      0      0      0      0 
+Node    0, zone    DMA32, type      Movable    369    238     81    761    743    150     48     24      0      0      0 
+Node    0, zone    DMA32, type  Reclaimable     31      7      5     11      2      0      0      1      0      0      0 
+Node    0, zone    DMA32, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone    DMA32, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+Node    0, zone   Normal, type    Unmovable    628     77     65    140     29     28      4      5      1      0      0 
+Node    0, zone   Normal, type      Movable   2807   2159    296    109     27     16      1      0      1     12      0 
+Node    0, zone   Normal, type  Reclaimable   1023     23     10     11      7      7      0      3      2      6      0 
+Node    0, zone   Normal, type   HighAtomic      0      0      0      0      0      0      0      0      0      1      0 
+Node    0, zone   Normal, type      Isolate      0      0      0      0      0      0      0      0      0      0      0 
+
+
+$ slabtop -o 2>/dev/null | head -25
+ Active / Total Objects (% used)    : 22954122 / 23112789 (99.3%)
+ Active / Total Slabs (% used)      : 385269 / 385269 (100.0%)
+ Active / Total Caches (% used)     : 349 / 431 (81.0%)
+ Active / Total Size (% used)       : 2961826.30K / 2989728.63K (99.1%)
+ Minimum / Average / Maximum Object : 0.01K / 0.13K / 16.00K
+
+  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
+16905344 16877255  99%    0.06K 264146       64   1056584K dmaengine-unmap-2      
+857178 846744  98%    0.19K  20409       42    163272K dentry                 
+828648 818731  98%    0.04K   8124      102     32496K lsm_inode_cache        
+395928 395928 100%    1.16K  14664       27    469248K ext4_inode_cache       
+270296 263309  97%    0.70K   5876       46    188032K proc_inode_cache       
+263640 204243  77%    0.10K   6760       39     27040K buffer_head            
+160000 159872  99%    1.00K   5000       32    160000K kmalloc-rnd-02-1k      
+141750 141750 100%    0.19K   3375       42     27000K kmalloc-rnd-05-192     
+124950 121567  97%    0.62K   2450       51     78400K inode_cache            
+119952 119952 100%    0.14K   2142       56     17136K kernfs_node_cache      
+115328 115328 100%    0.06K   1802       64      7208K kmalloc-rcl-64         
+100896 100896 100%    1.00K   3153       32    100896K kmalloc-rnd-08-1k      
+ 77824  76293  98%    0.01K    152      512       608K kmalloc-cg-8           
+ 76160  70640  92%    0.07K   1360       56      5440K vmap_area              
+ 68340  65345  95%    0.04K    670      102      2680K extent_status          
+ 63616  60788  95%    0.57K   1136       56     36352K radix_tree_node        
+ 57984  57984 100%    0.03K    453      128      1812K kmalloc-rnd-07-32      
+ 52000  47506  91%    0.50K   1625       32     26000K kmalloc-rnd-14-512     
+
+$ systemd-cgtop -b -n 1 2>/dev/null | head -20
+/                                                      1369      -    59.5G        -        -
+dev-hugepages.mount                                       -      -    68.0K        -        -
+dev-mqueue.mount                                          -      -     4.0K        -        -
+init.scope                                                1      -     4.7M        -        -
+proc-fs-nfsd.mount                                        -      -    20.0K        -        -
+proc-sys-fs-binfmt_misc.mount                             -      -     8.0K        -        -
+qemu.slice                                              170      -    52.1G        -        -
+qemu.slice/116.scope                                     20      -     4.8G        -        -
+qemu.slice/117.scope                                     20      -     4.7G        -        -
+qemu.slice/118.scope                                     24      -     6.3G        -        -
+qemu.slice/119.scope                                     17      -     5.4G        -        -
+qemu.slice/120.scope                                     18      -     3.9G        -        -
+qemu.slice/121.scope                                     15      -     4.3G        -        -
+qemu.slice/122.scope                                     19      -     7.2G        -        -
+qemu.slice/123.scope                                     20      -     7.9G        -        -
+qemu.slice/124.scope                                     17      -     6.4G        -        -
+sys-fs-fuse-connections.mount                             -      -     8.0K        -        -
+sys-kernel-config.mount                                   -      -     4.0K        -        -
+sys-kernel-debug.mount                                    -      -     4.0K        -        -
+sys-kernel-tracing.mount                                  -      -     4.0K        -        -
+
+$ cat /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.events 2>/dev/null
+[exit=1]
+
+
+===== 7. systemd 与启动 =====
+
+$ systemd-analyze time 2>/dev/null; systemd-analyze blame 2>/dev/null | head -20; systemd-analyze critical-chain 2>/dev/null | head -30
+Startup finished in 3min 4.240s (firmware) + 8.500s (loader) + 12.866s (kernel) + 29.424s (userspace) = 3min 55.031s 
+graphical.target reached after 29.397s in userspace.
+16.853s pve-guests.service
+16.398s pve-daily-update.service
+ 2.913s systemd-modules-load.service
+ 2.572s logrotate.service
+ 2.474s ifupdown2-pre.service
+ 2.473s systemd-udev-settle.service
+ 2.054s pveproxy.service
+ 1.899s networking.service
+ 1.515s pvedaemon.service
+ 1.274s dev-mapper-pve\x2droot.device
+ 1.228s pvescheduler.service
+ 1.177s pve-ha-crm.service
+ 1.164s proc-fs-nfsd.mount
+ 1.158s lvm2-monitor.service
+ 1.154s pve-ha-lrm.service
+ 1.051s pve-firewall.service
+ 1.049s systemd-udevd.service
+ 1.043s pvestatd.service
+ 1.024s pve-cluster.service
+  586ms pve-sdn-commit.service
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @29.397s
+└─multi-user.target @29.397s
+  └─pvescheduler.service @28.168s +1.228s
+    └─pve-guests.service @11.299s +16.853s
+      └─pve-ha-lrm.service @10.132s +1.154s
+        └─pveproxy.service @8.066s +2.054s
+          └─pvedaemon.service @6.535s +1.515s
+            └─pve-cluster.service @5.476s +1.024s
+              └─rrdcached.service @5.413s +60ms
+                └─time-sync.target @5.409s
+                  └─chrony.service @5.299s +89ms
+                    └─network.target @5.278s
+                      └─networking.service @3.378s +1.899s
+                        └─local-fs.target @3.372s
+                          └─etc-pve.mount @5.498s
+                            └─local-fs-pre.target @1.517s
+                              └─lvm2-monitor.service @359ms +1.158s
+                                └─dm-event.service @397ms
+                                  └─systemd-journald.socket @344ms
+                                    └─system.slice @316ms
+                                      └─-.slice @316ms
+
+$ systemctl list-unit-files --state=enabled --no-pager 2>/dev/null | head -35
+UNIT FILE                              STATE   PRESET
+apparmor.service                       enabled enabled
+blk-availability.service               enabled enabled
+chrony.service                         enabled enabled
+console-setup.service                  enabled enabled
+corosync.service                       enabled enabled
+cron.service                           enabled enabled
+e2scrub_reap.service                   enabled enabled
+getty@.service                         enabled enabled
+keyboard-setup.service                 enabled enabled
+ksmtuned.service                       enabled enabled
+lvm2-monitor.service                   enabled enabled
+lxc-monitord.service                   enabled enabled
+lxc-net.service                        enabled enabled
+lxc.service                            enabled enabled
+lxcfs.service                          enabled enabled
+mdadm-shutdown.service                 enabled enabled
+networking.service                     enabled enabled
+nfs-blkmap.service                     enabled enabled
+nfs-server.service                     enabled enabled
+nvmefc-boot-connections.service        enabled enabled
+nvmf-autoconnect.service               enabled enabled
+open-iscsi.service                     enabled enabled
+postfix.service                        enabled enabled
+proxmox-boot-cleanup.service           enabled enabled
+proxmox-firewall.service               enabled enabled
+pve-cluster.service                    enabled enabled
+pve-firewall-commit.service            enabled enabled
+pve-firewall.service                   enabled enabled
+pve-guests.service                     enabled enabled
+pve-ha-crm.service                     enabled enabled
+pve-ha-lrm.service                     enabled enabled
+pve-lxc-syscalld.service               enabled enabled
+pve-query-machine-capabilities.service enabled enabled
+pve-sdn-commit.service                 enabled enabled
+
+$ journalctl -b --no-pager 2>/dev/null | head -40
+Nov 04 19:50:46 teacher kernel: Linux version 6.8.12-15-pve (build@proxmox) (gcc (Debian 12.2.0-14+deb12u1) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40) #1 SMP PREEMPT_DYNAMIC PMX 6.8.12-15 (2025-09-12T11:02Z) ()
+Nov 04 19:50:46 teacher kernel: Command line: BOOT_IMAGE=/boot/vmlinuz-6.8.12-15-pve root=/dev/mapper/pve-root ro quiet
+Nov 04 19:50:46 teacher kernel: KERNEL supported cpus:
+Nov 04 19:50:46 teacher kernel:   Intel GenuineIntel
+Nov 04 19:50:46 teacher kernel:   AMD AuthenticAMD
+Nov 04 19:50:46 teacher kernel:   Hygon HygonGenuine
+Nov 04 19:50:46 teacher kernel:   Centaur CentaurHauls
+Nov 04 19:50:46 teacher kernel:   zhaoxin   Shanghai  
+Nov 04 19:50:46 teacher kernel: BIOS-provided physical RAM map:
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x00000000000a0000-0x00000000000fffff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x0000000000100000-0x00000000673dcfff] usable
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x00000000673dd000-0x0000000069d94fff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x0000000069d95000-0x000000006a718fff] usable
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x000000006a719000-0x000000006b5bafff] ACPI NVS
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x000000006b5bb000-0x000000006d74efff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x000000006d74f000-0x000000006d92cfff] type 20
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x000000006d92d000-0x000000006fffffff] usable
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x0000000070000000-0x000000008fffffff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x00000000fd000000-0x00000000fe7fffff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x00000000fed20000-0x00000000fed44fff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x00000000ff000000-0x00000000ffffffff] reserved
+Nov 04 19:50:46 teacher kernel: BIOS-e820: [mem 0x0000000100000000-0x000000107fffffff] usable
+Nov 04 19:50:46 teacher kernel: NX (Execute Disable) protection: active
+Nov 04 19:50:46 teacher kernel: APIC: Static calls initialized
+Nov 04 19:50:46 teacher kernel: efi: EFI v2.7 by American Megatrends
+Nov 04 19:50:46 teacher kernel: efi: ACPI 2.0=0x6ad1c000 ACPI=0x6ad1c000 SMBIOS=0x6d3f8000 SMBIOS 3.0=0x6d3f7000 MEMATTR=0x62c01018 ESRT=0x655d8598 MOKvar=0x6d3fe000 
+Nov 04 19:50:46 teacher kernel: efi: Remove mem72: MMIO range=[0x80000000-0x8fffffff] (256MB) from e820 map
+Nov 04 19:50:46 teacher kernel: e820: remove [mem 0x80000000-0x8fffffff] reserved
+Nov 04 19:50:46 teacher kernel: efi: Remove mem73: MMIO range=[0xfd000000-0xfe7fffff] (24MB) from e820 map
+Nov 04 19:50:46 teacher kernel: e820: remove [mem 0xfd000000-0xfe7fffff] reserved
+Nov 04 19:50:46 teacher kernel: efi: Not removing mem74: MMIO range=[0xfed20000-0xfed44fff] (148KB) from e820 map
+Nov 04 19:50:46 teacher kernel: efi: Remove mem75: MMIO range=[0xff000000-0xffffffff] (16MB) from e820 map
+Nov 04 19:50:46 teacher kernel: e820: remove [mem 0xff000000-0xffffffff] reserved
+Nov 04 19:50:46 teacher kernel: secureboot: Secure boot disabled
+Nov 04 19:50:46 teacher kernel: SMBIOS 3.2.1 present.
+Nov 04 19:50:46 teacher kernel: DMI: Inspur SA5212M5/YZMB-00882-104, BIOS 4.1.29 10/25/2023
+Nov 04 19:50:46 teacher kernel: tsc: Detected 2000.000 MHz processor
+Nov 04 19:50:46 teacher kernel: e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
+Nov 04 19:50:46 teacher kernel: e820: remove [mem 0x000a0000-0x000fffff] usable
+
+$ journalctl -b -p err --no-pager 2>/dev/null | tail -30
+Nov 10 22:16:19 teacher sshd[2040492]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:16:39 teacher sshd[2040565]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:17:00 teacher sshd[2040638]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:17:20 teacher sshd[2040708]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:17:40 teacher sshd[2040787]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:18:01 teacher sshd[2040862]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:18:21 teacher sshd[2040945]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:18:41 teacher sshd[2041021]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:19:02 teacher sshd[2041091]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:19:22 teacher sshd[2041172]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:19:43 teacher sshd[2041260]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:20:03 teacher sshd[2041343]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:20:23 teacher sshd[2041427]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:20:44 teacher sshd[2041493]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:21:04 teacher sshd[2041568]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:21:24 teacher sshd[2041644]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:21:45 teacher sshd[2041714]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:22:05 teacher sshd[2041798]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:22:25 teacher sshd[2041866]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:22:46 teacher sshd[2041931]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:23:06 teacher sshd[2042014]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:23:26 teacher sshd[2042164]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:23:47 teacher sshd[2042256]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:24:07 teacher sshd[2042381]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:24:27 teacher sshd[2042524]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:24:48 teacher sshd[2042597]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:25:08 teacher sshd[2042678]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:25:29 teacher sshd[2042738]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:25:49 teacher sshd[2042947]: error: kex_exchange_identification: Connection closed by remote host
+Nov 10 22:26:09 teacher sshd[2043113]: error: kex_exchange_identification: Connection closed by remote host
+
+$ bootctl status 2>/dev/null | head -30
+System:
+      Firmware: n/a (n/a)
+ Firmware Arch: x64
+   Secure Boot: disabled (setup)
+  TPM2 Support: no
+  Boot into FW: supported
+
+Current Boot Loader:
+      Product: n/a
+     Features: ✗ Boot counting
+               ✗ Menu timeout control
+               ✗ One-shot menu timeout control
+               ✗ Default entry control
+               ✗ One-shot entry control
+               ✗ Support for XBOOTLDR partition
+               ✗ Support for passing random seed to OS
+               ✗ Load drop-in drivers
+               ✗ Support Type #1 sort-key field
+               ✗ Support @saved pseudo-entry
+               ✗ Support Type #1 devicetree field
+               ✗ Boot loader sets ESP information
+          ESP: n/a
+         File: └─n/a
+
+Random Seed:
+ Passed to OS: no
+ System Token: not set
+       Exists: no
+
+Available Boot Loaders on ESP:
+
+$ efibootmgr -v 2>/dev/null | head -20
+BootCurrent: 0002
+Timeout: 1 seconds
+BootOrder: 0002,0001
+Boot0001* UEFI OS	HD(2,GPT,0639e230-a98d-4b9f-9264-f938e66ba7a6,0x800,0x200000)/File(\EFI\BOOT\BOOTX64.EFI)
+Boot0002* proxmox	HD(2,GPT,0639e230-a98d-4b9f-9264-f938e66ba7a6,0x800,0x200000)/File(\EFI\PROXMOX\SHIMX64.EFI)
+MirroredPercentageAbove4G: 0.00
+MirrorMemoryBelow4GB: false
+
+
+===== 8. 内核参数与资源限制 =====
+
+$ ulimit -a
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 255847
+max locked memory           (kbytes, -l) 8195672
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 1048576
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 255847
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+$ cat /etc/security/limits.conf 2>/dev/null | grep -v "^#" | sed "/^$/d"
+
+$ for f in /etc/security/limits.d/*.conf; do [ -f "$f" ] && { echo "### $f"; grep -v "^#" "$f" | sed "/^$/d"; }; done 2>/dev/null
+[exit=1]
+
+$ cat /proc/sys/fs/file-nr; cat /proc/sys/fs/file-max; cat /proc/sys/fs/nr_open
+6432	0	9223372036854775807
+9223372036854775807
+1048576
+
+$ cat /proc/sys/net/core/somaxconn; cat /proc/sys/net/ipv4/ip_local_port_range; cat /proc/sys/net/ipv4/tcp_max_syn_backlog
+4096
+32768	60999
+4096
+
+$ sysctl kernel.pid_max kernel.threads-max vm.overcommit_memory vm.swappiness fs.file-max net.core.somaxconn net.ipv4.ip_forward net.ipv4.conf.all.rp_filter 2>/dev/null
+kernel.pid_max = 4194304
+kernel.threads-max = 511694
+vm.overcommit_memory = 0
+vm.swappiness = 10
+fs.file-max = 9223372036854775807
+net.core.somaxconn = 4096
+net.ipv4.ip_forward = 1
+net.ipv4.conf.all.rp_filter = 2
+
+$ systemctl show sshd.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=255847
+
+$ systemctl show ssh.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=524288
+LimitNPROC=255847
+
+$ systemctl show docker.service -p LimitNOFILE -p LimitNPROC -p LimitCORE -p MemoryMax -p CPUQuota 2>/dev/null
+MemoryMax=infinity
+LimitCORE=infinity
+LimitNOFILE=infinity
+LimitNPROC=infinity
+
+
+===== 9. K8s / 容器运行时（如存在） =====
+
+$ kubectl get nodes -o wide 2>/dev/null | head -10
+NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
+m01        Ready    control-plane   298d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
+master01   Ready    control-plane   298d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+master02   Ready    control-plane   298d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker01   Ready    <none>          298d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker02   Ready    <none>          298d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker03   Ready    <none>          298d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+
+$ kubectl top nodes 2>/dev/null | head -10
+NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+m01        1488m        42%      3528Mi          89%         
+master01   1388m        37%      3877Mi          82%         
+master02   1557m        42%      2874Mi          94%         
+worker01   1231m        21%      5383Mi          65%         
+worker02   1220m        21%      5533Mi          67%         
+worker03   1248m        33%      5299Mi          85%         
+
+
+===== 10. Ceph 客户端（如存在） =====
+
+$ ceph -s 2>/dev/null
+[exit=1]
+
+$ ceph df detail 2>/dev/null | head -40
+
+$ ceph osd tree 2>/dev/null
+[exit=1]
+
+$ ceph versions 2>/dev/null
+[exit=1]
+
+
+===== 11. 结束 =====
+
+$ date -Is
+2026-11-10T22:26:16+08:00
