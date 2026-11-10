@@ -1,8 +1,8 @@
 # 13 · GitLab SSO / OIDC：把平台 UI 收进统一身份
 
 > Harbor 的账号体系、OIDC 细节、Robot/imagePullSecret 见
-> [14 GitLab / Harbor · Harbor 账号与镜像仓库](../14-gitlab-harbor/04-harbor-accounts-registry.md)；
-> 配置与 Trivy 坑见 [05 配置与坑](../14-gitlab-harbor/05-harbor-config-pitfalls.md)。
+> [GitLab / Harbor · Harbor 账号与镜像仓库](../03-gitlab/harbor-accounts-registry.md)；
+> 配置与 Trivy 坑见 [05 配置与坑](../03-gitlab/harbor-config-pitfalls.md)。
 
 ## 当时的情况
 

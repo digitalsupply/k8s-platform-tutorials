@@ -26,7 +26,7 @@
 | [00 集群全景](docs/00-cluster-overview/README.md) | 拓扑、版本、边界、生产化差距、当前实况快照 | 第一次接触这套环境的人 |
 | [01 Kubernetes](docs/01-kubernetes-k3s/README.md) | Pod 进程模型、k3s 概念、1.29→1.35 逐级升级、etcd/Calico/kube-proxy | 想真正看懂 Pod 与升级的人 |
 | [02 Cilium / eBPF](docs/02-cilium-ebpf/README.md) | eBPF 核心概念、Calico→Cilium 全量迁移、KPR、L2 Announcements、Hubble | 排查 Service/NodePort/LB/网络策略的人 |
-| [03 GitLab](docs/03-gitlab/README.md) | GitLab CE 19.4 安装、8088/80 端口、GitLab Runner | 运维 GitLab / 处理端口冲突的人 |
+| [03 GitLab / Harbor](docs/03-gitlab/README.md) | GitLab 安装/端口、账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 GitLab 运维、CI/CD、镜像仓库与权限治理的人 |
 | [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps | 做 K8s 可观测性与告警治理的人 |
 | [05 Linux](docs/05-linux/README.md) | su/sudo/PAM、在线扩容、内存分析、旧服务下线 | Linux 基础与主机层运维 |
 | [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏 | 管存储、PVC、数据库备份的人 |
@@ -37,7 +37,6 @@
 | [11 GitOps 平台化](docs/11-gitops-platform/README.md) | app-of-apps、覆盖盘点、Sealed Secrets、Vault/ESO 取舍 | 想把集群真正交给 Git 的人 |
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
-| [14 GitLab / Harbor 账号与仓库](docs/14-gitlab-harbor/README.md) | GitLab 账号/角色、Token、Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 CI/CD、GitOps、镜像仓库与权限治理的人 |
 
 ---
 
@@ -97,7 +96,7 @@
 | 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md) |
 | 01 Kubernetes | [`pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py)、[`upgrade-scripts/`](docs/01-kubernetes-k3s/assets/upgrade-scripts/)、[`ansible/`](docs/01-kubernetes-k3s/assets/ansible/)、[`containerd-config.toml`](docs/01-kubernetes-k3s/assets/containerd-config.toml) |
 | 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
-| 03 GitLab | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/) |
+| 03 GitLab/Harbor | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/)、账号/Token/Webhook、CI-CD、Harbor 文档 |
 | 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
 | 05 Linux | [`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
 | 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`ceph_csi_inventory.py`](docs/06-storage-ceph/scripts/ceph_csi_inventory.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`ceph-csi-operator/`](docs/06-storage-ceph/assets/ceph-csi-operator/)、[`cnpg/`](docs/06-storage-ceph/assets/cnpg/) |
@@ -108,7 +107,6 @@
 | 11 GitOps | [`app-of-apps.yaml`](docs/11-gitops-platform/assets/argocd/app-of-apps.yaml)、[`sealed-secrets/`](docs/11-gitops-platform/assets/sealed-secrets/)、[`clean-k8s-yaml.py`](docs/11-gitops-platform/scripts/clean-k8s-yaml.py)、[`argocd_gitops_audit.py`](docs/11-gitops-platform/scripts/argocd_gitops_audit.py) |
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
-| 14 GitLab/Harbor | 文档为主：账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/imagePullSecret |
 
 说明：
 

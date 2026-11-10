@@ -1,4 +1,4 @@
-# 03 · GitLab CI/CD 到 GitOps：Runner + Tekton + Harbor + ArgoCD
+# GitLab CI/CD 到 GitOps：Runner + Tekton + Harbor + ArgoCD
 
 ## 当时的情况
 
@@ -171,7 +171,7 @@ imagePullSecret：
 | gitlab-runner | `harbor-auth` |
 | open-webui | `harbor-pull` |
 
-> 这两个 Secret 实际都使用 Harbor 的 `admin` 账号（见 [04 Harbor 账号](04-harbor-accounts-registry.md) / [05 配置与坑](05-harbor-config-pitfalls.md)）。
+> 这两个 Secret 实际都使用 Harbor 的 `admin` 账号（见 [04 Harbor 账号](harbor-accounts-registry.md) / [05 配置与坑](harbor-config-pitfalls.md)）。
 > 推荐改成项目级 Robot 账号。
 
 ## 踩坑点

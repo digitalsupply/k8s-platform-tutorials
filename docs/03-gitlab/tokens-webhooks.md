@@ -1,4 +1,4 @@
-# 02 · GitLab Token 与 Webhook 全解
+# GitLab Token 与 Webhook
 
 ## 当时的情况
 
@@ -107,7 +107,7 @@ GitLab 在 `192.168.67.0/24`，集群在 `10.0.0.0/24`，二者没有路由。
 
 - GitLab 直接 webhook 到集群内 EventListener **不可靠/不可达**；
 - openwebui 的 CI 采用 **集群内 Runner 轮询 GitLab**，再在集群内创建
-  Tekton PipelineRun（见 [03 GitLab CI/CD 到 GitOps](03-gitlab-cicd-gitops.md)）；
+  Tekton PipelineRun（见 [03 GitLab CI/CD 到 GitOps](cicd-gitops.md)）；
 - `el-deeptutor.internal` / `10.0.0.252` 的 hook 是给已有网络路径的场景用的。
 
 ## 踩坑点
@@ -153,7 +153,7 @@ ArgoCD repo secret 的 `username=root`、`password=...`，不是 deploy token。
 2. **设置过期时间**，定期轮换；
 3. **Webhook 校验 secret**，记录最近 deliveries；
 4. **CI 变量用 masked/protected**，不要进 Git；
-5. **Harbor 镜像凭据用 Robot**（见 [04 Harbor 账号与镜像仓库](04-harbor-accounts-registry.md)），不要用 Harbor admin；
+5. **Harbor 镜像凭据用 Robot**（见 [04 Harbor 账号与镜像仓库](harbor-accounts-registry.md)），不要用 Harbor admin；
 6. **GitLab 开启 2FA/HTTPS**，至少保护 root。
 
 ## 示例

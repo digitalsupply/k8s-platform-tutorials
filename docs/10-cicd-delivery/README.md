@@ -1,7 +1,7 @@
 # 10 · CI/CD 交付：GitLab → Tekton → BuildKit → Harbor → ArgoCD
 
 > GitLab 侧的账号/Token/Webhook/Runner 配置补充见
-> [14 GitLab / Harbor](../14-gitlab-harbor/README.md)。
+> [03 GitLab / Harbor](../03-gitlab/README.md)。
 
 ## 当时的情况
 
