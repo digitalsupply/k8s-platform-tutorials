@@ -20,8 +20,8 @@
 | m01 | Rocky 9.6 | `5.14.0-570` | systemd 252 | K8s control-plane |
 | master01/02 | Ubuntu 22.04.5 | `5.15.0-202` | systemd 249 | K8s control-plane |
 | worker01/02/03 | Ubuntu 22.04.5 | `5.15.0-202` | systemd 249 | K8s worker |
-| ubuntu01（201） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | GitLab |
-| ubuntu02（202） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | Harbor |
+| ubuntu01（201，Hyper-V VM） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | GitLab |
+| ubuntu02（202，Hyper-V VM） | Ubuntu 24.04.4 | `6.8.0-147` | systemd 255 | Harbor |
 
 真实问题：
 

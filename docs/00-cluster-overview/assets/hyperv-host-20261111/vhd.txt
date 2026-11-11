@@ -1,0 +1,33 @@
+
+
+Path        : D:\HyperV\VirtualHardDisks\ubuntu01-fresh.vhdx
+VhdFormat   : VHDX
+VhdType     : Dynamic
+FileSize    : 62671290368
+Size        : 85899345920
+MinimumSize : 85899345920
+
+
+
+
+
+Path        : D:\HyperV\VirtualHardDisks\ubuntu02-fresh.vhdx
+VhdFormat   : VHDX
+VhdType     : Dynamic
+FileSize    : 39434846208
+Size        : 64424509440
+MinimumSize : 64424509440
+
+
+
+
+
+Path        : D:\HyperV\VirtualHardDisks\ubuntu03-fresh.vhdx
+VhdFormat   : VHDX
+VhdType     : Dynamic
+FileSize    : 8212447232
+Size        : 53687091200
+MinimumSize : 53687091200
+
+
+

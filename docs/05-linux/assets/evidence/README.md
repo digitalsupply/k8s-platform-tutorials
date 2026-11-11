@@ -14,8 +14,8 @@
 | `k8s-worker01/` | worker01 | 10.0.0.122 | Ubuntu 22.04.5 | K8s worker |
 | `k8s-worker02/` | worker02 | 10.0.0.123 | Ubuntu 22.04.5 | K8s worker |
 | `k8s-worker03/` | worker03 | 10.0.0.124 | Ubuntu 22.04.5 | K8s worker |
-| `gitlab-201/` | ubuntu01 | 192.168.67.201 | Ubuntu 24.04.4 | GitLab CE 宿主机 |
-| `harbor-202/` | ubuntu02 | 192.168.67.202 | Ubuntu 24.04.4 | Harbor 宿主机 |
+| `gitlab-201/` | ubuntu01 | 192.168.67.201 | Ubuntu 24.04.4 | GitLab CE（Hyper-V VM） |
+| `harbor-202/` | ubuntu02 | 192.168.67.202 | Ubuntu 24.04.4 | Harbor（Hyper-V VM） |
 
 每个目录的 `collect.txt` 包含 11 个部分：
 

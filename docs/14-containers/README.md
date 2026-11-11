@@ -17,6 +17,9 @@
 | K8s 6 节点 | containerd `2.3.2` + CRI | 138 个 Pod，worker01 上 41 Pod / 56 容器 / 41 镜像 / **9.12GB imagefs** |
 | CI worker | BuildKit rootless | `/var/lib/buildkitd-cache` **7.0GB** |
 
+> GitLab 201 / Harbor 202 是 Windows Hyper-V 宿主 `SYZX-HY2-TX`（192.168.67.110）上的
+> `ubuntu01`/`ubuntu02` VM，不是物理机。宿主层问题会同时影响两个 Docker 主机。
+
 真实问题：
 
 - `ctr images ls` 是空的，因为镜像在 `k8s.io`/`moby` namespace；

@@ -160,7 +160,8 @@ sudo python3 scripts/check_ports.py \
 
 ## 补充：GitLab 在交付链路中的位置（当前环境）
 
-GitLab 服务本身不在 K8s 里，而是跑在宿主机 `192.168.67.201`（GitLab CE 19.4.2，Omnibus）。
+GitLab 服务本身不在 K8s 里，而是跑在 **Hyper-V VM `ubuntu01` `192.168.67.201`**
+（宿主 `SYZX-HY2-TX` `192.168.67.110`；GitLab CE 19.4.2，Omnibus）。
 集群里只有 **GitLab Runner** 和 Tekton，分工如下：
 
 ```text

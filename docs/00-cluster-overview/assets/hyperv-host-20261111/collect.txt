@@ -1,0 +1,363 @@
+===== 0. HOST =====
+SYZX-HY2-TX
+syzx-hy2-tx\tfadmin
+
+
+Caption                : Microsoft Windows 10 专业版
+Version                : 10.0.19045
+BuildNumber            : 19045
+OSArchitecture         : 64 位
+LastBootUpTime         : 2026/11/5 14:04:44
+TotalVisibleMemorySize : 33384444
+FreePhysicalMemory     : 12969912
+LocalDateTime          : 2026/11/11 10:13:03
+
+
+
+
+
+
+Manufacturer              : Micro-Star International Co., Ltd.
+Model                     : MS-7E06
+TotalPhysicalMemory       : 34185670656
+NumberOfProcessors        : 1
+NumberOfLogicalProcessors : 28
+HypervisorPresent         : True
+
+
+
+
+
+Name                         NumberOfCores NumberOfLogicalProcessors MaxClockSpeed SocketDesignation
+----                         ------------- ------------------------- ------------- -----------------
+Intel(R) Core(TM) i7-14700KF            20                        28          3400 U3E1             
+
+
+
+
+BankLabel    Capacity Speed Manufacturer      PartNumber          
+---------    -------- ----- ------------      ----------          
+BANK 0    17179869184  5600 Micron Technology CP16G56C46U5.C8D    
+BANK 0    17179869184  5600 Micron Technology CP16G56C46U5.C8D    
+
+
+
+
+Name                           AdapterRAM DriverVersion
+----                           ---------- -------------
+Parsec Virtual Display Adapter            0.45.0.0     
+Todesk Virtual Display Adapter            16.44.2.509  
+NVIDIA GeForce RTX 5070        4293918720 32.0.15.8157 
+
+
+
+===== 1. DISK =====
+
+Number FriendlyName          SerialNumber                                      Size PartitionStyle HealthStatus OperationalStatus
+------ ------------          ------------                                      ---- -------------- ------------ -----------------
+     0 ZHITAI TiPlus7100 1TB <redacted-serial> 1024209543168 MBR            Healthy      Online           
+
+
+
+
+FriendlyName          MediaType BusType          Size HealthStatus OperationalStatus
+------------          --------- -------          ---- ------------ -----------------
+ZHITAI TiPlus7100 1TB SSD       NVMe    1024209543168 Healthy      OK               
+
+
+
+
+DriveLetter FileSystemLabel FileSystem DriveType         Size SizeRemaining HealthStatus
+----------- --------------- ---------- ---------         ---- ------------- ------------
+          C 系统              NTFS       Fixed     137439997952   51057647616 Healthy     
+          D 软件              NTFS       Fixed     886767087616  296453623808 Healthy     
+
+
+
+
+
+Name                : SYZX-HY2-TX
+VirtualMachinePath  : D:\HyperV\VMs
+VirtualHardDiskPath : D:\HyperV\VirtualHardDisks
+
+
+
+
+===== 2. NETWORK =====
+
+Name                               InterfaceDescription                       Status LinkSpeed MacAddress       
+----                               --------------------                       ------ --------- ----------       
+VMware Network Adapter VMnet8      VMware Virtual Ethernet Adapter for VMnet8 Up     100 Mbps  00-50-56-C0-00-08
+以太网                                Intel(R) Ethernet Controller I226-V        Up     1 Gbps    34-5A-60-76-47-AC
+vEthernet (WSL)                    Hyper-V Virtual Ethernet Adapter #2        Up     10 Gbps   00-15-5D-2A-81-DC
+WLAN                               Intel(R) Wi-Fi 6E AX211 160MHz             Up     2.2 Gbps  D0-57-7E-52-6F-02
+vEthernet (Terraform-Lab-External) Hyper-V Virtual Ethernet Adapter #3        Up     1 Gbps    34-5A-60-76-47-AC
+VMware Network Adapter VMnet1      VMware Virtual Ethernet Adapter for VMnet1 Up     100 Mbps  00-50-56-C0-00-01
+vEthernet (Default Switch)         Hyper-V Virtual Ethernet Adapter           Up     10 Gbps   00-15-5D-64-F1-2D
+Tailscale                          Tailscale Tunnel                           Up     100 Gbps                   
+
+
+
+
+InterfaceAlias                     IPAddress       PrefixLength AddressState
+--------------                     ---------       ------------ ------------
+vEthernet (Terraform-Lab-External) 192.168.67.110            24    Preferred
+vEthernet (WSL)                    172.20.32.1               20    Preferred
+vEthernet (Default Switch)         172.23.16.1               20    Preferred
+VMware Network Adapter VMnet8      192.168.171.1             24    Preferred
+VMware Network Adapter VMnet1      192.168.234.1             24    Preferred
+本地连接* 10                           169.254.138.78            16    Tentative
+本地连接* 9                            169.254.220.167           16    Tentative
+WLAN                               192.168.67.10             24    Preferred
+Tailscale                          100.74.67.100             32    Preferred
+Loopback Pseudo-Interface 1        127.0.0.1                  8    Preferred
+
+
+
+
+InterfaceAlias                     NextHop      RouteMetric
+--------------                     -------      -----------
+WLAN                               192.168.67.1           0
+vEthernet (Terraform-Lab-External) 192.168.67.1         256
+
+
+
+
+InterfaceAlias                     ServerAddresses           
+--------------                     ---------------           
+Tailscale                          {}                        
+WLAN                               {223.5.5.5, 211.138.30.66}
+vEthernet (Default Switch)         {}                        
+本地连接* 9                            {}                        
+本地连接* 10                           {}                        
+VMware Network Adapter VMnet1      {}                        
+VMware Network Adapter VMnet8      {}                        
+Loopback Pseudo-Interface 1        {}                        
+vEthernet (Terraform-Lab-External) {223.5.5.5}               
+vEthernet (WSL)                    {}                        
+
+
+
+
+
+Name                           : Terraform-Lab-External
+SwitchType                     : External
+NetAdapterInterfaceDescription : Intel(R) Ethernet Controller I226-V
+AllowManagementOS              : True
+EmbeddedTeam                   : 
+
+Name                           : Default Switch
+SwitchType                     : Internal
+NetAdapterInterfaceDescription : 
+AllowManagementOS              : True
+EmbeddedTeam                   : 
+
+Name                           : WSL
+SwitchType                     : Internal
+NetAdapterInterfaceDescription : 
+AllowManagementOS              : True
+EmbeddedTeam                   : 
+
+
+
+
+===== 3. HYPERV VMS =====
+
+
+Name                     : kali-linux-2026.2
+State                    : Off
+Generation               : 2
+Version                  : 9.0
+ProcessorCount           : 4
+MemoryStartup            : 4294967296
+MemoryAssigned           : 0
+MemoryMinimum            : 2147483648
+MemoryMaximum            : 8589934592
+DynamicMemoryEnabled     : True
+Path                     : D:\HyperV\VMs
+Uptime                   : 00:00:00
+IntegrationServicesState : 
+
+Name                     : ubuntu01
+State                    : Running
+Generation               : 2
+Version                  : 9.0
+ProcessorCount           : 2
+MemoryStartup            : 8589934592
+MemoryAssigned           : 8589934592
+MemoryMinimum            : 536870912
+MemoryMaximum            : 1099511627776
+DynamicMemoryEnabled     : False
+Path                     : D:\HyperV\VMs
+Uptime                   : 21:37:39.2750000
+IntegrationServicesState : 
+
+Name                     : ubuntu02
+State                    : Running
+Generation               : 2
+Version                  : 9.0
+ProcessorCount           : 2
+MemoryStartup            : 6442450944
+MemoryAssigned           : 6442450944
+MemoryMinimum            : 536870912
+MemoryMaximum            : 1099511627776
+DynamicMemoryEnabled     : False
+Path                     : D:\HyperV\VMs
+Uptime                   : 5.20:03:51.9800000
+IntegrationServicesState : 
+
+Name                     : ubuntu03
+State                    : Off
+Generation               : 2
+Version                  : 9.0
+ProcessorCount           : 2
+MemoryStartup            : 4294967296
+MemoryAssigned           : 0
+MemoryMinimum            : 536870912
+MemoryMaximum            : 1099511627776
+DynamicMemoryEnabled     : False
+Path                     : D:\HyperV\VMs
+Uptime                   : 00:00:00
+IntegrationServicesState : 
+
+
+
+
+
+VMName            Name     SwitchName             MacAddress   IPAddresses Status IsLegacy
+------            ----     ----------             ----------   ----------- ------ --------
+ubuntu02          ubuntu02 Terraform-Lab-External 00155D436E19 {}          {Ok}      False
+ubuntu03          ubuntu03 Terraform-Lab-External 00155D436E18 {}                    False
+ubuntu01          ubuntu01 Terraform-Lab-External 00155D436E1A {}          {Ok}      False
+kali-linux-2026.2 网络适配器    Terraform-Lab-External 00155D436E1B {}                    False
+
+
+
+Get-VHD : 找不到与参数名称“VMName”匹配的参数。
+所在位置 行:1 字符: 9
++ Get-VHD -VMName * | Select-Object VMName,Path,VhdFormat,VhdType,FileS ...
++         ~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-VHD]，ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.Vhd.PowerShell.Cmdlets.GetVHD
+ 
+
+VMName            Name                                              SnapshotType CreationTime       ParentSnapshotName                               
+------            ----                                              ------------ ------------       ------------------                               
+kali-linux-2026.2 自动检查点 - kali-linux-2026.2 - (2026/9/9 - 15:32:30)     Standard 2026/9/9 15:32:31                                                   
+kali-linux-2026.2 kali-linux-2026.2 - (2026/9/17 - 13:38:55)            Standard 2026/9/17 13:38:57 自动检查点 - kali-linux-2026.2 - (2026/9/9 - 15:32:30)
+
+
+
+
+VMName            SecureBoot SecureBootTemplate
+------            ---------- ------------------
+ubuntu02                 Off MicrosoftWindows  
+ubuntu03                 Off MicrosoftWindows  
+ubuntu01                 Off MicrosoftWindows  
+kali-linux-2026.2        Off MicrosoftWindows  
+
+
+
+
+VMName            Name   Enabled PrimaryStatusDescription
+------            ----   ------- ------------------------
+ubuntu02          来宾服务接口   False 确定                      
+ubuntu02          检测信号      True 确定                      
+ubuntu02          键值对交换     True 无连接                     
+ubuntu02          关闭        True 确定                      
+ubuntu02          时间同步      True 确定                      
+ubuntu02          VSS       True 确定                      
+ubuntu03          来宾服务接口   False                         
+ubuntu03          检测信号      True                         
+ubuntu03          键值对交换     True                         
+ubuntu03          关闭        True                         
+ubuntu03          时间同步      True                         
+ubuntu03          VSS       True                         
+ubuntu01          来宾服务接口   False 确定                      
+ubuntu01          检测信号      True 确定                      
+ubuntu01          键值对交换     True 无连接                     
+ubuntu01          关闭        True 确定                      
+ubuntu01          时间同步      True 确定                      
+ubuntu01          VSS       True 确定                      
+kali-linux-2026.2 来宾服务接口   False                         
+kali-linux-2026.2 检测信号      True                         
+kali-linux-2026.2 键值对交换     True                         
+kali-linux-2026.2 关闭        True                         
+kali-linux-2026.2 时间同步      True                         
+kali-linux-2026.2 VSS       True                         
+
+
+
+===== 4. SERVICES =====
+
+Name         Status StartType
+----         ------ ---------
+sshd        Running Automatic
+TermService Running    Manual
+vmcompute   Running    Manual
+vmms        Running Automatic
+
+
+
+
+FeatureName             State
+-----------             -----
+Microsoft-Hyper-V-All Enabled
+
+
+
+
+Name                           State
+----                           -----
+OpenSSH.Client~~~~0.0.1.0  Installed
+OpenSSH.Server~~~~0.0.1.0 NotPresent
+
+
+
+===== 5. RECENT ERRORS =====
+
+TimeCreated         ProviderName                Id LevelDisplayName Message                                                                                                                                                                     
+-----------         ------------                -- ---------------- -------                                                                                                                                                                     
+2026/11/11 2:09:50  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/10 14:09:50 Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/10 2:09:52  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/9 14:09:50  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/9 2:09:51   Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/8 14:09:50  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/8 2:09:50   Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/7 14:09:50  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/7 2:09:50   Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/6 14:09:50  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/6 2:09:50   Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/5 15:12:03  Service Control Manager   7000 错误               由于下列错误，RustDesk Service 服务启动失败:                                                                                                                                             
+                                                                    The service did not respond to the start or control request in a timely fashion.                                                                                            
+2026/11/5 15:12:03  Service Control Manager   7009 错误               等待 RustDesk Service 服务的连接超时(30000 毫秒)。                                                                                                                                      
+2026/11/5 14:09:52  Microsoft-Windows-TPM-WMI 1796 错误               安全启动更新无法更新安全启动变量，错误为 The data area passed to a system call is too small.。有关详细信息，请参阅 https://go.microsoft.com/fwlink/?linkid=2169931                                         
+2026/11/5 14:09:48  Microsoft-Windows-TPM-WMI 1801 错误               需要更新安全启动 CA/密钥。此设备签名信息包含在此处。                                                                                                                                                
+                                                                    DeviceAttributes： BaseBoardManufacturer:Micro-Star International Co., Ltd.;FirmwareManufacturer:American Megatrends International, LLC.;FirmwareVersion:H.70;OEMModelBaseBoa
+                                                                    rd:Z790 GAMING PLUS WIFI (MS-7E06);OEMManufacturerName:Micro-Star International Co., Ltd.;OSArchitecture:amd64;                                                             
+                                                                    BucketId： f65fcba0fbb1120a9b5777c0c0175fdc8fb0d2e230f1a825c69e34c49e84050b                                                                                                  
+                                                                    BucketConfidenceLevel：                                                                                                                                                      
+                                                                    UpdateType： 0                                                                                                                                                               
+                                                                    HResult： The operation completed successfully.                                                                                                                              
+2026/11/5 11:25:11  Service Control Manager   7000 错误               由于下列错误，OpenSSH SSH Server 服务启动失败:                                                                                                                                           
+                                                                    The service did not respond to the start or control request in a timely fashion.                                                                                            
+2026/11/5 11:25:11  Service Control Manager   7031 错误               OpenSSH SSH Server 服务意外地终止，这种情况已经出现了 2 次。以下的修正操作将在 0 毫秒内运行: 重新启动服务。                                                                                                         
+2026/11/5 11:25:10  Service Control Manager   7031 错误               OpenSSH SSH Server 服务意外地终止，这种情况已经出现了 1 次。以下的修正操作将在 0 毫秒内运行: 重新启动服务。                                                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{BBCC2853-E5F4-4052-8F7C-DDD082023E38} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DF6F472B-2160-4A07-BEDD-4920A8077332} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DCED7A5B-739A-4186-8307-015343845C65} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{9A59EE42-A60E-4231-8005-73DCBE4ED3E1} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{BBCC2853-E5F4-4052-8F7C-DDD082023E38} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DF6F472B-2160-4A07-BEDD-4920A8077332} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DCED7A5B-739A-4186-8307-015343845C65} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{9A59EE42-A60E-4231-8005-73DCBE4ED3E1} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{BBCC2853-E5F4-4052-8F7C-DDD082023E38} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DF6F472B-2160-4A07-BEDD-4920A8077332} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{DCED7A5B-739A-4186-8307-015343845C65} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+2026/11/5 11:24:23  Server                    2505 错误               服务器无法与 \Device\NetBT_Tcpip_{9A59EE42-A60E-4231-8005-73DCBE4ED3E1} 传输绑定，因为网络上的另一部计算机具有相同的名称。服务器无法启动。                                                                         
+
+
+
+===== 6. END =====
+2026-11-11T10:13:10.9473535+08:00

@@ -231,3 +231,15 @@ traefik            traefik-xyz                 5h9m
 traefik            traefik-xyz-http-redirect   5h9m
 traefik            traefik-xyz-root            19m
 ```
+
+## 外部交付宿主机（2026-11-11 补充）
+
+GitLab `192.168.67.201` / Harbor `192.168.67.202` 不是物理机，而是
+Windows Hyper-V 宿主 `SYZX-HY2-TX`（`192.168.67.110`）上的 `ubuntu01` / `ubuntu02` VM：
+
+| VM | IP | vCPU | 内存 | VHDX 实际/虚拟 |
+|---|---|---:|---:|---|
+| ubuntu01 | 192.168.67.201 | 2 | 8GB | 62.7GB / 85GB |
+| ubuntu02 | 192.168.67.202 | 2 | 6GB | 39.4GB / 64GB |
+
+证据：[hyperv-host-20261111/README.md](hyperv-host-20261111/README.md)。

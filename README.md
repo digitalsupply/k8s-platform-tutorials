@@ -69,7 +69,7 @@
 
 ---
 
-## 当前集群状态（2026-11-10 快照）
+## 当前集群状态（2026-11-10 快照，2026-11-11 补充 Hyper-V 宿主）
 
 > 完整快照见 [00-cluster-overview/assets/current-state.md](docs/00-cluster-overview/assets/current-state.md)。
 
@@ -87,6 +87,7 @@
 | 存储 | Ceph Reef `18.2.8`，`HEALTH_OK`；17 个 PV 全部 Bound |
 | 备份 | etcd 每小时快照（`etcd-backup/etcd-snapshot`）；CNPG Barman 备份 |
 | 交付 | GitLab Runner + Tekton + BuildKit + Harbor + ArgoCD |
+| GitLab/Harbor 宿主 | Windows Hyper-V `SYZX-HY2-TX` `192.168.67.110`；`ubuntu01`/`ubuntu02` VM（非物理机） |
 | 统一登录 | GitLab OIDC：Grafana/ArgoCD/Harbor 原生；Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy |
 
 > 数字会变。把 `current-state.md` 当“某个时刻的证据”，而不是永久配置。
@@ -97,7 +98,7 @@
 
 | 分类 | 配套资产 |
 |---|---|
-| 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md) |
+| 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md)、[`hyperv-host-20261111/`](docs/00-cluster-overview/assets/hyperv-host-20261111/README.md) |
 | 01 Kubernetes | [`pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py)、[`collect_k8s_interview_evidence.sh`](docs/01-kubernetes-k3s/scripts/collect_k8s_interview_evidence.sh)、[`upgrade-scripts/`](docs/01-kubernetes-k3s/assets/upgrade-scripts/)、[`interview-evidence/`](docs/01-kubernetes-k3s/assets/interview-evidence/m01-evidence.txt) |
 | 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
 | 03 GitLab/Harbor | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/)、账号/Token/Webhook、CI-CD、Harbor 文档 |

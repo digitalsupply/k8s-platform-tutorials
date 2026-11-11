@@ -7,6 +7,11 @@
 
 本环境用 **GitLab CE** 做代码与身份中心，用 **Harbor** 做镜像仓库：
 
+> **部署位置修正**：GitLab `192.168.67.201` 和 Harbor `192.168.67.202` **不是物理机**，
+> 而是 Windows Hyper-V 宿主 `SYZX-HY2-TX`（`192.168.67.110`）上的
+> `ubuntu01` / `ubuntu02` 虚拟机。宿主层（VM 状态、VHDX、虚拟交换机）也会影响它们。
+> 证据见 [00 Hyper-V 宿主](../00-cluster-overview/assets/hyperv-host-20261111/README.md)。
+
 ```text
 GitLab（192.168.67.201:80）
   ├── 用户/组/项目

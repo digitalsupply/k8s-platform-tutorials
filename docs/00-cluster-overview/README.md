@@ -5,7 +5,14 @@
 
 ## 当时的情况
 
-这是一套**跑在一台 PVE 宿主机上的实验/生产混合集群**：
+这是一套**跨两台物理宿主机**的实验/生产混合集群：
+
+| 宿主机 | 地址 | 角色 | 承载 |
+|---|---|---|---|
+| Proxmox `teacher` | 192.168.67.156 | PVE 8.4.13 | K8s 6 节点、Ceph 3 节点、NFS/DB 等 VM |
+| Windows `SYZX-HY2-TX` | 192.168.67.110 | Windows 10 Pro + Hyper-V | `ubuntu01`（GitLab 201）、`ubuntu02`（Harbor 202）、`ubuntu03`、kali |
+
+K8s/Ceph 侧：
 
 - Kubernetes：`v1.35.9`，6 个节点（3 control-plane + 3 worker），kubeadm 部署；
 - 容器运行时：containerd `2.3.2` + runc `1.4.3`；
@@ -17,11 +24,27 @@
 - 追踪：Tempo 3.0.3（tempo-distributed），OTel Operator/Collector；
 - 存储：外部 Ceph Reef `18.2.8`（3 台 VM、6 个 OSD），K8s 通过 ceph-csi 使用 RBD；另有 NFS StorageClass；
 - 数据库/消息：CloudNativePG（PostgreSQL 16）、Strimzi Kafka、Redis；
-- 交付：GitLab（宿主机 `192.168.67.201`）+ GitLab Runner + Tekton + Harbor + ArgoCD；
+- 交付：GitLab（Hyper-V VM `ubuntu01` `192.168.67.201`）+ GitLab Runner + Tekton + Harbor（VM `ubuntu02` `192.168.67.202`）+ ArgoCD；
 - 身份：oauth2-proxy + Dex，保护 ArgoCD/Tekton/Hubble/Alloy/Traefik 等 UI。
 
-> 注意：K8s 与 Ceph 都是 PVE 上的 VM，**共享同一台物理机的 CPU、内存和磁盘**。
+> 注意 1：K8s 与 Ceph 都是 PVE `teacher` 上的 VM，**共享同一台物理机的 CPU、内存和磁盘**。
 > 所以“节点内存 84%”“Ceph 慢”“Pod 抖动”经常是同一层的资源竞争，而不是某个组件单独的 bug。
+>
+> 注意 2：GitLab/Harbor **不是 201/202 物理机**，而是 Windows Hyper-V 宿主 `SYZX-HY2-TX`（192.168.67.110）
+> 上的 `ubuntu01`/`ubuntu02` VM。宿主层问题（VM 暂停、VHDX 满、虚拟交换机故障）会同时影响 GitLab 和 Harbor。
+> 详见 [Hyper-V 宿主证据](assets/hyperv-host-20261111/README.md)。
+
+```text
+PVE teacher 192.168.67.156
+├─ K8s m01/master01/master02/worker01/02/03  (10.0.0.x)
+└─ Ceph ceph-01/02/03                         (10.0.0.31/41/51)
+
+Windows Hyper-V SYZX-HY2-TX 192.168.67.110
+├─ ubuntu01 192.168.67.201  GitLab CE 19.4
+├─ ubuntu02 192.168.67.202  Harbor 2.14.5
+├─ ubuntu03 (Off)
+└─ kali-linux-2026.2 (Off)
+```
 
 ## 主要概念与原理
 
@@ -98,6 +121,7 @@ Cilium Agent（DaemonSet，每节点一个）
 | [cluster-diagnostics-20261007.md](notes/cluster-diagnostics-20261007.md) | kube-proxy nftables 切换后的集群诊断与重启分析 |
 | [production-readiness-gaps-20261109.md](notes/production-readiness-gaps-20261109.md) | 生产化差距审计：P0/P1/P2 清单与建议 |
 | [工具链版本对照表.md](notes/工具链版本对照表.md) | 全组件版本、EOL、1.35 兼容性与升级优先级 |
+| [Hyper-V 宿主 SYZX-HY2-TX](assets/hyperv-host-20261111/README.md) | GitLab/Harbor 实际宿主、VM 规格、VHDX、网络、风险 |
 
 ## 配套资产
 
@@ -106,6 +130,8 @@ Cilium Agent（DaemonSet，每节点一个）
 | [current-state.md](assets/current-state.md) | 2026-11-10 16:03 的集群实况快照（节点/Helm/ArgoCD/Cilium/Ceph/监控/入口） |
 | [cluster_inventory.py](scripts/cluster_inventory.py) | 只读盘点脚本：输出 Markdown 或 JSON，可定期执行做基线对比 |
 | [root-workspace-inventory-20261110.md](assets/root-workspace-inventory-20261110.md) | `/root` 下 md/脚本盘点与删除记录 |
+| [hyperv-host-20261111/](assets/hyperv-host-20261111/README.md) | Hyper-V 宿主/VM 真机证据 |
+| [collect_hyperv_evidence.ps1](scripts/collect_hyperv_evidence.ps1) | 只读采集 Hyper-V 宿主证据 |
 
 ```bash
 # 生成 Markdown 快照
