@@ -2084,7 +2084,8 @@ kubectl -n monitoring logs deploy/wecom-adapter --tail=20
 
 ```text
 错误率 1% 持续 5 分钟  → 可能只是发布抖动，不该叫人
-错误率 1% 持续 6 小时  → 一整天的服务质量损失，必须马上处理
+错误率 1% 持续 6 小时  → 要看 SLO：99.9% 时约 8% 月预算，99% 时约 0.83%
+                         不是“一整天”的损失，但已经值得处理
 
 同一个阈值，不同持续时间，严重程度天差地别。
 SLO 的解法：**不盯"当前值"，盯"错误预算燃烧速度"**。
@@ -2107,20 +2108,41 @@ apiserver_request:burnrate3d
 
 **第二步：四档告警，长短窗口必须同时超标**
 
+> **修正记录（2026-11-11）**：原文把“该窗口消耗预算的比例”写成了“烧光全部预算的时间”。
+> 按 30 天 SLO（720h）计算，14.4×1h 只消耗 2% 预算，不是 1 小时烧光；
+> 1× 烧光需要 30 天，不是 3 天。告警阈值本身不变，时间换算已修正如下。
+
 ```promql
-# 档位 1（fast，for: 2m）：14.4 倍速烧，1 小时就能烧光全部预算 → 立刻告警
+# 档位 1（fast，for: 2m）：14.4 倍速，1h 消耗月预算 2% → 立刻告警
 sum by (cluster) (apiserver_request:burnrate1h) > (14.40 * 0.01000)
   and on (cluster) sum by (cluster) (apiserver_request:burnrate5m) > (14.40 * 0.01000)
 
-# 档位 2（for: 15m）：6 倍速，6 小时烧光
+# 档位 2（for: 15m）：6 倍速，6h 消耗月预算 5%
 apiserver_request:burnrate6h > 6.00 * 0.01000  and  apiserver_request:burnrate30m > 6.00 * 0.01000
 
-# 档位 3（for: 1h）：3 倍速，1 天烧光
+# 档位 3（for: 1h）：3 倍速，1d 消耗月预算 10%
 apiserver_request:burnrate1d > 3.00 * 0.01000  and  apiserver_request:burnrate2h > 3.00 * 0.01000
 
-# 档位 4（for: 3h）：1 倍速，3 天烧光 → 说明有慢性问题，优先级最低
+# 档位 4（for: 3h）：1 倍速，3d 消耗月预算 10%；按 1× 烧光要 30 天
 apiserver_request:burnrate3d > 1.00 * 0.01000  and  apiserver_request:burnrate6h > 1.00 * 0.01000
 ```
+
+> 统一公式（30 天 SLO，预算窗口 720h）：
+>
+> ```text
+> 预算消耗比 = burn_rate × 观察窗口 / 720h
+> 烧光时间   = 720h / burn_rate
+> ```
+>
+> | burn | 窗口 | 该窗口消耗预算 | 按此速率烧光 |
+> |---:|---:|---:|---:|
+> | 14.4 | 1h | 2% | 50h |
+> | 6 | 6h | 5% | 120h（5d） |
+> | 3 | 1d | 10% | 240h（10d） |
+> | 1 | 3d | 10% | 720h（30d） |
+>
+> 所以四档告警的语义是“**这段时间烧掉了多少预算**”，不是“多久烧光”。
+> 1× 是“按计划在 30 天内刚好烧完”，不是 3 天。
 
 **设计要点解读：**
 
@@ -2128,7 +2150,7 @@ apiserver_request:burnrate3d > 1.00 * 0.01000  and  apiserver_request:burnrate6h
 |---|---|
 | `and on (cluster)` 短窗口 + 长窗口**双条件** | 只看 5m 会被毛刺骗；只看 6h 反应太慢。**双窗口 = 既要趋势成立、又要当前仍在烧** |
 | 短窗口决定灵敏度，长窗口决定可信度 | `for` 因此可以设得很短（2m），因为第二个条件已经天然过滤了毛刺 |
-| 乘 `0.01000`（= 99% SLO 对应的 1% 错误率） | 燃烧率的定义：**实际错误率 ÷ 预算错误率**，所以 1.0 = 正在以"刚好烧光预算"的速度燃烧 |
+| 乘 `0.01000`（= 99% SLO 对应的 1% 错误率） | 燃烧率的定义：**实际错误率 ÷ 预算错误率**，所以 1.0 = 按 30 天计划持续刚好烧光 |
 | 用录制规则而非内联 | 7 窗口 × 读写两套的复杂度，内联写出来没法维护 |
 
 **当前本集群实测：**
@@ -2148,10 +2170,13 @@ groups:
       - record: myservice:http_requests:burnrate5m
         expr: |
           sum(rate(myservice_http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(myservice_http_requests_total[5m]))
           / 0.01    # SLO 99% → 允许 1% 错误率
       - record: myservice:http_requests:burnrate1h
         expr: |
-          sum(rate(myservice_http_requests_total{status=~"5.."}[1h])) / 0.01
+          sum(rate(myservice_http_requests_total{status=~"5.."}[1h]))
+          / sum(rate(myservice_http_requests_total[1h]))
+          / 0.01
 
       # ---- 告警规则：双窗口 ----
       - alert: MyServiceErrorBudgetBurnFast
@@ -2161,7 +2186,7 @@ groups:
         for: 2m
         labels: {severity: critical}
         annotations:
-          summary: "myservice 错误预算正在以 14.4 倍速燃烧（1 小时内将烧光）"
+          summary: "myservice 错误预算正在以 14.4 倍速燃烧（1 小时消耗 2% 月预算）"
           description: "短窗 {{ $value | humanizePercentage }}，请立即回滚或限流。"
 ```
 
@@ -2553,7 +2578,7 @@ print('for:',Counter(str(r.get('for')) for r in rules))"
 | **Group / Inhibit / Silence** | 分组（同类合并）/ 抑制（大告警压小告警）/ 静默（临时屏蔽） |
 | **Receiver** | 通知出口（邮件、Webhook、企业微信等） |
 | **SLO / SLI / Error Budget** | 服务等级目标 / 指标 / 错误预算（1 - SLO） |
-| **Burn Rate** | 错误预算燃烧速度，1.0 = 按计划刚好烧光 |
+| **Burn Rate** | 错误预算燃烧速度，1.0 = 按 30 天计划持续刚好烧光 |
 | **Flapping** | 状态反复横跳（up/down、Ready/NotReady） |
 | **Runbook** | 告警处置手册，通常放在 `runbook_url` 注解里 |
 

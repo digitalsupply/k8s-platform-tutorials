@@ -86,11 +86,13 @@
 - 位置：`…/prometheus-promql-alerting-tutorial.md:2111-2122`
 - 原文："14.4× → 1 小时烧光" / "6× → 6 小时" / "3× → 1 天" / "1× → 3 天"
 - 正确（30 天 SLO）：预算消耗比 = burn × 窗口 / 720h → 14.4×1h = **2%**，6×6h = **5%**，3×24h = **10%**，1×72h = **10%**。1× 烧光预算是 30 天，不是 3 天。文档自己在下一段把"燃烧率 = 实际错误率 ÷ 预算错误率"写对了，时间换算却全反。
+- 修复状态（2026-11-11）：已修正为“窗口预算消耗”，补 720h 公式与烧光时间表；阈值不变。
 
 ### 2.10 SLO 模板的录制规则缺分母，阈值不可比
 - 位置：同上 `:2148-2155`
 - 原文：`sum(rate(...{status=~"5.."}[5m])) / 0.01`
 - 正确：`sum(rate(…{status=~"5.."}[5m])) / sum(rate(…[5m])) / 0.01`。按现写法，1000 QPS 下每秒 0.15 个 5xx（0.015% 错误率）就会打 critical。
+- 修复状态（2026-11-11）：模板已补总请求分母。
 
 ### 2.11 GitLab 端口排障建立在错误配置键上（5 篇文档、约 830 行）
 - 位置：`docs/03-gitlab/gitlab-19.4-install.md:166` 等（共 12 处 `gitlab_rails['nginx'][…]`）
@@ -140,7 +142,7 @@
 - 同文 `:612`：`histogram_quantile(0.99, rate(x_bucket[5m]))` 并非"坏例子"（合法，只是分维度）；真正坏的是 `sum(rate(...))` 丢掉 `le` → 空结果 + `bucket label "le" is missing` 警告，不是 "+Inf 垃圾值"。
 - 同文 `:647`：etcd quota "默认 8GB" —— 实测 `etcd_server_quota_backend_bytes = 2147483648`（**2 GiB**）。
 - 同文 `:42`：Alertmanager "邮件（QQ 企业邮 SMTP）" —— 实际 receivers 只有 `wecom` 与 `n8n-webhook`，无 email。
-- 同文 `:179`、`04-current-state.md:37`：把 "kube-proxy 6 个 target" 当实测输出、把 health 异常记 0；实测 `job="kube-proxy"` 零 target，且 `KubeProxyDown` **正在 firing（critical）**。
+- 同文 `:179`、`04-current-state.md:37`：把 "kube-proxy 6 个 target" 当实测输出、把 health 异常记 0；实测 `job="kube-proxy"` 零 target，且 `KubeProxyDown` **正在 firing（critical）**。已修复：`kubeProxy.enabled=false`，残留 Service/SM/Rule/CM 已清理。
 - `manifests/rules/coverage-gap-alerts.yaml`：`CalicoNodeNotReady` / `CalicoKubeControllersDown` / `CNIComponentNotReady` 全部匹配 `pod=~"calico-node-.*"`；Cilium 集群里是空向量 → 三条哑告警，其中两条表达式完全相同。
 
 ### 3.5 Linux / 容器 / 存储

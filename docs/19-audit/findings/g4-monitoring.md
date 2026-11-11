@@ -26,6 +26,7 @@
 - 原文: 「档位 1（fast，for: 2m）：14.4 倍速烧，**1 小时就能烧光全部预算**」；「档位 2：6 倍速，**6 小时烧光**」；「档位 3：3 倍速，**1 天烧光**」；「档位 4：1 倍速，**3 天烧光**」
 - 问题: 30 天 SLO 下，"1 倍速"= 30 天烧完全部预算。14.4× 的正确含义是"**1 小时烧掉 2% 预算**"（14.4/720），不是"1 小时烧光"；6× 是 6 小时烧 5%；3× 是 1 天烧 10%；1× 是 3 天烧 10%。四条全错，且错的方向一致（把"窗口长度"当成"烧光时间"）。据此调参会把真正的 2% 事件当成"预算清零"而惊动全员，也会把 1× 的慢性泄漏误判成"3 天必挂"。
 - 证据/正确说法: 预算比例 = burnrate × 窗口/30d。14.4 × 1h/720h = 2%；6 × 6/720 = 5%；3 × 24/720 = 10%；1 × 72/720 = 10%。这正是 Google SRE Workbook "Multiwindow, Multi-Burn-Rate Alerts" 表的 2%/5%/10% 三档。同一文件 :2131 对燃烧率定义（"实际错误率 ÷ 预算错误率"）的表述是对的，与这里的时间换算自相矛盾。
+- 修复状态（2026-11-11）: 已改为“窗口消耗预算比例”，补 720h 公式与烧光时间表；阈值不变。
 
 ---
 
@@ -33,6 +34,7 @@
 - 位置: docs/04-monitoring-gitops/notes/prometheus-promql-alerting-tutorial.md:2148-2155
 - 原文: 「`- record: myservice:http_requests:burnrate5m` / `expr: |` / `  sum(rate(myservice_http_requests_total{status=~"5.."}[5m]))` / `  / 0.01    # SLO 99% → 允许 1% 错误率`」
 - 问题: 燃烧率 = 错误率 / (1-SLO) = [5xx 速率 ÷ 总请求速率] ÷ 0.01。模板漏掉了 `sum(rate(...total[5m]))` 这个分母，得到的是"每秒 5xx 条数 ×100"，量纲完全不对，和后面的 `> 14.4` 阈值不可比：业务量 1000 QPS 时只要 0.15 条/秒 5xx（0.015% 错误率，远未超 SLO）就会触发 critical。文档自己在 :2131 把定义写对了，模板却写错，属"照抄即误报"。
+- 修复状态（2026-11-11）: 模板 5m/1h 录制规则已补 `sum(rate(...total))` 分母。
 - 证据/正确说法: 正确写法：`sum(rate(myservice_http_requests_total{status=~"5.."}[5m])) / sum(rate(myservice_http_requests_total[5m])) / 0.01`。可对照集群里真实的上游录制规则 `apiserver_request:burnrate5m`（`kubectl get prometheusrule prometheus-kube-prometheus-apiserver-burnrate.rules -n monitoring -o yaml`，分子分母都是 `sum(rate(...))`）。
 
 ---
@@ -42,6 +44,7 @@
 - 原文: 「`kubelet 18 | apiserver 3 | alloy 6 | node-exporter 6 | kube-etcd 3` / `| kube-proxy 6 | ...`」；「`prometheus-kubernetes-system-kube-proxy | 1 | critical | 15m | 上游`」；04-current-state：「Prometheus 加载 | 68 groups / 251 alerting rules」「health 异常 | 0」
 - 问题: 集群 CNI 已是 Cilium 1.20.4 且启用了 kube-proxy replacement，kube-system 里没有 kube-proxy（也没有任何 kube-proxy target）。上游规则 `KubeProxyDown = absent(up{job="kube-proxy"})` 因此**永久成立**，现在就是 critical firing 状态。文档一边把"kube-proxy 6 个 target"当作实测输出，一边把 `health 异常 0` 当作健康结论，掩盖了这条常驻误报——而这类"永远红的 critical"正是本目录反复警告的告警疲劳源头。
 - 证据/正确说法: `count(up{job=~".*kube-proxy.*"})` → 空（0 个 target）；`kubectl -n kube-system get ds` → 只有 `cilium`(6/6) 与 `kube-vip-ds`(3/3)；`curl /api/v1/alerts` 命中 `KubeProxyDown alertstate=firing severity=critical`。正确说法：kube-proxy 已移除，`KubeProxyDown` 应删除或改为 `absent(up{job="kube-proxy"}) and on() kube_node_info` 之类的"仅在存在该组件时判定"，并在文档中登记为已知死规则。
+- 修复状态（2026-11-11）: `kubeProxy.enabled=false`（platform-gitops cda3531）；Service/SM/Rule/Dashboard 已清理；ArgoCD Synced，`KubeProxyDown` 已消失。
 
 ---
 
