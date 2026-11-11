@@ -1,0 +1,12 @@
+=== kubectl get events | OOM/Evicted/Killing
+
+=== pod lastState terminated reasons
+Counter({'Unknown': 27, 'Completed': 5, 'Error': 4})
+
+=== node conditions
+m01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]
+master01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]
+master02 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]
+worker01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]
+worker02 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]
+worker03 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False')]

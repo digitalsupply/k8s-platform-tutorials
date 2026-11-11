@@ -1,0 +1,27 @@
+=== nginx worker processes
+PID                 PPID                COMMAND             COMMAND
+4445                4423                nginx               nginx: master process nginx -g daemon off;
+4514                4445                nginx               nginx: worker process
+4515                4445                nginx               nginx: worker process
+=== pid 4514 eventpoll
+lrwx------ 1 10000 10000 64 Nov 10 13:39 9 -> anon_inode:[eventpoll]
+=== fdinfo
+/proc/4514/fd/9
+pos:	0
+flags:	02
+mnt_id:	16
+ino:	56
+tfd:       10 events: 80000019 data:     62b3b3581820  pos:0 ino:38 sdev:f
+=== threads
+1
+=== pid 4515 eventpoll
+lrwx------ 1 10000 10000 64 Nov 10 13:39 11 -> anon_inode:[eventpoll]
+=== fdinfo
+/proc/4515/fd/11
+pos:	0
+flags:	02
+mnt_id:	16
+ino:	56
+tfd:       12 events: 80000019 data:     62b3b3581820  pos:0 ino:38 sdev:f
+=== threads
+1

@@ -106,3 +106,6 @@ ssh root@10.0.0.122 'bash -s' < docs/14-containers/scripts/collect_container_evi
 ```
 
 > 本章的 `crictl`/`docker` 命令都是只读；需要创建容器时请在实验机执行，不要在生产 Harbor/GitLab 上跑。
+>
+> 面试一句话答案（OOMKilled/Evicted、tini 等）见
+> [15 面试速查](../15-interview-cheatsheet/README.md)。

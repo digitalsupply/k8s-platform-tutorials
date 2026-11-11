@@ -1,0 +1,20 @@
+=== harbor-202 ===
+$ ss -s
+Total: 248
+TCP:   95 (estab 28, closed 58, orphaned 0, timewait 0)
+
+Transport Total     IP        IPv6
+RAW	  1         0         1        
+UDP	  2         2         0        
+TCP	  37        34        3        
+INET	  40        36        4        
+FRAG	  0         0         0        
+
+$ ss -tan state counts
+established  28
+syn-sent     0
+time-wait    0
+close-wait   0
+fin-wait-1   0
+fin-wait-2   0
+last-ack     0

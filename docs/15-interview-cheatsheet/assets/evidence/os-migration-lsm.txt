@@ -1,0 +1,38 @@
+=== Ubuntu 24.04
+Ubuntu 24.04.4 LTS
+Python 3.12.3
+apt 2.8.4 (amd64)
+netplan files:
+50-cloud-init.yaml
+60-csf-cluster-route.yaml
+
+=== Rocky 9
+Rocky Linux 9.6 (Blue Onyx)
+4.14.0
+nmcli 工具，版本 1.52.0-9.el9_6
+nftables v1.0.9 (Old Doc Yak #3)
+chronyc (chrony) version 4.6.1 (+READLINE +SECHASH +IPV6 +DEBUG)
+ifcfg-ens18
+ifcfg-eth0
+Disabled
+
+=== LSM
+--- 10.0.0.61
+lockdown,capability,landlock,yama,selinux,bpfDisabled
+--- 10.0.0.122
+lockdown,capability,landlock,yama,apparmorapparmor-enabled
+--- 192.168.67.201
+lockdown,capability,landlock,yama,apparmorapparmor-enabled
+=== python distutils
+/usr/lib/python3/dist-packages/setuptools/_distutils/__init__.py
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+=== netplan
+ii  netplan.io     1.1.2-8ubuntu1~24.04.2 amd64        Declarative network configuration for various backends at runtime
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    default:
+=== apt
+apt 2.8.4 (amd64)

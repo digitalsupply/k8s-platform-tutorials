@@ -1,0 +1,18 @@
+=== cgroup fs type
+cgroup2fs
+=== mount
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime)
+=== controllers
+cpuset cpu io memory hugetlb pids rdma misc
+=== subtree
+cpuset cpu io memory pids
+=== PIDs
+--- 10.0.0.61
+cgroup2fs
+cpuset cpu io memory hugetlb pids rdma misc
+--- 10.0.0.122
+cgroup2fs
+cpuset cpu io memory hugetlb pids rdma misc
+--- 192.168.67.201
+cgroup2fs
+cpuset cpu io memory hugetlb pids rdma misc

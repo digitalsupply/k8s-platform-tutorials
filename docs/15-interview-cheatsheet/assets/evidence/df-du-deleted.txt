@@ -1,0 +1,7 @@
+deleted but open: /tmp/df-du-deleted.bin
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/pve-root   94G   28G   62G  32% /
+
+du /tmp: 636M	/tmp
+
+fd link: /tmp/df-du-deleted.bin (deleted)

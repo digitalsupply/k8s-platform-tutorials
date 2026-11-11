@@ -38,6 +38,7 @@
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
 | [14 Containers](docs/14-containers/README.md) | Docker/containerd/CRI/OCI、镜像层、overlay、生命周期、网络、存储、capability、排障 | 管容器运行时、镜像、Pod 安全与 CI 构建的人 |
+| [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/云原生一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
 
 ---
 
@@ -63,6 +64,7 @@
   → 12 PVE/宿主机
   → 13 SSO/OIDC
   → 14 容器运行时
+  → 15 面试速查
 ```
 
 ---
@@ -110,6 +112,7 @@
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
 | 14 Containers | [`collect_container_evidence.sh`](docs/14-containers/scripts/collect_container_evidence.sh)、[`assets/evidence/`](docs/14-containers/assets/evidence/README.md)、[`labs/`](docs/14-containers/labs/README.md) |
+| 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/云原生一句话答案 |
 
 说明：
 
@@ -144,7 +147,8 @@ k8s-platform-tutorials/
     ├── 11-gitops-platform/
     ├── 12-proxmox-pve/
     ├── 13-sso-oidc/
-    └── 14-containers/
+    ├── 14-containers/
+    └── 15-interview-cheatsheet/
 ```
 
 每个分类目录的统一约定：

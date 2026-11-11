@@ -1,5 +1,8 @@
 # 07 · Networking：Traefik、Service、DNS、隧道与封装
 
+> 面试一句话答案（TIME_WAIT/CLOSE_WAIT、三次握手、refused/timeout/reset）见
+> [15 面试速查](../15-interview-cheatsheet/02-network.md)。
+
 ## 当时的情况
 
 集群入口和网络经历了几次变化：

@@ -1,0 +1,20 @@
+=== gitlab-201 ===
+$ ss -s
+Total: 621
+TCP:   68 (estab 33, closed 4, orphaned 0, timewait 4)
+
+Transport Total     IP        IPv6
+RAW	  1         0         1        
+UDP	  5         3         2        
+TCP	  64        52        12       
+INET	  70        55        15       
+FRAG	  0         0         0        
+
+$ ss -tan state counts
+established  33
+syn-sent     0
+time-wait    4
+close-wait   0
+fin-wait-1   0
+fin-wait-2   0
+last-ack     0

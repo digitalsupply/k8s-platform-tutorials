@@ -1,0 +1,9 @@
+port 41957
+State      Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+LISTEN     0      1          127.0.0.1:41957      0.0.0.0:*           
+CLOSE-WAIT 1      0          127.0.0.1:41957    127.0.0.1:43354       
+
+close-wait total: 1
+after close:
+State Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+

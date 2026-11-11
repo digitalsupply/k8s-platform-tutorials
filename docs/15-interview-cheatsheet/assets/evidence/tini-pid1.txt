@@ -1,0 +1,16 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== frpc task pid
+2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5    2236      RUNNING
+pid=2236
+=== /proc/2236/status
+Name:	frpc
+State:	S (sleeping)
+Pid:	2236
+PPid:	1916
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+NSpid:	2236	1
+=== exe
+/usr/local/bin/frpc
+=== cgroup
+0::/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod7ad24f2f_709c_459b_a183_4a99bd805c86.slice/cri-containerd-2bc0dbd6f5147de6ede1132ffe8672d68682963b1797861fa17179cb535467d5.scope
