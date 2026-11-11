@@ -5,6 +5,9 @@
 >
 > 所有数字、日志、命令输出都来自 [`assets/evidence/`](assets/evidence/README.md)，
 > 不是教科书默认值。这里用可复制的命令 transcript 代替截图，便于检索和复现。
+>
+> 容器运行时（Docker/containerd/CRI/镜像/overlay/安全）单独放在
+> [14 Containers](../14-containers/README.md)。
 
 ## 当时的情况
 

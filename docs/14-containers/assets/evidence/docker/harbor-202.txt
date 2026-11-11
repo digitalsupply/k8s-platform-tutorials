@@ -1,0 +1,51 @@
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+=== docker info
+ Server Version: 29.9.0
+ Storage Driver: overlayfs
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Security Options:
+ Kernel Version: 6.8.0-147-generic
+ Operating System: Ubuntu 24.04.4 LTS
+ Docker Root Dir: /var/lib/docker
+ Live Restore Enabled: false
+=== docker ps
+CONTAINER ID   IMAGE                                   NAMES               STATUS
+22caa6c1787e   goharbor/trivy-adapter-photon:v2.14.5   trivy-adapter       Up 5 days (healthy)
+2c80646e3267   goharbor/nginx-photon:v2.14.5           nginx               Up 5 days (healthy)
+ffa4da91797b   goharbor/harbor-jobservice:v2.14.5      harbor-jobservice   Up 5 days (healthy)
+023f3c82f97d   goharbor/harbor-core:v2.14.5            harbor-core         Up 5 days (healthy)
+aa0318bfce81   goharbor/registry-photon:v2.14.5        registry            Up 5 days (healthy)
+c3b6733b446f   goharbor/harbor-portal:v2.14.5          harbor-portal       Up 5 days (healthy)
+93473e9109b1   goharbor/harbor-db:v2.14.5              harbor-db           Up 5 days (healthy)
+5acc426d31c2   goharbor/harbor-registryctl:v2.14.5     registryctl         Up 5 days (healthy)
+a426b8592f78   goharbor/redis-photon:v2.14.5           redis               Up 5 days (healthy)
+bbac9e975694   goharbor/harbor-log:v2.14.5             harbor-log          Up 5 days (healthy)
+=== docker images
+REPOSITORY                                                          TAG                                                                SIZE
+192.168.67.202:8443/compassio/frontend                              v0.1.0                                                             97.2MB
+192.168.67.202:8443/compassio/cache                                 d1d507f08756f65e3ca706082781d95c5261971c54ad21b28dff409a168ca0b6   357MB
+goharbor/harbor-exporter                                            v2.14.5                                                            415MB
+goharbor/redis-photon                                               v2.14.5                                                            474MB
+goharbor/trivy-adapter-photon                                       v2.14.5                                                            962MB
+goharbor/harbor-registryctl                                         v2.14.5                                                            500MB
+goharbor/registry-photon                                            v2.14.5                                                            344MB
+goharbor/nginx-photon                                               v2.14.5                                                            460MB
+goharbor/harbor-log                                                 v2.14.5                                                            510MB
+goharbor/harbor-jobservice                                          v2.14.5                                                            507MB
+goharbor/harbor-core                                                v2.14.5                                                            564MB
+goharbor/harbor-portal                                              v2.14.5                                                            478MB
+goharbor/harbor-db                                                  v2.14.5                                                            876MB
+goharbor/prepare                                                    v2.14.5                                                            609MB
+=== docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          20        10        5.552GB   1.846GB (33%)
+Containers      10        10        9.433MB   0B (0%)
+Local Volumes   11        9         2.994kB   2.633kB (87%)
+Build Cache     46        0         719.9MB   1.282MB
+=== overlay mounts
+TARGET                                                                                            SOURCE  OPTIONS
+/var/lib/docker/rootfs/overlayfs/5acc426d31c29be25a7d50e52da24decc5a9af4398f84e152c5c853c0d665e50 overlay rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/157/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/80/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/79/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/78/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/77/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/76/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/75/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/3/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/162/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/162/work,nouserxattr
+/var/lib/docker/rootfs/overlayfs/bbac9e9756945cc8676cf2c12ace5cef72d5af63eb4b409254520dddbf402404 overlay rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/154/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/17/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/16/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/15/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/14/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/13/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/12/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/11/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/3/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/155/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/155/work,nouserxattr
+/var/lib/docker/rootfs/overlayfs/a426b8592f78d0aa191c6202f5cf654bca37e4329c1c5a95bca22b5df8051a4a overlay rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/156/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/49/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/48/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/47/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/46/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/45/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/44/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/3/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/161/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/161/work,nouserxattr
+/var/lib/docker/rootfs/overlayfs/93473e9109b1180c032b63458784242008b15d55f16050aa7cdd9fe877ec77a9 overlay rw,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/159/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/37/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/36/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/35/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/34/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/33/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/32/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/31/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/30/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/29/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/28/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/27/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/3/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/2/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/164/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/164/work,nouserxattr

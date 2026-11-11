@@ -1,0 +1,14 @@
+Warning: Permanently added '192.168.67.201' (ED25519) to the list of known hosts.
+4.5GB	registry.cn-hangzhou.aliyuncs.com/go404/deeptutor:latest
+4.5GB	registry.cn-hangzhou.aliyuncs.com/go404/deeptutor:870f2dbe948ce9761e5430c6fa74677f77d80f7e
+4.5GB	192.168.67.202:8443/deeptutor/deeptutor:870f2dbe948ce9761e5430c6fa74677f77d80f7e
+2.94GB	manim-test:latest
+2.23GB	manim-lean2:latest
+1.88GB	manim-lean:latest
+998MB	ghcr.io/aquasecurity/trivy-java-db:1
+998MB	192.168.67.202:8443/library/trivy-java-db:1
+795MB	registry.cn-hangzhou.aliyuncs.com/go404/compassio-backend:05f030acf642a6155077a0a5aeff56cf87d628bb
+795MB	192.168.67.202:8443/compassio/backend:05f030acf642a6155077a0a5aeff56cf87d628bb
+664MB	192.168.67.202:8443/china-study-free/web:694f79f
+664MB	192.168.67.202:8443/china-study-free/web:66ebfef
+count: 33

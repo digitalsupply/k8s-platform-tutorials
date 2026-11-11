@@ -1,0 +1,543 @@
+{
+  "status": {
+    "id": "28f0a6a46fad6eced65bcae34e2f14ea935a0bc828df9dc84039ad5fc0bfec90",
+    "metadata": {
+      "attempt": 1,
+      "name": "node-exporter"
+    },
+    "state": "CONTAINER_RUNNING",
+    "createdAt": "2026-11-09T20:29:24.49822136+08:00",
+    "startedAt": "2026-11-09T20:29:24.566498337+08:00",
+    "finishedAt": "0001-01-01T00:00:00Z",
+    "exitCode": 0,
+    "image": {
+      "annotations": {},
+      "image": "quay.io/prometheus/node-exporter:v1.11.1",
+      "runtimeHandler": "",
+      "userSpecifiedImage": ""
+    },
+    "imageRef": "quay.io/prometheus/node-exporter@sha256:0f422f62c15f154af8d8572b23d623aebfb10cec73a5c654d18f911f3f9df241",
+    "reason": "",
+    "message": "",
+    "labels": {
+      "io.kubernetes.container.name": "node-exporter",
+      "io.kubernetes.pod.name": "prometheus-prometheus-node-exporter-nd6cr",
+      "io.kubernetes.pod.namespace": "monitoring",
+      "io.kubernetes.pod.uid": "bd5301f1-a0d1-43c1-93b6-48639568f642"
+    },
+    "annotations": {
+      "io.kubernetes.container.hash": "9279ca54",
+      "io.kubernetes.container.ports": "[{\"name\":\"http-metrics\",\"hostPort\":9100,\"containerPort\":9100,\"protocol\":\"TCP\"}]",
+      "io.kubernetes.container.restartCount": "1",
+      "io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
+      "io.kubernetes.container.terminationMessagePolicy": "File",
+      "io.kubernetes.pod.terminationGracePeriod": "30"
+    },
+    "mounts": [
+      {
+        "containerPath": "/host/proc",
+        "gidMappings": [],
+        "hostPath": "/proc",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": true,
+        "recursiveReadOnly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/host/sys",
+        "gidMappings": [],
+        "hostPath": "/sys",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": true,
+        "recursiveReadOnly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/host/root",
+        "gidMappings": [],
+        "hostPath": "/",
+        "propagation": "PROPAGATION_HOST_TO_CONTAINER",
+        "readonly": true,
+        "recursiveReadOnly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/etc/hosts",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/etc-hosts",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": false,
+        "recursiveReadOnly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/dev/termination-log",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/containers/node-exporter/92f7b1c1",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": false,
+        "recursiveReadOnly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      }
+    ],
+    "logPath": "/var/log/pods/monitoring_prometheus-prometheus-node-exporter-nd6cr_bd5301f1-a0d1-43c1-93b6-48639568f642/node-exporter/1.log",
+    "resources": {
+      "linux": {
+        "cpuPeriod": "100000",
+        "cpuQuota": "0",
+        "cpuShares": "2",
+        "cpusetCpus": "",
+        "cpusetMems": "",
+        "hugepageLimits": [],
+        "memoryLimitInBytes": "0",
+        "memorySwapLimitInBytes": "0",
+        "oomScoreAdj": "1000",
+        "unified": {
+          "memory.oom.group": "1",
+          "memory.swap.max": "0"
+        }
+      },
+      "windows": null
+    },
+    "imageId": "sha256:47509d7f7c15a729686d9d5eccec66abd4b2495d9ae01f637f63e6375fe93f8b"
+  },
+  "info": {
+    "sandboxID": "5e77f80a07c4f87466f27345a91ddf4873bdfccdff6de3d81c3c985909ba815c",
+    "pid": 1259,
+    "removing": false,
+    "snapshotKey": "28f0a6a46fad6eced65bcae34e2f14ea935a0bc828df9dc84039ad5fc0bfec90",
+    "snapshotter": "overlayfs",
+    "runtimeType": "io.containerd.runc.v2",
+    "runtimeOptions": {
+      "binary_name": "/usr/local/sbin/runc",
+      "systemd_cgroup": true
+    },
+    "config": {
+      "metadata": {
+        "name": "node-exporter",
+        "attempt": 1
+      },
+      "image": {
+        "image": "sha256:47509d7f7c15a729686d9d5eccec66abd4b2495d9ae01f637f63e6375fe93f8b",
+        "user_specified_image": "quay.io/prometheus/node-exporter:v1.11.1"
+      },
+      "args": [
+        "--path.procfs=/host/proc",
+        "--path.sysfs=/host/sys",
+        "--path.rootfs=/host/root",
+        "--path.udev.data=/host/root/run/udev/data",
+        "--web.listen-address=[0.0.0.0]:9100",
+        "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)",
+        "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$"
+      ],
+      "mounts": [
+        {
+          "container_path": "/host/proc",
+          "host_path": "/proc",
+          "readonly": true
+        },
+        {
+          "container_path": "/host/sys",
+          "host_path": "/sys",
+          "readonly": true
+        },
+        {
+          "container_path": "/host/root",
+          "host_path": "/",
+          "readonly": true,
+          "propagation": 1
+        },
+        {
+          "container_path": "/etc/hosts",
+          "host_path": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/etc-hosts"
+        },
+        {
+          "container_path": "/dev/termination-log",
+          "host_path": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/containers/node-exporter/92f7b1c1"
+        }
+      ],
+      "labels": {
+        "io.kubernetes.container.name": "node-exporter",
+        "io.kubernetes.pod.name": "prometheus-prometheus-node-exporter-nd6cr",
+        "io.kubernetes.pod.namespace": "monitoring",
+        "io.kubernetes.pod.uid": "bd5301f1-a0d1-43c1-93b6-48639568f642"
+      },
+      "annotations": {
+        "io.kubernetes.container.hash": "9279ca54",
+        "io.kubernetes.container.ports": "[{\"name\":\"http-metrics\",\"hostPort\":9100,\"containerPort\":9100,\"protocol\":\"TCP\"}]",
+        "io.kubernetes.container.restartCount": "1",
+        "io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
+        "io.kubernetes.container.terminationMessagePolicy": "File",
+        "io.kubernetes.pod.terminationGracePeriod": "30"
+      },
+      "log_path": "node-exporter/1.log",
+      "linux": {
+        "resources": {
+          "cpu_period": 100000,
+          "cpu_shares": 2,
+          "oom_score_adj": 1000,
+          "hugepage_limits": [
+            {
+              "page_size": "2MB"
+            }
+          ],
+          "unified": {
+            "memory.oom.group": "1",
+            "memory.swap.max": "0"
+          }
+        },
+        "security_context": {
+          "namespace_options": {
+            "network": 2,
+            "pid": 2,
+            "userns_options": {
+              "mode": 2
+            }
+          },
+          "run_as_user": {
+            "value": 65534
+          },
+          "run_as_group": {
+            "value": 65534
+          },
+          "readonly_rootfs": true,
+          "supplemental_groups": [
+            65534
+          ],
+          "masked_paths": [
+            "/proc/asound",
+            "/proc/acpi",
+            "/proc/interrupts",
+            "/proc/kcore",
+            "/proc/keys",
+            "/proc/latency_stats",
+            "/proc/timer_list",
+            "/proc/timer_stats",
+            "/proc/sched_debug",
+            "/proc/scsi",
+            "/sys/firmware",
+            "/sys/devices/virtual/powercap"
+          ],
+          "readonly_paths": [
+            "/proc/bus",
+            "/proc/fs",
+            "/proc/irq",
+            "/proc/sys",
+            "/proc/sysrq-trigger"
+          ],
+          "seccomp": {
+            "profile_type": 1
+          }
+        }
+      }
+    },
+    "runtimeSpec": {
+      "ociVersion": "1.3.0",
+      "process": {
+        "user": {
+          "uid": 65534,
+          "gid": 65534,
+          "additionalGids": [
+            65534
+          ]
+        },
+        "args": [
+          "/bin/node_exporter",
+          "--path.procfs=/host/proc",
+          "--path.sysfs=/host/sys",
+          "--path.rootfs=/host/root",
+          "--path.udev.data=/host/root/run/udev/data",
+          "--web.listen-address=[0.0.0.0]:9100",
+          "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)",
+          "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$"
+        ],
+        "cwd": "/",
+        "capabilities": {
+          "bounding": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ],
+          "effective": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ],
+          "permitted": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ]
+        },
+        "apparmorProfile": "cri-containerd.apparmor.d",
+        "oomScoreAdj": 1000
+      },
+      "root": {
+        "path": "rootfs",
+        "readonly": true
+      },
+      "mounts": [
+        {
+          "destination": "/proc",
+          "type": "proc",
+          "source": "proc",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev"
+          ]
+        },
+        {
+          "destination": "/dev",
+          "type": "tmpfs",
+          "source": "tmpfs",
+          "options": [
+            "nosuid",
+            "strictatime",
+            "mode=755",
+            "size=65536k"
+          ]
+        },
+        {
+          "destination": "/dev/pts",
+          "type": "devpts",
+          "source": "devpts",
+          "options": [
+            "nosuid",
+            "noexec",
+            "newinstance",
+            "ptmxmode=0666",
+            "mode=0620",
+            "gid=5"
+          ]
+        },
+        {
+          "destination": "/dev/mqueue",
+          "type": "mqueue",
+          "source": "mqueue",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev"
+          ]
+        },
+        {
+          "destination": "/sys",
+          "type": "sysfs",
+          "source": "sysfs",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/sys/fs/cgroup",
+          "type": "cgroup",
+          "source": "cgroup",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev",
+            "relatime",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/host/proc",
+          "type": "bind",
+          "source": "/proc",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/host/sys",
+          "type": "bind",
+          "source": "/sys",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/host/root",
+          "type": "bind",
+          "source": "/",
+          "options": [
+            "rbind",
+            "rslave",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/etc/hosts",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/etc-hosts",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/dev/termination-log",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/bd5301f1-a0d1-43c1-93b6-48639568f642/containers/node-exporter/92f7b1c1",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/etc/hostname",
+          "type": "bind",
+          "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/5e77f80a07c4f87466f27345a91ddf4873bdfccdff6de3d81c3c985909ba815c/hostname",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/etc/resolv.conf",
+          "type": "bind",
+          "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/5e77f80a07c4f87466f27345a91ddf4873bdfccdff6de3d81c3c985909ba815c/resolv.conf",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/dev/shm",
+          "type": "bind",
+          "source": "/run/containerd/io.containerd.grpc.v1.cri/sandboxes/5e77f80a07c4f87466f27345a91ddf4873bdfccdff6de3d81c3c985909ba815c/shm",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        }
+      ],
+      "annotations": {
+        "io.kubernetes.cri.container-name": "node-exporter",
+        "io.kubernetes.cri.container-type": "container",
+        "io.kubernetes.cri.image-name": "quay.io/prometheus/node-exporter:v1.11.1",
+        "io.kubernetes.cri.sandbox-id": "5e77f80a07c4f87466f27345a91ddf4873bdfccdff6de3d81c3c985909ba815c",
+        "io.kubernetes.cri.sandbox-name": "prometheus-prometheus-node-exporter-nd6cr",
+        "io.kubernetes.cri.sandbox-namespace": "monitoring",
+        "io.kubernetes.cri.sandbox-uid": "bd5301f1-a0d1-43c1-93b6-48639568f642"
+      },
+      "linux": {
+        "resources": {
+          "devices": [
+            {
+              "allow": false,
+              "access": "rwm"
+            }
+          ],
+          "memory": {},
+          "cpu": {
+            "shares": 2,
+            "period": 100000
+          },
+          "unified": {
+            "memory.oom.group": "1",
+            "memory.swap.max": "0"
+          }
+        },
+        "cgroupsPath": "kubepods-besteffort-podbd5301f1_a0d1_43c1_93b6_48639568f642.slice:cri-containerd:28f0a6a46fad6eced65bcae34e2f14ea935a0bc828df9dc84039ad5fc0bfec90",
+        "namespaces": [
+          {
+            "type": "pid",
+            "path": "/proc/1072/ns/pid"
+          },
+          {
+            "type": "ipc",
+            "path": "/proc/1072/ns/ipc"
+          },
+          {
+            "type": "uts",
+            "path": "/proc/1072/ns/uts"
+          },
+          {
+            "type": "mount"
+          },
+          {
+            "type": "network",
+            "path": "/proc/1072/ns/net"
+          },
+          {
+            "type": "cgroup"
+          }
+        ],
+        "rootfsPropagation": "rslave",
+        "maskedPaths": [
+          "/proc/asound",
+          "/proc/acpi",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/sys/firmware",
+          "/sys/devices/virtual/powercap"
+        ],
+        "readonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      }
+    }
+  }
+}

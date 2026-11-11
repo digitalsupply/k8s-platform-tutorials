@@ -1,0 +1,32 @@
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+=== harbor-core inspect
+Image: goharbor/harbor-core:v2.14.5
+Privileged: False
+CapAdd: ['CAP_SETGID', 'CAP_SETUID']
+CapDrop: ['ALL']
+NetworkMode: harbor_harbor
+ReadonlyRootfs: False
+SecurityOpt: None
+Binds: ['/root/harbor/common/config/core/app.conf:/etc/core/app.conf:rw', '/data/secret/core/private_key.pem:/etc/core/private_key.pem:rw', '/data/secret/keys/secretkey:/etc/core/key:rw', '/root/harbor/common/config/shared/trust-certificates:/harbor_cust_cert:rw', '/data/ca_download/:/etc/core/ca:rw,z', '/data/:/data:rw,z', '/root/harbor/common/config/core/certificates:/etc/core/certificates:rw,z']
+Mounts: [('/data', 'bind', True), ('/harbor_cust_cert', 'bind', True), ('/etc/core/app.conf', 'bind', True), ('/etc/core/ca', 'bind', True), ('/etc/core/certificates', 'bind', True), ('/etc/core/key', 'bind', True), ('/etc/core/private_key.pem', 'bind', True)]
+=== docker info runtime
+ Storage Driver: overlayfs
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Runtimes: io.containerd.runc.v2 runc
+ Default Runtime: runc
+ Security Options:
+  cgroupns
+=== history
+IMAGE                                                                     CREATED        CREATED BY                                                                                                                                                                                                                        SIZE      COMMENT
+sha256:18f26b2d6f3cc55b41b9ed5bcf8ae8b4e60b07af15ee656307239ec40db045f8   5 weeks ago    COPY make/photon/prepare/versions /harbor/ # buildkit                                                                                                                                                                             12.3kB    buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    ENTRYPOINT ["/harbor/entrypoint.sh"]                                                                                                                                                                                              0B        buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    USER harbor                                                                                                                                                                                                                       0B        buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    WORKDIR /harbor/                                                                                                                                                                                                                  4.1kB     buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    RUN /bin/sh -c chown -R harbor:harbor /etc/pki/tls/certs     && chown -R harbor:harbor /harbor/     && chmod u+x /harbor/entrypoint.sh     && chmod u+x /harbor/install_cert.sh     && chmod u+x /harbor/harbor_core # buildkit   77.6MB    buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./icons /harbor/icons # buildkit                                                                                                                                                                                             229kB     buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./make/migrations /harbor/migrations # buildkit                                                                                                                                                                              225kB     buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./src/core/views /harbor/views # buildkit                                                                                                                                                                                    20.5kB    buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./make/photon/core/harbor_core /harbor/ # buildkit                                                                                                                                                                           76.3MB    buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./make/photon/core/entrypoint.sh /harbor/ # buildkit                                                                                                                                                                         12.3kB    buildkit.dockerfile.v0
+<missing>                                                                 5 weeks ago    COPY ./make/photon/common/install_cert.sh /harbor/ # buildkit                                                                                                                                                                     12.3kB    buildkit.dockerfile.v0

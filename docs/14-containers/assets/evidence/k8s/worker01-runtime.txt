@@ -1,0 +1,36 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== counts
+pods: 41
+containers(all): 56
+images: 41
+=== top images
+swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.n8n.io/n8nio/n8n                          2.14.2                                     22511cc8b434a       289MB
+docker.io/grafana/grafana                                                                 12.4.3                                     f537cfe582700       287MB
+quay.io/cilium/cilium                                                                     <none>                                     1320017dd0b61       256MB
+quay.io/strimzi/operator                                                                  1.0.0                                      356131908e4a1       233MB
+docker.io/grafana/alloy                                                                   v1.20.0                                    0589767014b1a       222MB
+quay.io/cephcsi/cephcsi                                                                   v3.18.2                                    a784032100aea       218MB
+quay.io/argoproj/argocd                                                                   v3.5.3                                     4381d92829717       215MB
+192.168.67.202:8443/compassio/backend                                                     05f030acf642a6155077a0a5aeff56cf87d628bb   36389f25df2ed       195MB
+192.168.67.202:8443/compassio/buildkit                                                    v0.20.2-rootless                           737b23afe728f       103MB
+ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib   0.145.0                                    ffada2f1998aa       93.1MB
+ghcr.io/tektoncd/triggers/eventlistenersink-7ad1faa98cddbcb0c24990303b220bb8              <none>                                     a781d35c67c7b       58.3MB
+ghcr.io/tektoncd/pipeline/events-a9042f7efb0cbade2a868a1ee5ddd52c                         <none>                                     7782f5907bd3b       56.3MB
+ghcr.io/tektoncd/pipeline/webhook-d4749e605405422fd87700164e31b2d1                        <none>                                     1c2c4da16bebc       56.2MB
+docker.io/library/traefik                                                                 v3.7.17                                    d848e658dbc96       55.2MB
+192.168.67.202:8443/compassio/python                                                      3.11-slim                                  bea8499a31bb2       48.9MB
+=== stats
+Incorrect Usage: flag provided but not defined: -no-stream
+
+NAME:
+   crictl stats - List container(s) resource usage statistics
+
+USAGE:
+   crictl stats command [command options] [ID]
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+=== imagefs
+          "mountpoint": "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs"
+          "value": "9123471360"
+          "value": "290374"

@@ -1,0 +1,13 @@
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+=== default namespace
+REF TYPE DIGEST SIZE PLATFORMS LABELS 
+=== moby namespace
+REF                                                                                                  TYPE                                                 DIGEST                                                                  SIZE      PLATFORMS                                                                                              LABELS 
+127.0.0.1:8443/compassio/buildkit:v0.20.2-rootless                                                   application/vnd.oci.image.index.v1+json              sha256:cb5bb371545222c430528556acfdf424144b69897f5deaad391bd227187e90df 98.7 MiB  linux/amd64,linux/arm/v7,linux/arm64,linux/ppc64le,linux/riscv64,linux/s390x                           -      
+192.168.67.202:8443/compassio/buildkit:v0.20.2-rootless                                              application/vnd.oci.image.index.v1+json              sha256:cb5bb371545222c430528556acfdf424144b69897f5deaad391bd227187e90df 98.7 MiB  linux/amd64,linux/arm/v7,linux/arm64,linux/ppc64le,linux/riscv64,linux/s390x                           -      
+192.168.67.202:8443/compassio/cache:d1d507f08756f65e3ca706082781d95c5261971c54ad21b28dff409a168ca0b6 application/vnd.docker.distribution.manifest.v2+json sha256:705d77108ddf2626e6a17afdfe7ec0a06331ab12a8d96400992b4c9d3db45872 84.2 MiB  linux                                                                                                  -      
+192.168.67.202:8443/compassio/frontend:v0.1.0                                                        application/vnd.oci.image.index.v1+json              sha256:c11270a5bf53f0ae2da1734cbc72f4c70cd58a7fecc2a2526706f37586a463ad 25.9 MiB  linux/amd64                                                                                            -      
+=== namespaces
+NAME         LABELS 
+moby                
+moby_history        

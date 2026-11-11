@@ -120,7 +120,8 @@ python3 docs/00-cluster-overview/scripts/cluster_inventory.py --format json > /t
 - 宿主机、VM、LVM-thin、磁盘容量的“物理层地图”：[12 Proxmox VE](../12-proxmox-pve/README.md)；
 - 集群如何逐步交给 Git、Secret 如何不落明文：[11 GitOps 平台化](../11-gitops-platform/README.md)；
 - 存储/PV/CNPG 备份：[06 Storage / Ceph](../06-storage-ceph/README.md)；
-- 入口/DNS/Service：[07 Networking](../07-networking/README.md)。
+- 入口/DNS/Service：[07 Networking](../07-networking/README.md)；
+- 容器运行时/镜像/overlay/安全：[14 Containers](../14-containers/README.md)。
 
 ## 读完后你应该能回答
 

@@ -1,0 +1,20 @@
+=== docker/containerd status
+inactive
+inactive
+=== containerd version
+Client:
+  Version:  v1.7.24
+  Revision: 88bf19b2105c8b17560993bee28a01ddc2f97182
+  Go version: go1.22.10
+
+ctr: failed to dial "/run/containerd/containerd.sock": context deadline exceeded: connection error: desc = "transport: error while dialing: dial unix:///run/containerd/containerd.sock: timeout"
+=== docker data
+3.1G	/var/lib/docker
+=== overlay dirs
+75
+0
+=== docker sockets
+ls: cannot access '/var/run/docker.sock': No such file or directory
+ls: cannot access '/run/containerd/containerd.sock': No such file or directory
+=== docker units
+docker.service                         disabled        enabled

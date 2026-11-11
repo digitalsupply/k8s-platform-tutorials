@@ -1,0 +1,14 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== default namespace images
+time="2026-11-11T08:55:55+08:00" level=warning msg="DEPRECATION: The `enable_cdi` property of `[plugins.\"io.containerd.cri.v1.runtime\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled."
+REF TYPE DIGEST SIZE PLATFORMS LABELS 
+=== k8s.io images
+time="2026-11-11T08:55:55+08:00" level=warning msg="DEPRECATION: The `enable_cdi` property of `[plugins.\"io.containerd.cri.v1.runtime\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled."
+REF                                                                                                                                                             TYPE                                                      DIGEST                                                                  SIZE      PLATFORMS                                                                                                           LABELS                                                          
+192.168.67.202:8443/compassio/backend:05f030acf642a6155077a0a5aeff56cf87d628bb                                                                                  application/vnd.docker.distribution.manifest.v2+json      sha256:60534a3f5b9d68fdd079557bda840837f158c819fd14353de68cf77f6a5d7afe 185.6 MiB linux/amd64                                                                                                         io.cri-containerd.image=managed                                 
+192.168.67.202:8443/compassio/backend@sha256:60534a3f5b9d68fdd079557bda840837f158c819fd14353de68cf77f6a5d7afe                                                   application/vnd.docker.distribution.manifest.v2+json      sha256:60534a3f5b9d68fdd079557bda840837f158c819fd14353de68cf77f6a5d7afe 185.6 MiB linux/amd64                                                                                                         io.cri-containerd.image=managed                                 
+192.168.67.202:8443/compassio/buildkit:v0.20.2-rootless                                                                                                         application/vnd.oci.image.manifest.v1+json                sha256:ac0f37ea0e106025cb54cca41e9c8b2cecb7813516a4de66adadaeca7382202f 98.7 MiB  linux/amd64                                                                                                         io.cri-containerd.image=managed                                 
+=== namespaces
+time="2026-11-11T08:55:56+08:00" level=warning msg="DEPRECATION: The `enable_cdi` property of `[plugins.\"io.containerd.cri.v1.runtime\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled."
+NAME   LABELS 
+k8s.io        

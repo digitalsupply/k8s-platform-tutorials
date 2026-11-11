@@ -1,0 +1,36 @@
+Warning: Permanently added '192.168.67.201' (ED25519) to the list of known hosts.
+=== docker info
+ Server Version: 29.9.2
+ Storage Driver: overlayfs
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Security Options:
+ Kernel Version: 6.8.0-147-generic
+ Operating System: Ubuntu 24.04.4 LTS
+ Docker Root Dir: /var/lib/docker
+ Live Restore Enabled: false
+=== docker ps
+CONTAINER ID   IMAGE     NAMES     STATUS
+=== docker images
+REPOSITORY                                                   TAG                                        SIZE
+registry.cn-hangzhou.aliyuncs.com/go404/deeptutor            870f2dbe948ce9761e5430c6fa74677f77d80f7e   4.5GB
+registry.cn-hangzhou.aliyuncs.com/go404/deeptutor            latest                                     4.5GB
+192.168.67.202:8443/deeptutor/deeptutor                      870f2dbe948ce9761e5430c6fa74677f77d80f7e   4.5GB
+192.168.67.202:8443/china-study-free/web                     694f79f                                    664MB
+192.168.67.202:8443/china-study-free/web                     66ebfef                                    664MB
+192.168.67.202:8443/china-study-free/web                     4bfb618                                    664MB
+192.168.67.202:8443/china-study-free/web                     496103b                                    538MB
+dfcheck                                                      latest                                     23.8MB
+manim-lean2                                                  latest                                     2.23GB
+manim-lean                                                   latest                                     1.88GB
+manim-test                                                   latest                                     2.94GB
+192.168.67.202:8443/compassio/backend                        05f030acf642a6155077a0a5aeff56cf87d628bb   795MB
+registry.cn-hangzhou.aliyuncs.com/go404/compassio-backend    05f030acf642a6155077a0a5aeff56cf87d628bb   795MB
+192.168.67.202:8443/compassio/frontend                       05f030acf642a6155077a0a5aeff56cf87d628bb   93.8MB
+=== docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          32        0         20.69GB   14.21GB (68%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     12        0         1.037GB   0B
+=== overlay mounts

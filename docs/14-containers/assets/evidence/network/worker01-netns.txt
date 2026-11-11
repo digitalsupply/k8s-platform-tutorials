@@ -1,0 +1,111 @@
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+=== cilium netns 1174
+lo               UNKNOWN        127.0.0.1/8 
+eth0             UP             10.0.0.122/24 fe80::be24:11ff:fef1:9e7a/64 
+eth1             UP             172.16.1.122/16 fe80::be24:11ff:fe41:7123/64 
+cilium_net@cilium_host UP             
+cilium_host@cilium_net UP             10.244.3.57/32 
+lxc_health@if6   UP             
+lxcfdc133e30ba8@if8 UP             
+lxce05fb9ef45ad@if10 UP             
+lxcf91c4e4be9a3@if12 UP             
+lxc5766b464a6eb@if18 UP             
+lxc90a586a5d285@if20 UP             
+lxc062bb7d63892@if22 UP             
+lxc8b0d7245c10e@if24 UP             
+lxcb214837a397a@if28 UP             
+lxcb85bbb38785b@if30 UP             
+lxcb18a3a045325@if32 UP             
+lxc90e2d6f87fc9@if34 UP             
+lxcf2ff3b45183b@if36 UP             
+lxc5585b28fc9ce@if38 UP             
+lxc14b4ff859a17@if40 UP             
+lxca3c0a460a59a@if42 UP             
+lxc8060288d20ac@if44 UP             
+lxc4dfd52471bfd@if46 UP             
+lxc80861b4025a7@if48 UP             
+lxc6bcd0544c67f@if56 UP             
+lxc80cc956e36f5@if58 UP             
+lxc0087e9f98ab8@if64 UP             
+lxcb4f0686088c1@if66 UP             
+lxc6ed4338afdb5@if68 UP             
+lxcb9fd695dcf11@if70 UP             
+lxc4e72b5f1bf67@if74 UP             
+lxc6fc009781149@if76 UP             
+lxc9c520a8cf778@if78 UP             
+lxc2ff4355a5d87@if80 UP             
+lxc5984a4e9f70a@if82 UP             
+lxc87af7cbf5d0c@if84 UP             
+lxca2a0363b7817@if88 UP             
+lxc61eb16bbbc8e@if90 UP             
+lxc2417a00c593c@if98 UP             
+lxc40c560c1100e@if104 UP             
+lxc313038d19e2e@if106 UP             
+default via 10.0.0.1 dev eth0 proto static 
+10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.122 
+10.244.0.0/24 via 10.0.0.61 dev eth0 proto kernel 
+10.244.1.0/24 via 10.0.0.121 dev eth0 proto kernel 
+10.244.2.0/24 via 10.0.0.120 dev eth0 proto kernel 
+10.244.3.0/24 via 10.244.3.57 dev cilium_host proto kernel src 10.244.3.57 
+10.244.3.57 dev cilium_host proto kernel scope link 
+10.244.4.0/24 via 10.0.0.123 dev eth0 proto kernel 
+10.244.5.0/24 via 10.0.0.124 dev eth0 proto kernel 
+172.16.0.0/16 dev eth1 proto kernel scope link src 172.16.1.122 
+=== frpc netns 2028
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0@if9         UP             10.244.3.145/32 fe80::406c:6eff:fe71:6d1e/64 
+default via 10.244.3.57 dev eth0 mtu 1500 
+10.244.3.57 dev eth0 scope link 
+=== node-exporter netns 1072
+lo               UNKNOWN        127.0.0.1/8 
+eth0             UP             10.0.0.122/24 fe80::be24:11ff:fef1:9e7a/64 
+eth1             UP             172.16.1.122/16 fe80::be24:11ff:fe41:7123/64 
+cilium_net@cilium_host UP             
+cilium_host@cilium_net UP             10.244.3.57/32 
+lxc_health@if6   UP             
+lxcfdc133e30ba8@if8 UP             
+lxce05fb9ef45ad@if10 UP             
+lxcf91c4e4be9a3@if12 UP             
+lxc5766b464a6eb@if18 UP             
+lxc90a586a5d285@if20 UP             
+lxc062bb7d63892@if22 UP             
+lxc8b0d7245c10e@if24 UP             
+lxcb214837a397a@if28 UP             
+lxcb85bbb38785b@if30 UP             
+lxcb18a3a045325@if32 UP             
+lxc90e2d6f87fc9@if34 UP             
+lxcf2ff3b45183b@if36 UP             
+lxc5585b28fc9ce@if38 UP             
+lxc14b4ff859a17@if40 UP             
+lxca3c0a460a59a@if42 UP             
+lxc8060288d20ac@if44 UP             
+lxc4dfd52471bfd@if46 UP             
+lxc80861b4025a7@if48 UP             
+lxc6bcd0544c67f@if56 UP             
+lxc80cc956e36f5@if58 UP             
+lxc0087e9f98ab8@if64 UP             
+lxcb4f0686088c1@if66 UP             
+lxc6ed4338afdb5@if68 UP             
+lxcb9fd695dcf11@if70 UP             
+lxc4e72b5f1bf67@if74 UP             
+lxc6fc009781149@if76 UP             
+lxc9c520a8cf778@if78 UP             
+lxc2ff4355a5d87@if80 UP             
+lxc5984a4e9f70a@if82 UP             
+lxc87af7cbf5d0c@if84 UP             
+lxca2a0363b7817@if88 UP             
+lxc61eb16bbbc8e@if90 UP             
+lxc2417a00c593c@if98 UP             
+lxc40c560c1100e@if104 UP             
+lxc313038d19e2e@if106 UP             
+default via 10.0.0.1 dev eth0 proto static 
+10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.122 
+10.244.0.0/24 via 10.0.0.61 dev eth0 proto kernel 
+10.244.1.0/24 via 10.0.0.121 dev eth0 proto kernel 
+10.244.2.0/24 via 10.0.0.120 dev eth0 proto kernel 
+10.244.3.0/24 via 10.244.3.57 dev cilium_host proto kernel src 10.244.3.57 
+10.244.3.57 dev cilium_host proto kernel scope link 
+10.244.4.0/24 via 10.0.0.123 dev eth0 proto kernel 
+10.244.5.0/24 via 10.0.0.124 dev eth0 proto kernel 
+172.16.0.0/16 dev eth1 proto kernel scope link src 172.16.1.122 
+=== host veth/cali
