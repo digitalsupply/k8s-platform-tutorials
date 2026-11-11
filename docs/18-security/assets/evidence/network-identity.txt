@@ -1,0 +1,10 @@
+=== NetworkPolicy
+total 23
+empty podSelector: tekton-pipelines/allow-kubelet-health-probes types= ['Ingress']
+
+=== Cilium auth/encryption
+  mesh-auth-enabled: "false"
+
+=== service mesh
+
+=== external secrets

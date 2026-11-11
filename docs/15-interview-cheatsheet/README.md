@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE / 安全
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -11,7 +11,8 @@
 > 详细原理：[04 Monitoring](../04-monitoring-gitops/README.md)、[05 Linux](../05-linux/README.md)、
 > [07 Networking](../07-networking/README.md)、[09 生命周期](../09-incidents-and-readiness/README.md)、
 > [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)、
-> [16 中间件 OS](../16-middleware-os/README.md)、[17 SRE](../17-sre/README.md)。
+> [16 中间件 OS](../16-middleware-os/README.md)、[17 SRE](../17-sre/README.md)、
+> [18 安全](../18-security/README.md)。
 
 ## 一页速查
 
@@ -188,6 +189,25 @@
 | Postmortem | 时间线/影响/5 Whys/行动项 | 模板已补，owner 待完善 |
 | 变更相关性 | 80% 经验值 + deploy marker | 7 轮中 3 轮直接触发故障 |
 
+## 一页速查（Linux / K8s / 云原生安全）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| sudo | 白名单，禁 NOPASSWD ALL | `cloud-user NOPASSWD:ALL` |
+| capabilities | drop ALL，按需 add | 99/163 drop ALL；10 privileged |
+| no_new_privs | allowPrivilegeEscalation=false | 93/163；backend NNP=0 |
+| SSH | 禁 root/密码/agent forwarding | 全开，无 CA |
+| auditd | 关键文件/execve/setuid | m01 0 规则；Ubuntu inactive |
+| AIDE/Falco | 完整性/运行时 | 均未部署 |
+| PAM | faillock + pwquality | faillock 无；Ubuntu pwquality 无 |
+| 补丁 | CVE 分级 + 灰度 | m01 245 security（4 critical） |
+| PSA | restricted | 25 ns 无 label；1 restricted |
+| seccomp | RuntimeDefault | 123 none / 39 RuntimeDefault |
+| Secret | 加密 + 外部化 | 无 encryption provider；128 Secret |
+| NetworkPolicy | 默认拒绝 | 23 条；1 个全选隔离 |
+| mTLS | SPIFFE/mesh | Cilium mesh-auth=false |
+| 供应链 | 扫描+阻断+签名 | 扫描部分开；阻断/签名无 |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -312,7 +332,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [10-irreversibles.md](10-irreversibles.md) | 不可逆操作/状态/决策：dry-run、XFS/LVM、etcd、证书、CIDR、分区、命名、区域 |
 | [11-middleware-os.md](11-middleware-os.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、page cache、fd、cgroup、JVM 容器化 |
 | [12-sre.md](12-sre.md) | SLI/SLO/Error Budget、burn rate、症状告警、MTTD/MTTA/MTTR、SEV/IC、postmortem、变更相关性 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 140+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [13-security.md](13-security.md) | sudo/capability/NNP、SSH CA、auditd/AIDE/Falco、PAM、补丁、CIS/等保/国密、供应链、PSA/NetworkPolicy/mTLS |
+| [00-verification-matrix.md](00-verification-matrix.md) | 160+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

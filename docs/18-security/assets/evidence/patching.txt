@@ -1,0 +1,23 @@
+=== Rocky m01 updates
+上次元数据过期检查：0:53:28 前，执行于 2026年11月11日 星期三 13时43分03秒。
+更新信息概要 可用
+    245 安全更新通知
+          4 严重安全通告
+        143 重要安全通告
+         89 中级安全通告
+          9 低级安全通告
+      6 错误修复通知
+kernel=5.14.0-570.58.1.el9_6.x86_64
+
+=== Ubuntu worker01 updates
+enabled
+51
+Listing...
+apparmor/jammy-updates 3.0.4-2ubuntu2.5 amd64 [upgradable from: 3.0.4-2ubuntu2.4]
+cloud-init/jammy-updates 26.1-0ubuntu1~22.04.1 all [upgradable from: 25.2-0ubuntu1~22.04.1]
+cri-tools/unknown 1.35.0-1.1 amd64 [upgradable from: 1.30.1-1.1]
+fwupd/jammy-updates 2.0.20-1ubuntu2~22.04.2 amd64 [upgradable from: 1.7.9-1~22.04.3]
+kernel=5.15.0-202-generic
+
+=== K8s node reboot/drain automation
+no reboot orchestrator CRD

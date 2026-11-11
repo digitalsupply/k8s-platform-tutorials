@@ -8,6 +8,8 @@
 >
 > 容器运行时（Docker/containerd/CRI/镜像/overlay/安全）单独放在
 > [14 Containers](../14-containers/README.md)。
+> 主机安全基线（SSH/sudo/auditd/PAM/补丁）与 K8s/供应链安全见
+> [18 安全](../18-security/README.md)。
 > 对应的面试一句话答案见 [15 面试速查](../15-interview-cheatsheet/README.md)。
 
 ## 当时的情况

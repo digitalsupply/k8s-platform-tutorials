@@ -1,0 +1,74 @@
+=== OS / SSH / sudo / audit / PAM / kernel hardening
+## 10.0.0.61
+VERSION_ID="9.6"
+PRETTY_NAME="Rocky Linux 9.6 (Blue Onyx)"
+5.14.0-570.58.1.el9_6.x86_64
+--- sshd
+maxauthtries 6
+permitrootlogin yes
+pubkeyauthentication yes
+passwordauthentication yes
+x11forwarding yes
+permitemptypasswords no
+allowagentforwarding yes
+--- ssh CA
+no-CA
+--- authorized_keys files
+2
+--- sudoers
+root	ALL=(ALL) 	ALL
+%wheel	ALL=(ALL)	ALL
+# %wheel	ALL=(ALL)	NOPASSWD: ALL
+# %users  ALL=/sbin/mount /mnt/cdrom, /sbin/umount /mnt/cdrom
+cloud-user ALL=(ALL) NOPASSWD:ALL
+--- auditd
+active
+No rules
+--- pam
+password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
+password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
+--- mac
+Disabled
+--- hardening
+2
+1
+0
+1
+0
+--- tools
+
+## 10.0.0.122
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+VERSION_ID="22.04"
+5.15.0-202-generic
+--- sshd
+maxauthtries 6
+permitrootlogin yes
+pubkeyauthentication yes
+passwordauthentication yes
+x11forwarding yes
+permitemptypasswords no
+allowagentforwarding yes
+--- ssh CA
+no-CA
+--- authorized_keys files
+2
+--- sudoers
+root	ALL=(ALL:ALL) ALL
+%admin ALL=(ALL) ALL
+%sudo	ALL=(ALL:ALL) ALL
+--- auditd
+inactive
+--- pam
+--- mac
+apparmor module is loaded.
+22 profiles are loaded.
+22 profiles are in enforce mode.
+--- hardening
+2
+1
+1
+1
+1
+--- tools
+

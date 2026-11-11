@@ -98,6 +98,7 @@ Pod security          35 hostNetwork / 10 privileged / 19 add capabilities
   `COPY package.json` 单独一层、tag 与发布策略；
 - Ceph RBD/PVC：[06 Storage](../06-storage-ceph/README.md)；
 - Redis/Kafka/Nginx/Java 的 OS 层（THP、page cache、fd、cgroup、JVM）：[16 中间件 OS](../16-middleware-os/README.md)；
+- sudo/capability/NNP、PSA/seccomp/NetworkPolicy、镜像扫描与签名：[18 安全](../18-security/README.md)；
 - PVE 宿主/VM：[12 Proxmox](../12-proxmox-pve/README.md)。
 
 ## 配套脚本

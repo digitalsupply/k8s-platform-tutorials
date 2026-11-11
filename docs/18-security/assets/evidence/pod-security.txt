@@ -1,0 +1,38 @@
+=== pods / containers
+pods 138 containers 211
+hostNetwork pods 35
+hostPath pods 41
+privileged containers 10
+securityContext {'allowPrivilegeEscalation=false': 93, 'runAsNonRoot=true': 46, 'readOnlyRootFilesystem=true': 89}
+drop ALL 99 of 163
+seccomp {'RuntimeDefault': 39, '(none)': 123, 'Unconfined': 1}
+automount not disabled (pods) 125
+
+=== PSA labels
+{'(none)': 25, 'baseline': 1, 'privileged': 2, 'restricted': 1}
+china-study-free {'pod-security.kubernetes.io/enforce': 'baseline'}
+etcd-backup {'pod-security.kubernetes.io/audit': 'privileged', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'privileged'}
+metallb-system {'pod-security.kubernetes.io/audit': 'privileged', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'privileged'}
+tekton-pipelines {'pod-security.kubernetes.io/enforce': 'restricted'}
+
+=== sample caps / NNP
+compassio-backend:
+CapEff:	00000000a80425fb
+CapBnd:	00000000a80425fb
+NoNewPrivs:	0
+ceph ctrlplugin:
+CapEff:	0000000000000000
+CapBnd:	0000000000000000
+NoNewPrivs:	0
+
+=== AppArmor annotations
+apparmor annotations 0
+=== privileged containers by namespace
+{'ceph-csi-rbd': 9, 'cicd': 1}
+
+=== runtime security tooling
+falco pods=0
+falco=no
+aide=no
+oscap=no
+lynis=no

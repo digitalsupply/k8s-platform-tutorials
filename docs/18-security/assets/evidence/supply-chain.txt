@@ -1,0 +1,22 @@
+=== Harbor projects
+china-study-free public= false auto_scan= None prevent_vul= None
+compassio public= false auto_scan= true prevent_vul= None
+deeptutor public= true auto_scan= true prevent_vul= None
+library public= true auto_scan= None prevent_vul= None
+openwebui public= false auto_scan= false prevent_vul= None
+compassio immutable_tag_rules= 0
+deeptutor immutable_tag_rules= 0
+openwebui immutable_tag_rules= 0
+
+=== image scan summary
+compassio/frontend ['05f030acf642a6155077a0a5aeff56cf87d628bb', 'fa918117885dc5e87546e1ef88bb8aa4c654362d'] scan= {'fixable': 0, 'summary': {}, 'total': 0}
+deeptutor/deeptutor ['870f2dbe948ce9761e5430c6fa74677f77d80f7e'] scan= {'fixable': 41, 'summary': {'Critical': 2, 'High': 288, 'Low': 880, 'Medium': 547, 'Unknown': 23}, 'total': 1740}
+openwebui/open-webui ['a077c804'] scan= None
+
+=== signing / sbom / policy tools
+cosign=no
+notation=no
+trivy=no
+syft=no
+grype=no
+error: the server doesn't have a resource type "clusterpolicy"

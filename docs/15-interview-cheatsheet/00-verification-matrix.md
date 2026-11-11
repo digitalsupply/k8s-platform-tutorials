@@ -278,7 +278,39 @@
 | Blackbox/Probe | ❌ | 0 Probe，无 blackbox |
 | 业务 SLO | ❌ | 无正式 SLO/burn 规则 |
 
-## 十二、结论
+## 十二、Linux / K8s / 云原生安全
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| sudo 最小权限 | ❌ | m01 `cloud-user NOPASSWD:ALL` |
+| capabilities 裁剪 | ⚠️ | 99/163 drop ALL；10 privileged |
+| no_new_privs | ⚠️ | 93/163 allowPrivilegeEscalation=false；backend NNP=0 |
+| SSH 加固 | ❌ | root yes、密码 yes、agent forwarding yes |
+| SSH CA | ❌ | 无 `TrustedUserCAKeys`；每节点 2 个 authorized_keys |
+| auditd | ❌ | m01 active 0 规则；Ubuntu inactive |
+| AIDE/Falco | ❌ | 均未安装/部署 |
+| PAM faillock/pwquality | ❌ | faillock 无；Ubuntu pwquality 无 |
+| SELinux/AppArmor | ⚠️ | SELinux disabled；AppArmor 22 profiles；Pod 注解 0 |
+| 内核硬化 | ⚠️ | m01 dmesg_restrict=0/ptrace_scope=0 |
+| 安全补丁 | ❌ | m01 245 security（4 critical）；Ubuntu 51 |
+| livepatch/kpatch | ❌ | 未安装 |
+| PSA 覆盖 | ❌ | 25 ns 无 label；1 restricted/1 baseline/2 privileged |
+| securityContext | ⚠️ | 46 runAsNonRoot / 89 readOnlyRoot / 93 NNP / 99 drop ALL |
+| seccomp | ❌ | 123 none / 39 RuntimeDefault / 1 Unconfined |
+| privileged/hostNetwork/hostPath | ❌ | 10 / 35 / 41 |
+| apiserver audit | ❌ | 无 audit policy |
+| etcd 静态加密 | ❌ | 无 encryption provider |
+| Secret 外部化 | ⚠️ | 128 Secret；Sealed Secrets；无 Vault/ESO |
+| RBAC/SA token | ❌ | 3 cluster-admin；125/138 自动挂 SA token |
+| NetworkPolicy | ❌ | 23 条；仅 1 个全选隔离 |
+| mTLS/零信任 | ❌ | Cilium mesh-auth=false；无 mesh/SPIRE |
+| 镜像扫描 | ⚠️ | compassio/deeptutor 开；openwebui 关 |
+| 漏洞门禁 | ❌ | prevent_vul 全无；deeptutor 1740 漏洞 |
+| 镜像签名/SBOM | ❌ | cosign/notation/syft/trivy 均无 |
+| CIS/OpenSCAP | ❌ | 未安装 oscap/lynis |
+| 等保/国密 | 📚 | 有要求/方法，环境未实现 |
+
+## 十三、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；
