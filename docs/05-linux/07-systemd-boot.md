@@ -7,6 +7,9 @@
 >
 > 这一章回答：**机器从按下电源到业务 Ready，中间发生了什么；为什么 PVE 启动要 3 分 55 秒；
 > 为什么 `network-online.target` 会拖慢 13 秒；`systemd-run` 怎么临时限内存/CPU。**
+>
+> 虚拟化层引导（UEFI/Secure Boot/PXE/initramfs 缺驱动）见
+> [12 Proxmox 10-kvm-qemu-virtio-cloud-boot](../12-proxmox-pve/10-kvm-qemu-virtio-cloud-boot.md)。
 
 ## 1. 当时的情况
 

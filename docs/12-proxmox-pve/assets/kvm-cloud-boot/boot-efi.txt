@@ -1,0 +1,31 @@
+=== m01 initramfs
+/boot/initramfs-5.14.0-570.58.1.el9_6.x86_64.img
+-rw-r--r--   1 root     root        15624 Oct 31  2025 usr/lib/modules/5.14.0-570.58.1.el9_6.x86_64/kernel/drivers/block/virtio_blk.ko.xz
+-rw-r--r--   1 root     root        41076 Oct 31  2025 usr/lib/modules/5.14.0-570.58.1.el9_6.x86_64/kernel/drivers/net/virtio_net.ko.xz
+-rw-r--r--   1 root     root        11464 Oct 31  2025 usr/lib/modules/5.14.0-570.58.1.el9_6.x86_64/kernel/drivers/scsi/virtio_scsi.ko.xz
+drwxr-xr-x   2 root     root            0 Nov  4  2025 usr/lib/modules/5.14.0-570.58.1.el9_6.x86_64/kernel/fs/xfs
+-rw-r--r--   1 root     root       767184 Oct 31  2025 usr/lib/modules/5.14.0-570.58.1.el9_6.x86_64/kernel/fs/xfs/xfs.ko.xz
+-rwxr-xr-x   1 root     root         2598 May  3  2025 usr/sbin/fsck.xfs
+-rwxr-xr-x   1 root     root       725072 May  3  2025 usr/sbin/xfs_db
+-rwxr-xr-x   1 root     root          786 May  3  2025 usr/sbin/xfs_metadump
+-rwxr-xr-x   1 root     root       702688 May  3  2025 usr/sbin/xfs_repair
+efi:
+no-efi
+
+=== worker01 efi
+no-efi
+System:
+    Not booted with EFI
+
+
+=== gitlab 201 efi/sb
+/sys/firmware/efi
+SecureBoot disabled
+BootCurrent: 0004
+Timeout: 0 seconds
+BootOrder: 0004,0000,0001,0002
+Boot0000* EFI Network	AcpiEx(VMBus,,)/VenHw(9b17e5a2-0891-42dd-b653-80b5c22809ba,635161f83edfc546913ff2d2f965ed0e5d664a3c69ee344a835bb1a50d4de748)/MAC(000000000000,0)/IPv4(0.0.0.00.0.0.0,0,0)
+      dp: 02 02 18 00 00 00 00 00 00 00 00 00 00 00 00 00 56 4d 42 75 73 00 00 00 / 01 04 34 00 a2 e5 17 9b 91 08 dd 42 b6 53 80 b5 c2 28 09 ba 63 51 61 f8 3e df c5 46 91 3f f2 d2 f9 65 ed 0e 5d 66 4a 3c 69 ee 34 4a 83 5b b1 a5 0d 4d e7 48 / 03 0b 25 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 / 03 0c 1b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 / 7f ff 04 00
+Boot0001* EFI SCSI Device	AcpiEx(VMBus,,)/VenHw(9b17e5a2-0891-42dd-b653-80b5c22809ba,d96361baa104294db60572e2ffb1dc7f324ef591814ec24ab5c5163d010f83d6)/SCSI(0,1)
+      dp: 02 02 18 00 00 00 00 00 00 00 00 00 00 00 00 00 56 4d 42 75 73 00 00 00 / 01 04 34 00 a2 e5 17 9b 91 08 dd 42 b6 53 80 b5 c2 28 09 ba d9 63 61 ba a1 04 29 4d b6 05 72 e2 ff b1 dc 7f 32 4e f5 91 81 4e c2 4a b5 c5 16 3d 01 0f 83 d6 / 03 02 08 00 00 00 01 00 / 7f ff 04 00
+Boot0002* EFI SCSI Device	AcpiEx(VMBus,,)/VenHw(9b17e5a2-0891-42dd-b653-80b5c22809ba,d96361baa104294db60572e2ffb1dc7f324ef591814ec24ab5c5163d010f83d6)/SCSI(0,0)

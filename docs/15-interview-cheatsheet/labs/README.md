@@ -263,4 +263,42 @@ kubectl get hpa,vpa -A
 
 > 详细解释与纠偏见 [01 Kubernetes 10-k8s-core-evidence](../../01-kubernetes-k3s/10-k8s-core-evidence.md)。
 
+## 17. 虚拟化 / 云主机 / 引导
+
+```bash
+# KVM/QEMU
+qemu-system-x86_64 --version
+ls -l /dev/kvm
+qm showcmd 119 --pretty | head -40
+qm config 119 | grep -E 'bios|boot|scsi|efidisk'
+
+# Guest 虚拟化识别
+systemd-detect-virt
+lscpu | grep -E 'Hypervisor|Virtualization'
+lspci | grep -i virtio
+ethtool -i eth0
+lsblk -o NAME,MODEL
+dmidecode -s system-product-name
+vmstat 1 3
+
+# IMDS
+curl -m 2 -D- http://169.254.169.254/latest/meta-data/
+ip route get 169.254.169.254
+
+# cloud-init
+cloud-init status --long
+cloud-init analyze show
+cloud-init analyze blame
+tail -100 /var/log/cloud-init-output.log
+
+# 引导/initramfs
+ls -d /sys/firmware/efi
+bootctl status
+efibootmgr -v
+mokutil --sb-state
+lsinitramfs /boot/initrd.img-$(uname -r) | grep -E 'virtio|hv_|xfs|ext4'
+```
+
+> 详细解释见 [12 Proxmox 10-kvm-qemu-virtio-cloud-boot](../../12-proxmox-pve/10-kvm-qemu-virtio-cloud-boot.md)。
+
 > 本手册的命令都可以在仓库 `assets/evidence/` 找到对应输出。

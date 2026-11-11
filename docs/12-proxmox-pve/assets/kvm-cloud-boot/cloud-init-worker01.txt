@@ -1,0 +1,81 @@
+=== worker01 cloud-init ===
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+status: done
+extended_status: done
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:00:22 +0000
+detail: DataSourceNoCloud [seed=/dev/sr0]
+errors: []
+recoverable_errors: {}
+--- analyze show
+-- Boot Record 01 --
+The total time elapsed since completing an event is printed after the "@" character.
+The time the event takes is printed after the "+" character.
+
+Starting stage: modules-config
+|`->config-ssh_import_id previously ran @00.02000s +00.00000s
+|`->config-locale previously ran @00.02100s +00.00000s
+|`->config-grub_dpkg previously ran @00.02100s +00.00100s
+|`->config-apt_configure previously ran @00.02200s +00.00000s
+|`->config-runcmd previously ran @00.02200s +00.00100s
+|`->config-byobu previously ran @00.02300s +00.00100s
+Finished stage: (modules-config) 00.02500 seconds
+
+Starting stage: modules-final
+|`->config-write_files_deferred previously ran @01.44000s +00.00100s
+|`->config-reset_rmc previously ran @01.44100s +00.00000s
+|`->config-scripts_vendor previously ran @01.44100s +00.00100s
+|`->config-scripts_per_once previously ran @01.44200s +00.00100s
+|`->config-scripts_per_boot ran successfully and took 0.000 seconds @01.44300s +00.00000s
+|`->config-scripts_per_instance previously ran @01.44400s +00.00000s
+|`->config-scripts_user previously ran @01.44400s +00.00100s
+|`->config-ssh_authkey_fingerprints previously ran @01.44500s +00.00000s
+|`->config-keys_to_console previously ran @01.44500s +00.00100s
+|`->config-install_hotplug previously ran @01.44600s +00.00000s
+|`->config-final_message ran successfully and took 0.008 seconds @01.44700s +00.00800s
+Finished stage: (modules-final) 00.04400 seconds
+
+Total Time: 0.06900 seconds
+
+-- Boot Record 02 --
+--- analyze blame
+-- Boot Record 01 --
+     00.00800s (modules-final/config-final_message)
+     00.00100s (modules-final/config-write_files_deferred)
+     00.00100s (modules-final/config-scripts_vendor)
+     00.00100s (modules-final/config-scripts_user)
+     00.00100s (modules-final/config-scripts_per_once)
+     00.00100s (modules-final/config-keys_to_console)
+     00.00100s (modules-config/config-runcmd)
+     00.00100s (modules-config/config-grub_dpkg)
+     00.00100s (modules-config/config-byobu)
+     00.00000s (modules-final/config-ssh_authkey_fingerprints)
+     00.00000s (modules-final/config-scripts_per_instance)
+     00.00000s (modules-final/config-scripts_per_boot)
+     00.00000s (modules-final/config-reset_rmc)
+     00.00000s (modules-final/config-install_hotplug)
+--- datasource
+nocloud
+unknown
+config-disk (/dev/sr0)
+--- output log
+ci-info: | Route | Destination | Gateway  |    Genmask    | Interface | Flags |
+ci-info: +-------+-------------+----------+---------------+-----------+-------+
+ci-info: |   0   |   0.0.0.0   | 10.0.0.1 |    0.0.0.0    |    eth0   |   UG  |
+ci-info: |   1   |   10.0.0.0  | 0.0.0.0  | 255.255.255.0 |    eth0   |   U   |
+ci-info: |   2   |  172.16.0.0 | 0.0.0.0  |  255.255.0.0  |    eth1   |   U   |
+ci-info: +-------+-------------+----------+---------------+-----------+-------+
+ci-info: +++++++++++++++++++Route IPv6 info+++++++++++++++++++
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: | Route | Destination | Gateway | Interface | Flags |
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: |   0   |  fe80::/64  |    ::   |    eth1   |   U   |
+ci-info: |   1   |  fe80::/64  |    ::   |    eth0   |   U   |
+ci-info: |   2   |    local    |    ::   |    eth1   |   U   |
+ci-info: |   3   |    local    |    ::   |    eth0   |   U   |
+ci-info: |   4   |  multicast  |    ::   |    eth1   |   U   |
+ci-info: |   5   |  multicast  |    ::   |    eth0   |   U   |
+ci-info: +-------+-------------+---------+-----------+-------+
+Cloud-init v. 25.2-0ubuntu1~22.04.1 running 'modules:config' at Mon, 09 Nov 2026 12:29:12 +0000. Up 21.80 seconds.
+Cloud-init v. 25.2-0ubuntu1~22.04.1 running 'modules:final' at Mon, 09 Nov 2026 12:29:13 +0000. Up 22.87 seconds.
+Cloud-init v. 25.2-0ubuntu1~22.04.1 finished at Mon, 09 Nov 2026 12:29:14 +0000. Datasource DataSourceNoCloud [seed=/dev/sr0].  Up 22.98 seconds

@@ -1,0 +1,22 @@
+=== harbor-202 ===
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+systemd-detect-virt: microsoft
+efi dir:
+/sys/firmware/efi
+virt:
+BIOS Model name:                         Intel(R) Core(TM) i7-14700KF None CPU @ 3.3GHz
+Hypervisor vendor:                       Microsoft
+Virtualization type:                     full
+virtio/hv pci:
+drivers:
+driver: hv_netvsc
+version: 6.8.0-147-generic
+firmware-version: N/A
+NAME    MODEL
+sda     Virtual Disk
+├─sda1  
+├─sda14 
+smart:
+bash: line 7: smartctl: command not found
+steal vmstat:
+ 0  0      0 157592 244952 5177712    0    0     0     0  322  385  0  1 100  0  0  0

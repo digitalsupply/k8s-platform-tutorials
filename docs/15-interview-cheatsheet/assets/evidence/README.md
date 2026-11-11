@@ -39,6 +39,12 @@
 - QoS、LimitRange/Quota、PDB、探针、证书、etcd 备份；
 - CRD/Operator、Webhook、APIService、多租户、HPA/VPA、Cilium、Gateway API。
 
+## 虚拟化 / 云主机 / 引导证据
+
+见 [`12-proxmox-pve/assets/kvm-cloud-boot/`](../../../12-proxmox-pve/assets/kvm-cloud-boot/README.md)：
+
+- QEMU/KVM、virtio、virsh/libvirt、云 vs 物理、IMDS、cloud-init、Packer、UEFI/Secure Boot/PXE/initramfs。
+
 ## 全量验证矩阵
 
 [`00-verification-matrix.md`](../../00-verification-matrix.md) 汇总了 Linux/网络/存储/K8s 共 60+ 条断言的

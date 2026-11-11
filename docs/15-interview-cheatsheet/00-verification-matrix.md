@@ -114,7 +114,25 @@
 | Cilium eBPF | ✅ | 1.20.4，KPR=true，Hubble OK |
 | Gateway API | ⚠️ | 6 CRD 已装，0 个 Gateway/HTTPRoute |
 
-## 五、结论
+## 五、虚拟化 / 云主机 / 引导
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| KVM 虚拟化 CPU，QEMU 模拟设备 | ✅ | QEMU 9.2.0、/dev/kvm、qm showcmd |
+| virtio 是半虚拟化驱动 | ✅ | Guest virtio_net/scsi/balloon；Hyper-V hv_netvsc |
+| virsh 是 libvirt CLI | ✅ | virsh/libvirtd 未安装；PVE 用 qm |
+| 云主机看不到真实 SMART | ✅ | Guest QEMU HARDDISK/Virtual Disk；smartctl 无真实盘 |
+| 云主机有 steal time | ✅ | vmstat st 列；当前 0，机制存在 |
+| 云主机不能改物理网卡 | ✅ | ethtool 显示 virtio_net/hv_netvsc |
+| IMDS 169.254.169.254 | ✅ | 所有 Guest curl 超时；无云元数据 |
+| IMDSv2 防 SSRF | 📚 | 本环境无 IMDS，按 AWS 通用流程 |
+| cloud-init 调试 | ✅ | status/analyze/log；201 首启 apt 121s |
+| Packer 金镜像 | ❌/📚 | Packer 未安装；用 virt-customize + 9010 手工模板 |
+| UEFI/Secure Boot | ✅ | 9010 UEFI 无 SecureBoot；Hyper-V Gen2 Off；K8s Legacy |
+| PXE/网络引导 | ⚠️ | Hyper-V UEFI 有 EFI Network 项；本环境无 PXE 服务 |
+| initramfs 缺驱动会起不来 | ✅ | KVM virtio_scsi、Hyper-V hv_storvsc 均在 initramfs |
+
+## 六、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

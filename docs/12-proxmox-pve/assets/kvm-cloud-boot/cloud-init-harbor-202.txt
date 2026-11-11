@@ -1,0 +1,81 @@
+=== harbor-202 cloud-init ===
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+status: done
+extended_status: done
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:00:05 +0000
+detail: DataSourceNoCloud [seed=/dev/sr0]
+errors: []
+recoverable_errors: {}
+--- analyze show
+-- Boot Record 01 --
+The total time elapsed since completing an event is printed after the "@" character.
+The time the event takes is printed after the "+" character.
+
+Starting stage: init-local
+|`->no cache found (duration: 0.000s) @00.00200s +00.00000s
+|`->found local data from DataSourceNoCloud (duration: 0.029s) @00.00500s +00.02900s
+Finished stage: (init-local) 00.27200 seconds
+
+Starting stage: init-network
+|`->restored from cache with run check: DataSourceNoCloud [seed=/dev/sr0] (duration: 0.001s) @01.61300s +00.00100s
+|`->setting up datasource (duration: 0.000s) @01.62000s +00.00000s
+|`->reading and applying user-data (duration: 0.002s) @01.62300s +00.00300s
+|`->reading and applying vendor-data (duration: 0.000s) @01.62600s +00.00000s
+|`->reading and applying vendor-data2 (duration: 0.000s) @01.62600s +00.00000s
+|`->activating datasource (duration: 0.000s) @01.63800s +00.00000s
+|`->config-seed_random ran successfully and took 0.000 seconds (duration: 0.000s) @01.64300s +00.00000s
+|`->config-growpart ran successfully and took 0.383 seconds (duration: 0.383s) @01.64300s +00.38300s
+|`->config-resizefs ran successfully and took 0.141 seconds (duration: 0.141s) @02.02700s +00.14100s
+|`->config-mounts ran successfully and took 0.000 seconds (duration: 0.001s) @02.16800s +00.00000s
+|`->config-set_hostname ran successfully and took 0.000 seconds (duration: 0.000s) @02.16900s +00.00000s
+|`->config-update_hostname ran successfully and took 0.000 seconds (duration: 0.000s) @02.16900s +00.00000s
+|`->config-update_etc_hosts ran successfully and took 0.003 seconds (duration: 0.003s) @02.16900s +00.00300s
+|`->config-users_groups ran successfully and took 0.102 seconds (duration: 0.102s) @02.17200s +00.10200s
+|`->config-ssh ran successfully and took 0.942 seconds (duration: 0.942s) @02.27400s +00.94300s
+|`->config-set_passwords ran successfully and took 0.005 seconds (duration: 0.005s) @03.21700s +00.00500s
+Finished stage: (init-network) 01.61300 seconds
+
+Starting stage: modules-config
+|`->config-ssh_import_id ran successfully and took 0.000 seconds (duration: 0.000s) @03.55800s +00.00000s
+--- analyze blame
+-- Boot Record 01 --
+     124.87300s (modules-final/config-package_update_upgrade_install)
+     00.94300s (init-network/config-ssh)
+     00.38300s (init-network/config-growpart)
+     00.14100s (init-network/config-resizefs)
+     00.10200s (init-network/config-users_groups)
+     00.09600s (modules-config/config-grub_dpkg)
+     00.02900s (init-local/search-NoCloud)
+     00.01200s (modules-final/config-keys_to_console)
+     00.01200s (modules-config/config-apt_configure)
+     00.00500s (modules-final/config-scripts_user)
+     00.00500s (modules-final/config-final_message)
+     00.00500s (init-network/config-set_passwords)
+     00.00300s (init-network/consume-user-data)
+     00.00300s (init-network/config-update_etc_hosts)
+--- datasource
+nocloud
+unknown
+config-disk (/dev/sr0)
+--- output log
+ci-info: |   lo   | True |           ::1/128           |       .       |  host  |         .         |
+ci-info: +--------+------+-----------------------------+---------------+--------+-------------------+
+ci-info: ++++++++++++++++++++++++++++++Route IPv4 info++++++++++++++++++++++++++++++
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: | Route | Destination  |   Gateway    |    Genmask    | Interface | Flags |
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: |   0   |   0.0.0.0    | 192.168.67.1 |    0.0.0.0    |    eth0   |   UG  |
+ci-info: |   1   | 192.168.67.0 |   0.0.0.0    | 255.255.255.0 |    eth0   |   U   |
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: +++++++++++++++++++Route IPv6 info+++++++++++++++++++
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: | Route | Destination | Gateway | Interface | Flags |
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: |   0   |  fe80::/64  |    ::   |    eth0   |   U   |
+ci-info: |   2   |    local    |    ::   |    eth0   |   U   |
+ci-info: |   3   |  multicast  |    ::   |    eth0   |   U   |
+ci-info: +-------+-------------+---------+-----------+-------+
+Cloud-init v. 26.1-0ubuntu1~24.04.1 running 'modules:config' at Thu, 05 Nov 2026 06:09:19 +0000. Up 3.57 seconds.
+Cloud-init v. 26.1-0ubuntu1~24.04.1 running 'modules:final' at Thu, 05 Nov 2026 06:09:21 +0000. Up 5.59 seconds.
+Cloud-init v. 26.1-0ubuntu1~24.04.1 finished at Thu, 05 Nov 2026 06:09:21 +0000. Datasource DataSourceNoCloud [seed=/dev/sr0].  Up 5.61 seconds

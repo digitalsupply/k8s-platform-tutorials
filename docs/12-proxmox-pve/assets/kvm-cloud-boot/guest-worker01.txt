@@ -1,0 +1,26 @@
+=== worker01 ===
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+systemd-detect-virt: kvm
+efi dir:
+no-efi
+virt:
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+virtio/hv pci:
+00:03.0 Unclassified device [00ff]: Red Hat, Inc. Virtio memory balloon
+00:08.0 Communication controller: Red Hat, Inc. Virtio console
+00:12.0 Ethernet controller: Red Hat, Inc. Virtio network device
+00:13.0 Ethernet controller: Red Hat, Inc. Virtio network device
+01:01.0 SCSI storage controller: Red Hat, Inc. Virtio SCSI
+drivers:
+driver: virtio_net
+version: 1.0.0
+firmware-version: 
+NAME                      MODEL
+sda                       QEMU HARDDISK
+├─sda1                    
+├─sda2                    
+smart:
+bash: line 7: smartctl: command not found
+steal vmstat:
+12  0      0 674568 786680 5038124    0    0     0    20 11643 19275  4  3 93  0  0

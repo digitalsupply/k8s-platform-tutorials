@@ -1,0 +1,27 @@
+=== packer presence
+packer not found
+zsh:1: command not found: packer
+
+=== terraform
+Terraform v1.16.4
+on linux_amd64
+
+=== PVE boot orders
+boot: order=scsi0;ide2
+100 boot: order=scsi0;ide2
+101 boot: order=scsi0
+116 boot: order=scsi0;ide2
+117 boot: order=scsi0;ide2
+118 boot: order=scsi0;ide2
+119 boot: order=scsi0;ide2
+120 boot: order=scsi0
+121 boot: order=scsi0
+122 boot: order=scsi0
+123 boot: order=scsi0
+124 boot: order=scsi0
+125 boot: order=scsi0
+126 boot: order=scsi0
+127 boot: order=scsi0
+600 boot: order=scsi0
+9000 boot: order=scsi0
+9010 boot: order=scsi0

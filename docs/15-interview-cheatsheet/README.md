@@ -67,6 +67,18 @@
 | 扩展/多租户 | CRD/Operator/Webhook/PSA | 146 CRD；12+9 webhook；PSA 仅 4 ns |
 | 进阶 | KEDA/VPA/HPA/Cilium/Gateway API | KEDA 无；VPA 0 对象；Gateway 仅 CRD |
 
+## 一页速查（虚拟化 / 云主机 / 引导）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| KVM/QEMU | KVM 虚拟化 CPU，QEMU 模拟设备；virtio 半虚拟化 | QEMU 9.2.0、/dev/kvm；Guest virtio_net/scsi |
+| virsh | libvirt CLI，不是 KVM 本身 | 未安装 libvirtd/virsh；PVE 用 qm |
+| 云 vs 物理 | 无真实 SMART、虚拟网卡/CPU/DMI、可能有 steal | QEMU HARDDISK/Virtual Disk；DMI QEMU/Microsoft |
+| IMDSv2 | PUT token+TTL+hop limit，防 SSRF | 本环境无 IMDS，169.254.169.254 超时 |
+| cloud-init | status/analyze/log 三件套 | 201 done，首启 apt 121s；m01 degraded |
+| Packer | 不可变镜像，变更走新镜像 | 未安装；virt-customize + 模板 9010 |
+| 引导 | UEFI/Secure Boot/PXE/initramfs 驱动 | K8s Legacy；9010 UEFI 无 SecureBoot；Hyper-V Gen2 Off |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -171,6 +183,7 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [03-cloud-native.md](03-cloud-native.md) | OOMKilled vs Evicted、tini、cgroup 与容器 |
 | [04-storage.md](04-storage.md) | 分区、LVM、RAID、文件系统、fstab、NFS、Ceph、云盘、CSI、SMART |
 | [05-kubernetes.md](05-kubernetes.md) | 控制面/节点/资源/QoS/PDB/探针/升级/备份/扩展/多租户/进阶 |
+| [06-virtualization-boot.md](06-virtualization-boot.md) | KVM/QEMU/virtio/virsh、云 vs 物理、IMDSv2、cloud-init、Packer、UEFI/PXE/initramfs |
 | [00-verification-matrix.md](00-verification-matrix.md) | 60+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |

@@ -1,0 +1,83 @@
+=== m01 cloud-init ===
+Warning: Permanently added '10.0.0.61' (ED25519) to the list of known hosts.
+status: done
+extended_status: degraded done
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:00:10 +0000
+detail: DataSourceNoCloud [seed=/dev/sr0]
+errors: []
+recoverable_errors:
+WARNING:
+	- cloud-config failed schema validation! You may run 'sudo cloud-init schema --system' to check the details.
+--- analyze show
+-- Boot Record 01 --
+The total time elapsed since completing an event is printed after the "@" character.
+The time the event takes is printed after the "+" character.
+
+Starting stage: init-local
+|`->no cache found @00.00500s +00.00000s
+|`->found local data from DataSourceNoCloud @00.01400s +00.12800s
+Finished stage: (init-local) 00.26400 seconds
+
+Starting stage: init-network
+|`->restored from cache with run check: DataSourceNoCloud [seed=/dev/sr0] @01.13400s +00.00400s
+|`->setting up datasource @01.18900s +00.00000s
+|`->reading and applying user-data @01.20200s +00.01000s
+|`->reading and applying vendor-data @01.21200s +00.00000s
+|`->reading and applying vendor-data2 @01.21300s +00.00000s
+|`->activating datasource @01.27300s +00.00100s
+|`->config-seed_random ran successfully and took 0.000 seconds @01.29700s +00.00000s
+|`->config-write_files ran successfully and took 0.001 seconds @01.29800s +00.00100s
+|`->config-growpart ran successfully and took 0.005 seconds @01.30000s +00.00600s
+|`->config-resizefs ran successfully and took 0.007 seconds @01.30600s +00.00700s
+|`->config-mounts ran successfully and took 0.002 seconds @01.31400s +00.00200s
+|`->config-set_hostname ran successfully and took 0.015 seconds @01.31600s +00.01600s
+|`->config-update_hostname ran successfully and took 0.004 seconds @01.33200s +00.00500s
+|`->config-users_groups ran successfully and took 0.028 seconds @01.33800s +00.02900s
+|`->config-ssh ran successfully and took 0.379 seconds @01.36700s +00.38000s
+|`->config-set_passwords ran successfully and took 0.022 seconds @01.74800s +00.02200s
+Finished stage: (init-network) 00.65700 seconds
+
+Starting stage: modules-config
+|`->config-locale ran successfully and took 0.002 seconds @02.44200s +00.00300s
+--- analyze blame
+-- Boot Record 01 --
+     00.38000s (init-network/config-ssh)
+     00.12800s (init-local/search-NoCloud)
+     00.07400s (modules-final/config-keys_to_console)
+     00.06200s (modules-final/config-scripts_user)
+     00.02900s (init-network/config-users_groups)
+     00.02200s (init-network/config-set_passwords)
+     00.01600s (init-network/config-set_hostname)
+     00.01000s (init-network/consume-user-data)
+     00.00800s (modules-final/config-final_message)
+     00.00700s (init-network/config-resizefs)
+     00.00600s (init-network/config-growpart)
+     00.00500s (init-network/config-update_hostname)
+     00.00400s (modules-final/config-ssh_authkey_fingerprints)
+     00.00400s (init-network/check-cache)
+--- datasource
+nocloud
+unknown
+config-disk (/dev/sr0)
+--- output log
+ci-info: ++++++++++++++++++++++++++++++Net device info+++++++++++++++++++++++++++++++
+ci-info: +--------+------+-------------+---------------+--------+-------------------+
+ci-info: | Device |  Up  |   Address   |      Mask     | Scope  |     Hw-Address    |
+ci-info: +--------+------+-------------+---------------+--------+-------------------+
+ci-info: |  eth0  | True |  10.0.0.61  | 255.255.255.0 | global | bc:24:11:a4:e1:26 |
+ci-info: |  eth1  | True | 172.16.1.61 |  255.255.0.0  | global | bc:24:11:8b:c9:65 |
+ci-info: |   lo   | True |  127.0.0.1  |   255.0.0.0   |  host  |         .         |
+ci-info: +--------+------+-------------+---------------+--------+-------------------+
+ci-info: +++++++++++++++++++++++++++Route IPv4 info++++++++++++++++++++++++++++
+ci-info: +-------+-------------+----------+---------------+-----------+-------+
+ci-info: | Route | Destination | Gateway  |    Genmask    | Interface | Flags |
+ci-info: +-------+-------------+----------+---------------+-----------+-------+
+ci-info: |   0   |   0.0.0.0   | 10.0.0.1 |    0.0.0.0    |    eth0   |   UG  |
+ci-info: |   1   |   10.0.0.0  | 0.0.0.0  | 255.255.255.0 |    eth0   |   U   |
+ci-info: |   2   |  172.16.0.0 | 0.0.0.0  |  255.255.0.0  |    eth1   |   U   |
+ci-info: +-------+-------------+----------+---------------+-----------+-------+
+2026-11-09 12:53:02,213 - schema.py[WARNING]: cloud-config failed schema validation! You may run 'sudo cloud-init schema --system' to check the details.
+Cloud-init v. 24.4-4.el9_6.3.0.1 running 'modules:config' at Mon, 09 Nov 2026 12:53:02 +0000. Up 9.32 seconds.
+Cloud-init v. 24.4-4.el9_6.3.0.1 running 'modules:final' at Mon, 09 Nov 2026 12:53:03 +0000. Up 10.01 seconds.
+Cloud-init v. 24.4-4.el9_6.3.0.1 finished at Mon, 09 Nov 2026 12:53:03 +0000. Datasource DataSourceNoCloud [seed=/dev/sr0].  Up 10.20 seconds

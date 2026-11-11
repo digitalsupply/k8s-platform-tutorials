@@ -1,0 +1,20 @@
+=== worker01 initramfs ===
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+initramfs=/boot/initrd.img-5.15.0-202-generic
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/block/virtio_blk.ko
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/hv/hv_vmbus.ko
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/net/hyperv/hv_netvsc.ko
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/net/virtio_net.ko
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/scsi/hv_storvsc.ko
+usr/lib/modules/5.15.0-202-generic/kernel/drivers/scsi/virtio_scsi.ko
+usr/lib/modules/5.15.0-202-generic/kernel/fs/xfs
+usr/lib/modules/5.15.0-202-generic/kernel/fs/xfs/xfs.ko
+usr/sbin/fsck.ext4
+modules-load:
+overlay
+br_netfilter
+# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with "#" are ignored.
+

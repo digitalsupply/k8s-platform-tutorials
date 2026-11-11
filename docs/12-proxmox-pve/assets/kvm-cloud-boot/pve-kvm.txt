@@ -1,0 +1,100 @@
+=== qemu/kvm version
+QEMU emulator version 9.2.0 (pve-qemu-kvm_9.2.0-7)
+Copyright (c) 2003-2024 Fabrice Bellard and the QEMU Project developers
+crw-rw---- 1 root kvm 10, 232 Nov  9 20:52 /dev/kvm
+
+=== virsh/libvirt
+virsh not found
+libvirtd not found
+inactive
+
+=== qm config 119 (K8s node)
+agent: enabled=1
+boot: order=scsi0;ide2
+cicustom: user=local:snippets/force-password-login.yaml
+cipassword: **********
+ciupgrade: 0
+ciuser: root
+cores: 4
+cpu: x86-64-v3
+ide2: local-lvm:vm-119-cloudinit,media=cdrom,size=4M
+ipconfig0: ip=10.0.0.61/24,gw=10.0.0.1
+ipconfig1: ip=172.16.1.61/16
+memory: 6144
+meta: creation-qemu=9.2.0,ctime=1759141482
+name: m01
+net0: virtio=BC:24:11:A4:E1:26,bridge=vmbr1
+net1: virtio=BC:24:11:8B:C9:65,bridge=vmbr2
+numa: 0
+ostype: l26
+parent: before_resize
+scsi0: local-lvm:vm-119-disk-0,discard=on,iothread=1,size=50G,ssd=1
+scsihw: virtio-scsi-single
+smbios1: uuid=bcc7b888-d70c-4faf-84b9-e06bcdd81037
+sockets: 1
+vmgenid: e82d4430-64ed-4207-8079-01c360e1a6da
+
+=== qm config 9010 (openEuler template)
+agent: enabled=1
+bios: ovmf
+boot: order=scsi0
+citype: nocloud
+ciupgrade: 0
+ciuser: hao
+cores: 2
+cpu: x86-64-v2-AES
+efidisk0: local-lvm:base-9010-disk-0,efitype=4m,pre-enrolled-keys=0,size=4M
+memory: 2048
+meta: creation-qemu=9.2.0,ctime=1791795111
+name: tmpl-openeuler2403
+nameserver: 223.5.5.5
+net0: virtio=BC:24:11:A5:6F:55,bridge=vmbr1
+numa: 0
+ostype: l26
+scsi0: local-lvm:base-9010-disk-1,iothread=1,size=40G
+scsi1: local-lvm:vm-9010-cloudinit,media=cdrom
+scsihw: virtio-scsi-single
+serial0: socket
+smbios1: uuid=53577ca3-a288-4050-9fdd-006df81f7222
+sockets: 1
+sshkeys: ssh-rsa%20AAAAB3NzaC1yc2EAAAADAQABAAACAQC33kx9bFHaJtSx0%2BAqFJTRuT1CHF4MEv050OQMl7jWENY3tx79HmEvc7g4RpGVVoHBCZKL6%2BAxn2u74hGV80ct7Qh2mTveKFDCnEhdKrwy5aL2U5CPPN5QR%2BXShlfJEs0uw2lCMaMpn1y3UImPDqqQx3y0c46oVJY7Su0fxbYoyKj%2BMKlvuJ9FN7MKHZVhxpjGTPIyAFOX2r2VOkwMwnRkVjW6JFXsiuPlGKhlkE7FsKglFEb%2FGiaLcNA08CwAtqxR4k2amOFwP3DA0kiIN1IFXhVR9EOwBfp8Fim%2BUvC%2FfmZo2YwMfuML%2Ft9FnNl%2FiRk9G7Mkqr1sMdOvrJ4AFJ0w%2BHFuSPC0GxeLZMtFrTXuP2TzG%2F5iCPtZEkJLF2BEJZnV9UIr%2BGjPhFgtpO2hOpmgx34fcVRsdGGqfmNZdoW94hLGNxwN0uk36zbCMO55NzUy9w7xZmLzncC2s954eopSDrJtL66rJmX4Js%2BbTKV5hDzqWGit8cB8Y3ij2lqzZin5Z1GHJPp462hnU0OWSsHkW9ZRyheDrQodm3qauTYjZ9Fdyyfsh8LriuWWBpWEPR5JpTTmv6iTAT69zt9imz0p6VFZyuD0ht98Q3cVO7DgxjY8BQDjpnmanzDyme4XGgkEs4j51rqoTSzQrXK5zCebpFcnS5Ght%2Ft9rARzx4ta7w%3D%3D%20root%40teacher%0A
+template: 1
+vga: serial0
+vmgenid: 96593046-db1b-4dec-a0c7-e9db31dcb7e1
+
+=== qm showcmd 119 head
+/usr/bin/kvm \
+  -id 119 \
+  -name 'm01,debug-threads=on' \
+  -no-shutdown \
+  -chardev 'socket,id=qmp,path=/var/run/qemu-server/119.qmp,server=on,wait=off' \
+  -mon 'chardev=qmp,mode=control' \
+  -chardev 'socket,id=qmp-event,path=/var/run/qmeventd.sock,reconnect-ms=5000' \
+  -mon 'chardev=qmp-event,mode=control' \
+  -pidfile /var/run/qemu-server/119.pid \
+  -daemonize \
+  -smbios 'type=1,uuid=bcc7b888-d70c-4faf-84b9-e06bcdd81037' \
+  -smp '4,sockets=1,cores=4,maxcpus=4' \
+  -nodefaults \
+  -boot 'menu=on,strict=on,reboot-timeout=1000,splash=/usr/share/qemu-server/bootsplash.jpg' \
+  -vnc 'unix:/var/run/qemu-server/119.vnc,password=on' \
+  -cpu qemu64,+abm,+aes,+avx,+avx2,+bmi1,+bmi2,enforce,+f16c,+fma,+kvm_pv_eoi,+kvm_pv_unhalt,+movbe,+pni,+popcnt,+sse4.1,+sse4.2,+ssse3,+xsave \
+  -m 6144 \
+  -object 'iothread,id=iothread-virtioscsi0' \
+  -global 'PIIX4_PM.disable_s3=1' \
+  -global 'PIIX4_PM.disable_s4=1' \
+  -device 'pci-bridge,id=pci.1,chassis_nr=1,bus=pci.0,addr=0x1e' \
+  -device 'pci-bridge,id=pci.2,chassis_nr=2,bus=pci.0,addr=0x1f' \
+  -device 'pci-bridge,id=pci.3,chassis_nr=3,bus=pci.0,addr=0x5' \
+  -device 'vmgenid,guid=e82d4430-64ed-4207-8079-01c360e1a6da' \
+  -device 'piix3-usb-uhci,id=uhci,bus=pci.0,addr=0x1.0x2' \
+  -device 'usb-tablet,id=tablet,bus=uhci.0,port=1' \
+  -device 'VGA,id=vga,bus=pci.0,addr=0x2' \
+  -chardev 'socket,path=/var/run/qemu-server/119.qga,server=on,wait=off,id=qga0' \
+  -device 'virtio-serial,id=qga0,bus=pci.0,addr=0x8' \
+  -device 'virtserialport,chardev=qga0,name=org.qemu.guest_agent.0' \
+  -device 'virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x3,free-page-reporting=on' \
+  -iscsi 'initiator-name=iqn.1993-08.org.debian:01:5644184f92ec' \
+  -drive 'file=/dev/pve/vm-119-cloudinit,if=none,id=drive-ide2,media=cdrom,format=raw,aio=io_uring' \
+  -device 'ide-cd,bus=ide.1,unit=0,drive=drive-ide2,id=ide2,bootindex=101' \
+  -device 'virtio-scsi-pci,id=virtioscsi0,bus=pci.3,addr=0x1,iothread=iothread-virtioscsi0' \

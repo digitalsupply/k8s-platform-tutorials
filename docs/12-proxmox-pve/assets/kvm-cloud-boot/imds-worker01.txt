@@ -1,0 +1,7 @@
+=== worker01
+Warning: Permanently added '10.0.0.122' (ED25519) to the list of known hosts.
+curl IMDS:
+curl: (28) Connection timed out after 2001 milliseconds
+route:
+169.254.169.254 via 10.0.0.1 dev eth0 src 10.0.0.122 uid 0 
+    cache 
