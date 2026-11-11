@@ -1,0 +1,36 @@
+loop=/dev/loop0 size=1G
+  Physical volume "/dev/loop0" successfully created.
+  Volume group "vg-irrev" successfully created
+  Logical volume "lv-irrev" created.
+=== before
+/dev/mapper/vg--irrev-lv--irrev  770M  101M  614M  15% /mnt/irreversible-lvm
+  LV       LSize   VG      
+  lv-irrev 800.00m vg-irrev
+
+=== test shrink without resizing filesystem (metadata-only test)
+  TEST MODE: Metadata will NOT be updated and volumes will not be (de)activated.
+  WARNING: Reducing active and open logical volume to 512.00 MiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg-irrev/lv-irrev? [y/n]: [n]
+  Logical volume vg-irrev/lv-irrev NOT reduced.
+test_exit=5
+
+=== safe ext4 shrink order: umount -> e2fsck -> resize2fs -> lvreduce
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/vg-irrev/lv-irrev: 12/51296 files (8.3% non-contiguous), 33326/204800 blocks
+Resizing the filesystem on /dev/vg-irrev/lv-irrev to 102400 (4k) blocks.
+The filesystem on /dev/vg-irrev/lv-irrev is now 102400 (4k) blocks long.
+
+  WARNING: Reducing active logical volume to 400.00 MiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+  Size of logical volume vg-irrev/lv-irrev changed from 800.00 MiB (200 extents) to 400.00 MiB (100 extents).
+  Logical volume vg-irrev/lv-irrev successfully resized.
+=== after safe shrink
+/dev/mapper/vg--irrev-lv--irrev  376M  101M  248M  29% /mnt/irreversible-lvm
+  LV       LSize   VG      
+  lv-irrev 400.00m vg-irrev
+8459b8bd3fd5a67e624f7cb7
+
+=== cleanup
+cleanup-ok

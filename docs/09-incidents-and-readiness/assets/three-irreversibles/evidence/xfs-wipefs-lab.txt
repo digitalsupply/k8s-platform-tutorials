@@ -1,0 +1,58 @@
+loop=/dev/loop0 size=512M
+
+=== mkfs.xfs -N (dry run, no write)
+meta-data=/dev/loop0             isize=512    agcount=4, agsize=32768 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=131072, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+=== wipefs --no-act (empty image, no signatures)
+
+=== real mkfs.xfs
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+Discarding blocks...Done.
+
+=== signatures after mkfs
+DEVICE OFFSET TYPE UUID                                 LABEL
+loop0  0x0    xfs  9dc11365-8a50-4d95-8cea-bcbd89f2fed3 
+/dev/loop0: UUID="9dc11365-8a50-4d95-8cea-bcbd89f2fed3" BLOCK_SIZE="512" TYPE="xfs"
+
+=== XFS cannot shrink
+meta-data=/dev/loop0             isize=512    agcount=4, agsize=32768 blks
+data     =                       bsize=4096   blocks=131072, imaxpct=25
+log      =internal log           bsize=4096   blocks=16384, version=2
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[EXPERIMENTAL] try to shrink unused space 32768, old size is 131072
+xfs_growfs: XFS_IOC_FSGROWFSDATA xfsctl failed: Invalid argument
+meta-data=/dev/loop0             isize=512    agcount=4, agsize=32768 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=131072, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+xfs_shrink_exit=1
+after:
+meta-data=/dev/loop0             isize=512    agcount=4, agsize=32768 blks
+data     =                       bsize=4096   blocks=131072, imaxpct=25
+log      =internal log           bsize=4096   blocks=16384, version=2
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+=== wipefs -a destroys signatures
+/dev/loop0: 4 bytes were erased at offset 0x00000000 (xfs): 58 46 53 42
+after wipefs:
+
+cleanup-ok

@@ -1,0 +1,10 @@
+=== dd has no dry-run option
+no --dry-run / --test
+
+=== safe: write to a file, not a block device
+10+0 records out
+10485760 bytes (10 MB, 10 MiB) copied, 0.0104586 s, 1.0 GB/s
+-rw-r--r-- 1 root root 10M Nov 11 12:02 /tmp/dd-test.bin
+
+=== dangerous pattern (do NOT run): writing to a raw device
+dd if=image.iso of=/dev/sdX bs=4M status=progress

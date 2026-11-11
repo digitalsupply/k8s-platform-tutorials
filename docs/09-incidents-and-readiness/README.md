@@ -174,6 +174,7 @@ crictl rmi --prune
 
 | 文档 | 内容 |
 |---|---|
+| [10-three-irreversibles.md](10-three-irreversibles.md) | 三个不可逆：危险操作 dry-run、XFS/LVM/etcd/证书状态、CIDR/分区/命名/区域决策 |
 | [knative-removal-record-20261013.md](notes/knative-removal-record-20261013.md) | Knative 全量移除：依赖评估、Operator 卸载、RBAC/CRD/APIService 清理 |
 | [tekton-demo-cicd-removal-record-20261028.md](notes/tekton-demo-cicd-removal-record-20261028.md) | Tekton demo 资源清理，保留生产 Tekton |
 | [app-removal-record.md](../05-linux/notes/app-removal-record.md) | 宿主机 Zabbix/MariaDB/nginx/php-fpm 下线 |
@@ -186,6 +187,7 @@ crictl rmi --prune
 
 | 资产 | 说明 |
 |---|---|
+| [assets/three-irreversibles/](assets/three-irreversibles/README.md) | dry-run、XFS/LVM、DROP DATABASE、etcd、证书、CIDR 真机证据 |
 | [scripts/pre_removal_audit.py](scripts/pre_removal_audit.py) | 按关键字盘点 CRD/APIService/Webhook/RBAC/CR，只读 |
 | [scripts/cleanup_checklist.md](scripts/cleanup_checklist.md) | 组件下线检查清单（可打印/复制） |
 

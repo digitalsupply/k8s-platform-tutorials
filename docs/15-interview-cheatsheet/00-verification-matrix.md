@@ -207,7 +207,27 @@
 | 长期存储 | ❌ | Thanos/VM/Mimir 均未部署，Prometheus 本地 15d |
 | 成本治理 | ✅ | 指标 17.9GB/15d，日志 0.6GB/天；每 series 成本已量化 |
 
-## 九、结论
+## 九、三个「不可逆」
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| `rm` 无 dry-run | ✅ | `rm --dry-run` 报 `unrecognized option` |
+| `rsync --dry-run` 可预览删除 | ✅ | 列出 deleting old/junk.txt 等，未删除 |
+| `mkfs -N` / `wipefs --no-act` | ✅ | 只打印参数/签名，不写盘 |
+| `dd` 无 dry-run | ✅ | `dd --help` 无 dry-run；安全实验只写文件 |
+| `delete ns --dry-run` | ✅ | client/server 后对象仍 Active；server 走 admission |
+| `DROP TABLE` 可回滚 | ✅ | `BEGIN; DROP TABLE; ROLLBACK` 后行数仍 1 |
+| `DROP DATABASE` 无事务 | ✅ | 报 `cannot run inside a transaction block` |
+| XFS 不能 shrink | ✅ | `xfs_growfs -D` 返回 Invalid argument，blocks 不变 |
+| LVM 缩容顺序 | ✅ | `lvreduce --test` 警告；ext4 先 resize2fs 后 lvreduce，sha256 不变 |
+| etcd 恢复回退全集群 | ✅ | 快照 revision 60,243,742 vs 当前 60,290,176，约 57 分钟 |
+| 证书不可撤回 | ✅/📚 | 90d 自签、无 CSR/CRL；按短期轮换设计 |
+| CIDR 不可逆 | ✅ | pod 10.244/16、svc 10.96/12、节点 10.0.0/24、VIP 10.0.0.168 |
+| 分区方案不可逆 | ✅ | PVE GPT：bios_grub + ESP + LVM；pve/data 794G |
+| 命名规范不可逆 | 📚 | DNS/label/ArgoCD 都依赖名字；改名等于迁移 |
+| 云区域不可逆 | 📚 | on-prem 不涉及；合规/延迟优先 |
+
+## 十、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

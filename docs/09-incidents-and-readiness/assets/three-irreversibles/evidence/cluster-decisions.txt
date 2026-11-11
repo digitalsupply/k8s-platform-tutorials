@@ -1,0 +1,50 @@
+=== cluster network decisions
+clusterName: kubernetes
+controlPlaneEndpoint: 10.0.0.168:6443
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+
+=== node internal IPs
+m01 10.0.0.61 Rocky Linux 9.6 (Blue Onyx)
+master01 10.0.0.121 Ubuntu 22.04.5 LTS
+master02 10.0.0.120 Ubuntu 22.04.5 LTS
+worker01 10.0.0.122 Ubuntu 22.04.5 LTS
+worker02 10.0.0.123 Ubuntu 22.04.5 LTS
+worker03 10.0.0.124 Ubuntu 22.04.5 LTS
+
+=== service CIDR sample
+argocd/argocd-applicationset-controller 10.105.205.49
+argocd/argocd-dex-server 10.101.29.19
+argocd/argocd-redis 10.101.231.211
+argocd/argocd-repo-server 10.102.216.39
+argocd/argocd-server 10.110.82.65
+cert-manager/cert-manager 10.99.110.2
+
+=== PVE storage layout
+  PV             VG  Fmt  Attr PSize    PFree 
+  /dev/nvme0n1p3 pve lvm2 a--  <930.51g 16.00g
+  VG  #PV #LV #SN Attr   VSize    VFree 
+  pve   1  47   0 wz--n- <930.51g 16.00g
+  LV                               VG  LSize  
+  base-100-disk-0                  pve  20.00g
+  base-9000-disk-0                 pve  40.00g
+  base-9010-disk-0                 pve   0.00g
+  base-9010-disk-1                 pve  40.00g
+  data                             pve 794.30g
+  root                             pve  96.00g
+  snap_vm-119-disk-0_before_resize pve  50.00g
+  swap                             pve   8.00g
+  vm-100-cloudinit                 pve   0.00g
+
+=== root disk partition table
+Model: INTEL SSDPE2KX010T8 (nvme)
+Disk /dev/nvme0n1: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      17.4kB  1049kB  1031kB                     bios_grub
+ 2      1049kB  1075MB  1074MB  fat32              boot, esp
+ 3      1075MB  1000GB  999GB                      lvm
+

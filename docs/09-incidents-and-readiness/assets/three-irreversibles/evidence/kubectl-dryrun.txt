@@ -1,0 +1,22 @@
+=== create lab namespace + objects
+namespace/irreversible-lab created
+configmap/demo created
+pod/demo created
+NAME       READY   STATUS              RESTARTS   AGE
+pod/demo   0/1     ContainerCreating   0          1s
+
+NAME                         DATA   AGE
+configmap/demo               1      1s
+configmap/kube-root-ca.crt   1      1s
+
+=== client dry-run (no API call)
+namespace "irreversible-lab" deleted (dry run)
+irreversible-lab   Active   1s
+
+=== server dry-run (admission/finalizer aware)
+namespace "irreversible-lab" deleted (server dry run)
+irreversible-lab   Active   1s
+
+=== real delete
+namespace "irreversible-lab" deleted
+Error from server (NotFound): namespaces "irreversible-lab" not found

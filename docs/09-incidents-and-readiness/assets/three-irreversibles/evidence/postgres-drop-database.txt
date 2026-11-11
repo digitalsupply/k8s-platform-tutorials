@@ -1,0 +1,40 @@
+=== table DDL rollback + database drop cannot rollback
+Timing is on.
+DROP DATABASE
+Time: 0.490 ms
+NOTICE:  database "irreversible_lab" does not exist, skipping
+CREATE DATABASE
+Time: 167.352 ms
+You are now connected to database "irreversible_lab" as user "postgres".
+CREATE TABLE
+Time: 25.518 ms
+INSERT 0 1
+Time: 3.169 ms
+BEGIN
+Time: 0.110 ms
+DROP TABLE
+Time: 1.587 ms
+ROLLBACK
+Time: 0.185 ms
+ rows_after_rollback 
+---------------------
+                   1
+(1 row)
+
+Time: 0.796 ms
+BEGIN
+Time: 0.087 ms
+Time: 0.663 ms
+ERROR:  DROP DATABASE cannot run inside a transaction block
+ROLLBACK
+Time: 0.157 ms
+ current_database | count 
+------------------+-------
+ irreversible_lab |     1
+(1 row)
+
+Time: 0.524 ms
+
+=== cleanup: drop lab database
+DROP DATABASE
+compassio deeptutor mytest n8n postgres template0 template1 

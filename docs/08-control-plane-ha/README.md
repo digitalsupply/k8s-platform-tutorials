@@ -63,6 +63,9 @@ master01/02 各有 600+ watch，m01 只有 72 个，所以内存差一倍。
 - **不能直接复制运行中的数据目录**到另一台机器启动，会 member ID 冲突/脑裂；
 - 快照包含集群/成员身份，恢复时要决定是否生成新 member ID。
 
+> etcd 恢复会回退**整个集群状态**，不是单个 namespace；快照时间点、revision 差距与恢复演练
+> 见 [09 三个不可逆](../09-incidents-and-readiness/10-three-irreversibles.md)。
+
 ### 5. 版本偏斜与静态 Pod
 
 apiserver/controller-manager/scheduler/etcd 都是 static Pod，清单在

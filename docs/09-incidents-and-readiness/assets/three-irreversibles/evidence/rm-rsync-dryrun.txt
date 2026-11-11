@@ -1,0 +1,24 @@
+=== rm has no dry-run flag
+rm: unrecognized option '--dry-run'
+Try 'rm --help' for more information.
+exit=1
+
+=== preview files first
+/tmp/irreversible-demo
+/tmp/irreversible-demo/keep
+/tmp/irreversible-demo/keep/data.txt
+/tmp/irreversible-demo/old
+/tmp/irreversible-demo/old/junk.txt
+
+=== rsync --dry-run --delete preview
+sending incremental file list
+deleting old/junk.txt
+deleting old/
+deleting keep/data.txt
+deleting keep/
+
+sent 50 bytes  received 62 bytes  224.00 bytes/sec
+total size is 0  speedup is 0.00 (DRY RUN)
+
+=== real delete (after review)
+ls: cannot access '/tmp/irreversible-demo': No such file or directory

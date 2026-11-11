@@ -1,0 +1,24 @@
+=== cert-manager Certificates
+NAMESPACE       NAME                                                READY   SECRET                                                                 AGE
+cnpg-system     barman-cloud-client                                 True    barman-cloud-client-tls                                                2d17h
+cnpg-system     barman-cloud-server                                 True    barman-cloud-server-tls                                                2d17h
+opentelemetry   otel-operator-opentelemetry-operator-serving-cert   True    otel-operator-opentelemetry-operator-controller-manager-service-cert   253d
+
+=== barman-cloud-client certificate spec
+{"group":"cert-manager.io","kind":"Issuer","name":"selfsigned-issuer"} duration=2160h renewBefore=360h secret=barman-cloud-client-tls
+
+=== issued cert subject/issuer/validity
+subject=CN = barman-cloud-client
+issuer=CN = barman-cloud-client
+notBefore=Nov  8 10:19:48 2026 GMT
+notAfter=Feb  6 10:19:48 2027 GMT
+serial=0774548B52ED834A0E921EFC317592FEF12A3B71
+
+=== Kubernetes CSR objects (revocation surface)
+No resources found
+
+=== cert-manager CertificateRequests (issuance records, not revocation lists)
+NAMESPACE       NAME                                                  APPROVED   DENIED   READY   ISSUER                                                   REQUESTER                                         AGE
+cnpg-system     barman-cloud-client-1                                 True                True    selfsigned-issuer                                        system:serviceaccount:cert-manager:cert-manager   2d17h
+cnpg-system     barman-cloud-server-1                                 True                True    selfsigned-issuer                                        system:serviceaccount:cert-manager:cert-manager   2d17h
+opentelemetry   otel-operator-opentelemetry-operator-serving-cert-3   True                True    otel-operator-opentelemetry-operator-selfsigned-issuer   system:serviceaccount:cert-manager:cert-manager   44d

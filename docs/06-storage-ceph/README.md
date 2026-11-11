@@ -356,6 +356,9 @@ fstrim -av
 | [cnpg-upgrade-postmortem-2026-11-08.md](notes/cnpg-upgrade-postmortem-2026-11-08.md) | CNPG 1.22 → 1.30.1、rp_filter、barman plugin、switchover |
 | [ceph-disk-optimization-2026-11-05.md](notes/ceph-disk-optimization-2026-11-05.md) | 镜像/Pod/GC/Harbor/Tekton/PVE discard 两轮磁盘清理 |
 
+> XFS 不能缩、LVM 缩容顺序、`wipefs`/`mkfs` dry-run 实测见
+> [09 三个不可逆](../09-incidents-and-readiness/10-three-irreversibles.md)。
+
 ## 配套资产
 
 | 资产 | 说明 |

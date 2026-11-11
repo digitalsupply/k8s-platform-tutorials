@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -9,8 +9,8 @@
 >
 > 证据：[`assets/evidence/`](assets/evidence/README.md)。
 > 详细原理：[04 Monitoring](../04-monitoring-gitops/README.md)、[05 Linux](../05-linux/README.md)、
-> [07 Networking](../07-networking/README.md)、[10 CI/CD](../10-cicd-delivery/README.md)、
-> [14 Containers](../14-containers/README.md)。
+> [07 Networking](../07-networking/README.md)、[09 生命周期](../09-incidents-and-readiness/README.md)、
+> [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)。
 
 ## 一页速查
 
@@ -131,6 +131,22 @@
 | Trace 采样 | 头部简单；尾部按错误/延迟 | OTel 仅 batch，无采样；6.8 万 span/天 |
 | 长期存储 | Thanos/VM/Mimir 按规模选 | 均未部署；本地 15d/25GiB |
 | 成本治理 | series × 维度 × 采样 × 保留 | 指标 17.9GB，日志仅 0.6GB/天 |
+
+## 一页速查（三个不可逆）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| 不可逆操作 | rm/mkfs/dd/wipefs/drop db/delete ns | 先备份 + dry-run |
+| K8s dry-run | client 本地；server 走 admission | delete ns 两种模式对象都还在 |
+| rm | 没有 dry-run | `rm --dry-run` 报错；rsync 预览 |
+| dd | 没有 dry-run | 只写 /tmp 文件验证 |
+| DROP DATABASE | 不能进事务 | 表 DROP 可 rollback；库 DROP 报错 |
+| XFS | 只能 grow | shrink 返回 Invalid argument |
+| LVM | 先 resize2fs 再 lvreduce | 顺序反了可能丢数据 |
+| etcd | 恢复 = 全集群时间机器 | 快照 11:05 vs 当前 12:02，约 57 分钟 |
+| 证书 | 按不可撤回设计 | 90d 自签，无 CSR/CRL |
+| CIDR | 改 = 重建集群 | pod 10.244/16、svc 10.96/12 |
+| 分区/命名/区域 | 设计期定死 | PVE GPT + LVM、命名进 DNS/监控 |
 
 ## 二、本环境纠偏（面试别背绝对话）
 
@@ -253,7 +269,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [07-iac-gitops.md](07-iac-gitops.md) | Ansible 幂等/handlers/check/delegate/inventory/roles、Terraform state/plan/drift/import、GitOps、演进 |
 | [08-cicd-release.md](08-cicd-release.md) | 流水线阶段、缓存/并行、多阶段/分层、tag、滚动/蓝绿/金丝雀/Flag、回滚、expand-contract、Harbor/buildx |
 | [09-observability.md](09-observability.md) | 指标类型/基数、PromQL、黑盒/白盒分层、日志/轮转、Trace 采样、长期存储、成本治理 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 90+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [10-irreversibles.md](10-irreversibles.md) | 不可逆操作/状态/决策：dry-run、XFS/LVM、etcd、证书、CIDR、分区、命名、区域 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 100+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 
