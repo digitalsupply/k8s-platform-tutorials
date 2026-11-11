@@ -25,7 +25,7 @@
 - **P0 12/12 已修**：第 2 章每条末尾都有「修复状态」，逐条的改动、验证命令、提交见 [fix-log.md](fix-log.md)。
 - 其中 2 条由仓库作者先修（burn-rate/SLO 模板 `41666d8`、kube-proxy 残留 `c201de5`），本轮沿用其写法未覆盖。
 - P1 顺带修了 6 条（VXLAN 开销、Traefik 301/308、etcd quota、etcd 恢复 runbook、GitLab 版本、PM/SM 口径）。
-- 现场故障：`KubeProxyDown` 与残留 Service 已随 `c201de5` 消失；**Ceph mgr 抓 standby、n8n webhook 指向死隧道** 两项待处理，根因与命令见 fix-log §5。
+- 现场故障 **5/5 已处理**：`KubeProxyDown` 与残留 Service 随 `c201de5` 消失；Ceph `ScrapeConfig` 改为抓 ceph-01+ceph-02（`ceph_*` 序列回到 1090，两条 critical 假告警消失）；n8n webhook 在 `platform-gitops` `da1fc72` 改回 in-cluster（ArgoCD 已同步、AM 已重载）。根因与验证见 fix-log §5。
 
 ## 1. 文档说 vs 机器是（2026-11-11 实测）
 
@@ -216,6 +216,8 @@
 ---
 
 ## 6. 审计中发现的现场真实故障（文档未记录，且与"一切正常"的结论冲突）
+
+> **2026-11-11 晚：5 条已全部处理**（详见 [fix-log.md](fix-log.md) §5）。下面是发现时的原始记录。
 
 以下不是文档写错，是**集群现在确实有问题**，且会让文档里"监控正常/告警可用"的说法站不住：
 

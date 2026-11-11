@@ -12,7 +12,7 @@
 | P0（照抄会失败） | 12 | **12** | 0 | 0 |
 | P1（事实/语义错误） | 95 | 6 | 89 | — |
 | P2（内部矛盾/版漂） | 48 | 2 | 46 | 见 §4 口径 |
-| 现场真实故障 | 5 | 1 | 2 | 2（观察） |
+| 现场真实故障 | 5 | 4 | 0 | 1（观察：ceph-03 无 mgr） |
 
 P0 全部闭环，且每条都有可复现的验证命令（`bash -n` / `helm template` / 线上 `/etc/gitlab/gitlab.rb`）。
 
@@ -58,13 +58,15 @@ P0 全部闭环，且每条都有可复现的验证命令（`bash -n` / `helm te
 
 | # | 现象 | 根因（已实测） | 状态 |
 |---|---|---|---|
-| 1 | Ceph 面板全空，`ceph_health_status` 无数据 | `ScrapeConfig monitoring/ceph-mgr` 硬编码 `10.0.0.31:9283`（ceph-01，**standby**）；active mgr 在 `10.0.0.41`（ceph-02）。前者 `/metrics` 返回 200 + 0 字节，后者 1090 条 `ceph_*` | **待处理**（改 ScrapeConfig 指向 active，或改走 Service 发现） |
-| 2 | `CephClusterHealthUnknown` / `CephMGRMetricsMissing` 常驻 critical | 上面第 1 条的连带：`absent(ceph_health_status{cluster="ceph-prod"})` 成立 | 随 1 一起解决 |
-| 3 | `AlertmanagerFailedToSendAlerts`（webhook, serverError） | 线上 `n8n-webhook` 指向公网隧道 `https://n8ntrace.ccwu.cc/...`，实测 `curl` 连接失败（code=000）；集群内 `n8n-svc:5678` 返回 **200**。仓库模板里写的正是 in-cluster 地址 → **线上配置漂移** | **待处理**（把线上改回 `http://n8n-svc.n8n.svc.cluster.local:5678/webhook/k8s-alerts`） |
+| 1 | Ceph 面板全空，`ceph_health_status` 无数据 | `ScrapeConfig monitoring/ceph-mgr` 硬编码 `10.0.0.31:9283`（ceph-01，**standby**）；active mgr 在 `10.0.0.41`（ceph-02）。前者 `/metrics` 返回 200 + 0 字节，后者 1090 条 `ceph_*` | **已修**：`staticConfigs` 改成 ceph-01 + ceph-02 两个 target（active 返回指标、standby 返回空，主备切换不用改配置）。实测 `ceph_*` 序列回到 **1090**，`ceph_health_status=0` |
+| 2 | `CephClusterHealthUnknown` / `CephMGRMetricsMissing` 常驻 critical | 上面第 1 条的连带：`absent(ceph_health_status{cluster="ceph-prod"})` 成立 | **已消除**：指标恢复后两条从 firing 列表消失（实测只剩 AM 两条 + Watchdog + InfoInhibitor） |
+| 3 | `AlertmanagerFailedToSendAlerts`（webhook, serverError） | 线上 `n8n-webhook` 指向公网隧道 `https://n8ntrace.ccwu.cc/...`，实测 `curl` 连接失败（code=000，Cloudflare IP 104.21/172.67 被 reset）；集群内 `n8n-svc:5678` 返回 **200** → 线上配置漂移 | **已修**：`platform-gitops` `da1fc72` 改成 in-cluster 地址，ArgoCD selfHeal 已同步，Alertmanager 12:58:43 重载；重载后无新增失败（旧失败率在 10 分钟窗口内衰减） |
 | 4 | `KubeProxyDown` 常驻 critical | kube-proxy 已移除但上游 `absent(up{job="kube-proxy"})` 仍在 | **线上已修**（用户 `c201de5`，实测 firing 列表里已消失） |
 | 5 | `kube-system/prometheus-kube-proxy` 残留 Service | chart 未清理 | **线上已修**（同上，实测已无） |
 
-> 修完 1+3 之后，firing 列表里应只剩 `Watchdog` 与 `InfoInhibitor`（正常信号）。
+> 1~5 处理完之后，firing 列表只剩 `Watchdog` 与 `InfoInhibitor`（正常信号）；两条 `AlertmanagerFailedToSendAlerts` 会随 10 分钟 rate 窗口自然衰减。
+>
+> 遗留观察项：**ceph-03 上没有运行 mgr daemon**（`10.0.0.51:9283` 连接拒绝，`ceph -s` 只显示 1 active + 1 standby）。等 ceph-03 的 mgr 起来后再把第三个 target 加回 `ScrapeConfig`。
 
 ## 6. 对审计报告自身的三处更正
 
@@ -89,6 +91,11 @@ P0 全部闭环，且每条都有可复现的验证命令（`bash -n` / `helm te
 ## 8. 复现验证（本轮跑过的命令）
 
 ```bash
+# 集群侧（本轮改动的两处）
+kubectl -n monitoring get scrapeconfig ceph-mgr -o yaml | sed -n '/staticConfigs/,/^  [a-z]/p'
+git -C platform-gitops log --oneline -1        # da1fc72 fix(monitoring): point n8n webhook at in-cluster service
+kubectl -n argocd get app platform-monitoring-stack -o custom-columns='SYNC:.status.sync.status,HEALTH:.status.health.status'
+
 # 文档侧
 bash -n docs/04-monitoring-gitops/{notes/wecom-alert-receiver-20261001,assets/wecom}/apply.sh
 helm template t /tmp/ciliumchart/cilium --set kubeProxyReplacement=true | grep kube-proxy-replacement
