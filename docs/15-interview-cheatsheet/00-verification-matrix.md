@@ -331,7 +331,34 @@
 | 日志成本量化 | ✅ | 0.6GB/天、2.1M 行/天、5d ≈ 2.87GiB |
 | trace_id 关联 | ⚠️ | 日志有 trace_id，但未提取为 metadata |
 
-## 十四、结论
+## 十四、网络故障排查
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| 节点网络/默认网关 | ✅ | eth0 10.0.0.124/24，default 10.0.0.1 |
+| Pod/Service CIDR | ✅ | 10.244/16、10.96/12、VIP 10.0.0.252 |
+| Cilium native/KPR | ✅ | routing-mode=native、KPR=true、无 kube-proxy DS |
+| L2 宣告 | ✅ | CiliumL2AnnouncementPolicy/traefik-l2 |
+| Traefik LB | ✅ | 10.0.0.252，externalTrafficPolicy=Cluster |
+| CoreDNS | ✅ | 10.96.0.10，2 副本 |
+| Pod ndots | ✅ | `ndots:5` + 3 个 search |
+| somaxconn | ✅ | 4096 |
+| syn backlog | ⚠️ | 512，低于 8192 建议 |
+| syncookies | ✅ | 1 |
+| TIME_WAIT | ✅ | 185，正常 |
+| CLOSE_WAIT | ⚠️ | 1，需观察 |
+| ListenOverflows | ✅ | 0 |
+| softnet drop | ✅ | 0 |
+| conntrack | ✅ | 953/262144 |
+| keepalive | ❌ | 7200，大于典型 LB idle |
+| 端口范围 | ⚠️ | 28,232 个，可能耗尽 |
+| tcp_rmem/rmem_max | ⚠️ | max 6MB vs 208KB，不匹配 |
+| MTU | ✅ | native 1500，无封装 |
+| DNS 5s 三因 | ✅ | ndots/conntrack/CoreDNS |
+| 502/504/499 | ✅ | 超时层级/上游断/客户端断 |
+| 容量公式 | ✅ | BDP/PPS/端口/conntrack |
+
+## 十五、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

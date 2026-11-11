@@ -237,6 +237,7 @@ providers:
 
 | 文档 | 内容 |
 |---|---|
+| [10-network-troubleshooting.md](10-network-troubleshooting.md) | 时间特征、TCP 状态/队列、内核参数、命令卡、DNS ndots、HTTP/超时、LB、MTU、容量与 12 场景 |
 | [traefik-routing-architecture.md](notes/traefik-routing-architecture.md) | 所有 IngressRoute 的域名、后端、TLS、访问链路 |
 | [ingressroute-fix-summary.md](notes/ingressroute-fix-summary.md) | IngressRoute 域名修复记录 |
 | [loadbalancer-ip-summary.md](notes/loadbalancer-ip-summary.md) | LoadBalancer IP、端口映射、MetalLB 配置 |
@@ -251,6 +252,7 @@ providers:
 
 | 资产 | 说明 |
 |---|---|
+| [assets/network-troubleshooting/](assets/network-troubleshooting/README.md) | 本环境路由/ss/nstat/conntrack/内核参数/DNS/CNI/MTU 证据 |
 | [assets/current-ingressroutes.yaml](assets/current-ingressroutes.yaml) | 当前全部 IngressRoute |
 | [assets/current-traefik-service.yaml](assets/current-traefik-service.yaml) | 当前 Traefik LoadBalancer Service |
 | [assets/current-metallb-config.yaml](assets/current-metallb-config.yaml) | 当前 MetalLB IPAddressPool/L2Advertisement |

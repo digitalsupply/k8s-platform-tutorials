@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE / 安全 / 日志
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE / 安全 / 日志 / 网络排查
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -227,6 +227,24 @@
 | Loki 标签 | 低基数 | 75 streams；filename 102/pod 97 |
 | 成本 | 字节/stream/retention | 0.6GB/天、5d ≈ 2.87GiB |
 
+## 一页速查（网络故障排查）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| 四问 | 影响面/层次/方向/时间 | 先分 DNS/建连/TLS/TTFB/传输 |
+| 3s/5s/30s | SYN/DNS/LB idle | ndots:5；proxy_read_timeout 600s |
+| `ss -ti` | rtt/cwnd/retrans | 单连接信息量最大 |
+| 两个队列 | syn backlog / accept | somaxconn 4096；syn backlog 512 |
+| TIME_WAIT/CLOSE_WAIT | 主动关闭/应用没 close | 185 / 1 |
+| DNS ndots | search 放大 | Pod `ndots:5` + 3 search |
+| 502/504/499 | 上游断/慢/客户端断 | Traefik/nginx 链路 |
+| 超时层级 | 客户端>LB>Ingress>应用>DB | 应用 600s，注意倒挂 |
+| keepalive | 下游 < 上游 | 7200 > 典型 LB idle |
+| externalTrafficPolicy | Local 保源 IP | Traefik `Cluster` |
+| Cilium KPR | eBPF 代替 kube-proxy | kube-proxy DS 不存在 |
+| MTU | 小包通大包死 | native 1500，无封装 |
+| 容量 | 端口/conntrack/fd | 28,232 / 262,144 |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -353,7 +371,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [12-sre.md](12-sre.md) | SLI/SLO/Error Budget、burn rate、症状告警、MTTD/MTTA/MTTR、SEV/IC、postmortem、变更相关性 |
 | [13-security.md](13-security.md) | sudo/capability/NNP、SSH CA、auditd/AIDE/Falco、PAM、补丁、CIS/等保/国密、供应链、PSA/NetworkPolicy/mTLS |
 | [14-logging.md](14-logging.md) | logrotate copytruncate/create、journald、json-file/kubelet、Alloy/Loki、采样/脱敏/成本 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 180+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [15-network-troubleshooting.md](15-network-troubleshooting.md) | 时间特征、ss -ti、两个队列、DNS ndots、502/504/499、超时层级、MTU、Cilium KPR |
+| [00-verification-matrix.md](00-verification-matrix.md) | 200+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

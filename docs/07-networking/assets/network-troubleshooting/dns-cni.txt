@@ -1,0 +1,21 @@
+=== pod DNS
+search compassio.svc.cluster.local svc.cluster.local cluster.local
+nameserver 10.96.0.10
+options ndots:5
+---
+10.96.0.1       kubernetes.default.svc.cluster.local
+10.103.220.157  compassio-redis.compassio.svc.cluster.local
+
+=== CoreDNS
+10.96.0.10 [{"name":"dns","port":53,"protocol":"UDP","targetPort":53},{"name":"dns-tcp","port":53,"protocol":"TCP","targetPort":53},{"name":"metrics","port":9153,"protocol":"TCP","targetPort":9153}]
+replicas=2
+
+=== CNI / entry
+enable-ipv4 = true
+enable-l2-announcements = true
+kube-proxy-replacement = true
+routing-mode = native
+Error from server (NotFound): daemonsets.apps "kube-proxy" not found
+LoadBalancer externalTrafficPolicy=Cluster lb=[{"ip":"10.0.0.252","ipMode":"VIP"}]
+NAME         AGE
+traefik-l2   2d6h

@@ -1,5 +1,8 @@
 # 02 · 网络面试题：握手、TIME_WAIT、CLOSE_WAIT、连接错误
 
+> 更完整的现场排查（时间特征、`ss -ti`、两个队列、DNS ndots、MTU、超时层级）见
+> [15-network-troubleshooting.md](15-network-troubleshooting.md)。
+
 > 证据：[`assets/evidence/network-states-*.txt`](assets/evidence/network-states-worker01.txt)、
 > [`handshake.txt`](assets/evidence/handshake.txt)、
 > [`connect-errors.txt`](assets/evidence/connect-errors.txt)、

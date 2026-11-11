@@ -1,0 +1,13 @@
+=== native routing / MTU
+5: cilium_host@cilium_net: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether c2:5d:5c:93:c4:17 brd ff:ff:ff:ff:ff:ff
+10.244.5.163 dev cilium_host src 10.244.5.157 uid 0 
+    cache 
+10.244.3.39 via 10.0.0.122 dev eth0 src 10.0.0.124 uid 0 
+    cache 
+
+=== cilium mode
+native tunnel= kpr=true
+
+=== pod IP
+compassio-backend-666f7ffdfc-j4vk4   1/1   Running   0     43h   10.244.3.200   worker01   <none>   <none>

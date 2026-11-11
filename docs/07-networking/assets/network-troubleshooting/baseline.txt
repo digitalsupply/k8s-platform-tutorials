@@ -1,0 +1,110 @@
+=== worker03 addresses/routes/neigh
+lo               UNKNOWN        127.0.0.1/8 
+eth0             UP             10.0.0.124/24 fe80::be24:11ff:feb2:3691/64 
+eth1             UP             172.16.1.124/16 fe80::be24:11ff:fe7d:da06/64 
+cilium_net@cilium_host UP             
+cilium_host@cilium_net UP             10.244.5.157/32 
+lxc_health@if6   UP             
+lxcbea34dff31c6@if10 UP             
+lxcc3ca4cdc08fe@if12 UP             
+lxc50b8660fe68a@if14 UP             
+lxc3de9899f0101@if16 UP             
+lxce2a0fcc65caf@if18 UP             
+lxc3bf498a06400@if20 UP             
+lxc52a0a35b1b84@if22 UP             
+lxc2d576668635d@if24 UP             
+lxcff1d0a1b18d3@if26 UP             
+lxc6130d1266f2f@if28 UP             
+lxc3de2754fb8ac@if30 UP             
+lxc8ae03ae74f68@if32 UP             
+lxc2964233acd23@if34 UP             
+lxcd6e702b0d4c8@if36 UP             
+lxc2f31dadaacdd@if38 UP             
+lxcd1cb2b85a702@if40 UP             
+lxcbf39ac2d9cc1@if42 UP             
+lxcbaf19cb7f4c4@if44 UP             
+lxc5d835596a4e9@if48 UP             
+lxccfa9725752e1@if54 UP             
+lxc8436615841c1@if56 UP             
+lxcb68d110a083f@if58 UP             
+lxc4c677b4c64e2@if60 UP             
+lxc1c59d0f557ee@if62 UP             
+lxc9338bee19708@if64 UP             
+lxcc89964d2f2a5@if66 UP             
+lxc51ff8fc92320@if68 UP             
+lxc4ff38055151b@if70 UP             
+lxc72676eceb802@if72 UP             
+lxc03f15ed1884f@if74 UP             
+lxce2a7804ecaca@if76 UP             
+lxc2b33ea5cb23b@if80 UP             
+lxcdcbfb2a4016e@if82 UP             
+lxc6c06033df2b0@if84 UP             
+lxc9481ac3d3024@if86 UP             
+lxcce3eecbe84f4@if88 UP             
+lxc6e4cc1272e9f@if90 UP             
+lxceb3b5a7e188e@if92 UP             
+lxcbb003cc85a9a@if94 UP             
+lxc7fb80ec8a64e@if96 UP             
+lxc20641a8ee08f@if98 UP             
+lxc00bc7ec76931@if100 UP             
+lxcfac695ff55a7@if102 UP             
+lxcefebc817ee13@if104 UP             
+---
+default via 10.0.0.1 dev eth0 proto static 
+10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.124 
+10.244.0.0/24 via 10.0.0.61 dev eth0 proto kernel 
+10.244.1.0/24 via 10.0.0.121 dev eth0 proto kernel 
+10.244.2.0/24 via 10.0.0.120 dev eth0 proto kernel 
+10.244.3.0/24 via 10.0.0.122 dev eth0 proto kernel 
+10.244.4.0/24 via 10.0.0.123 dev eth0 proto kernel 
+10.244.5.0/24 via 10.244.5.157 dev cilium_host proto kernel src 10.244.5.157 
+10.244.5.157 dev cilium_host proto kernel scope link 
+172.16.0.0/16 dev eth1 proto kernel scope link src 172.16.1.124 
+---
+10.0.0.168 dev eth0 lladdr bc:24:11:c1:51:cb REACHABLE
+10.0.0.123 dev eth0 lladdr bc:24:11:c4:57:c1 REACHABLE
+10.0.0.122 dev eth0 lladdr bc:24:11:f1:9e:7a REACHABLE
+10.0.0.121 dev eth0 lladdr bc:24:11:a2:36:4e REACHABLE
+10.0.0.41 dev eth0 lladdr bc:24:11:f1:35:31 REACHABLE
+10.0.0.120 dev eth0 lladdr bc:24:11:c1:51:cb REACHABLE
+10.0.0.61 dev eth0 lladdr bc:24:11:a4:e1:26 REACHABLE
+10.0.0.31 dev eth0 lladdr bc:24:11:2b:74:6f REACHABLE
+
+=== ss / nstat / conntrack
+Total: 597
+TCP:   499 (estab 31, closed 453, orphaned 0, timewait 184)
+
+Transport Total     IP        IPv6
+RAW	  2         0         2        
+UDP	  3         2         1        
+TCP	  46        31        15       
+INET	  51        33        18       
+FRAG	  0         0         0        
+
+timewait=185 closewait=1
+---
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                  
+LISTEN 0      4096       127.0.0.1:9890       0.0.0.0:*    users:(("cilium-agent",pid=1519,fd=4))                  
+LISTEN 0      4096       127.0.0.1:9879       0.0.0.0:*    users:(("cilium-agent",pid=1519,fd=61))                 
+LISTEN 0      4096       127.0.0.1:33423      0.0.0.0:*    users:(("containerd",pid=681,fd=15))                    
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=635,fd=14))               
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*    users:(("rpcbind",pid=556,fd=4),("systemd",pid=1,fd=36))
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=694,fd=3))                           
+LISTEN 0      4096      10.0.0.124:4240       0.0.0.0:*    users:(("cilium-agent",pid=1519,fd=97))                 
+---
+TcpExtListenOverflows           0                  0.0
+TcpExtListenDrops               0                  0.0
+TcpExtTCPTimeouts               633                0.0
+TcpExtTCPAbortOnClose           102620             0.0
+TcpExtTCPBacklogDrop            0                  0.0
+TcpExtTCPReqQFullDrop           0                  0.0
+---
+conntrack=953/262144
+---
+00e6a1c4 00000000 0000005c 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00e47b1e 00000000 0000005c 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000001
+00f988ae 00000000 000000b9 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000002
+---
+     rx_queue_0_drops: 0
+     rx_queue_0_xdp_drops: 0
+     tx_queue_0_xdp_tx_drops: 0
