@@ -1,0 +1,54 @@
+=== ArgoCD Applications
+NAME                         SYNC STATUS   HEALTH STATUS
+app-of-apps                  Synced        Healthy
+china-study-free             Synced        Healthy
+compassio                    Synced        Healthy
+deeptutor                    Synced        Healthy
+open-webui                   Synced        Healthy
+platform-alloy-config        Synced        Healthy
+platform-ceph-csi            Synced        Healthy
+platform-ceph-csi-drivers    Synced        Healthy
+platform-ceph-csi-operator   Synced        Healthy
+platform-cicd                Synced        Healthy
+platform-cilium-l2           Synced        Healthy
+platform-cnpg-cluster        Synced        Healthy
+platform-cnpg-operator       Synced        Healthy
+platform-cnpg-plugin         Synced        Healthy
+platform-etcd-backup         Synced        Healthy
+platform-gateway-api         Synced        Healthy
+platform-grafana             Synced        Healthy
+platform-grafana-operator    Synced        Healthy
+platform-kafka-cluster       Synced        Healthy
+platform-kafka-operator      Synced        Healthy
+platform-metallb             Synced        Healthy
+platform-monitoring-crds     Synced        Healthy
+platform-monitoring-rules    Synced        Healthy
+platform-monitoring-stack    Synced        Healthy
+platform-monitoring-wecom    Synced        Healthy
+platform-sealed-secrets      Synced        Healthy
+platform-sso-oauth2-proxy    Synced        Healthy
+platform-traefik             Synced        Healthy
+platform-ui                  Synced        Healthy
+tekton-config                Synced        Healthy
+tekton-operator              Synced        Healthy
+
+=== app-of-apps syncPolicy
+clusters/prod/applications
+{"automated":{"prune":false,"selfHeal":true},"syncOptions":["ServerSideApply=true"]}
+
+=== sample app syncPolicy
+{"automated":{"prune":false,"selfHeal":true},"retry":{"backoff":{"duration":"10s","factor":2,"maxDuration":"3m"},"limit":5},"syncOptions":["CreateNamespace=true","ServerSideApply=true"]}
+
+=== Flux presence
+Error from server (NotFound): namespaces "flux-system" not found
+flux not found
+
+=== git log
+cd55dea docs(virt): verify cloud images and add cloud image vs ISO/Packer tooling
+50bfd15 docs(virt): add KVM/QEMU, virtio, cloud vs physical, IMDSv2, cloud-init, Packer and boot tutorial
+1334b35 docs(infra): correct GitLab/Harbor topology to Hyper-V host 192.168.67.110
+e297603 docs(k8s): add evidence-based core interview points and verification matrix
+d370484 docs(storage): add disk/filesystem/LVM/RAID/NFS/CSI/SMART tutorial and interview answers
+79d58f6 docs(interview): add Linux/network/cloud-native one-liners with machine evidence
+82991ac docs(containers): add runtime, image, network, storage, security and troubleshooting tutorial
+d9aa736 docs(linux): add evidence-based kernel/userspace/storage/permissions/process/memory/systemd tutorial

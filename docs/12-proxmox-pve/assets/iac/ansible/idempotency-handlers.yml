@@ -1,0 +1,21 @@
+---
+# 幂等 + handlers 示例：第一次 changed，第二次 ok，handler 只在 changed 时触发。
+# 执行：
+#   ansible-playbook -i inventory-k8s.ini idempotency-handlers.yml
+#   ansible-playbook -i inventory-k8s.ini idempotency-handlers.yml   # 第二次
+
+- name: Demonstrate idempotency and handlers
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Ensure a directory exists
+      ansible.builtin.file:
+        path: /tmp/ansible-idempotent-demo
+        state: directory
+        mode: "0755"
+      notify: Handler only on change
+
+  handlers:
+    - name: Handler only on change
+      ansible.builtin.debug:
+        msg: "directory was created or mode changed"

@@ -1,0 +1,28 @@
+---
+# delegate_to 示例：在 worker 的 play 里，把某一步委托给控制机执行。
+# 典型场景：在控制机跑 kubectl / 调 API / 更新负载均衡，而不是在节点上跑。
+#
+# 执行：
+#   ansible-playbook -i inventory-k8s.ini delegate-example.yml --limit worker03
+
+- name: Show where delegated tasks run
+  hosts: k8s_worker
+  gather_facts: false
+  tasks:
+    - name: Run on the control node (localhost)
+      ansible.builtin.command: hostname
+      delegate_to: localhost
+      run_once: true
+      register: control_host
+      changed_when: false
+
+    - name: Run on the target node
+      ansible.builtin.command: hostname
+      register: node_host
+      changed_when: false
+
+    - name: Print both
+      ansible.builtin.debug:
+        msg:
+          - "control node: {{ control_host.stdout }}"
+          - "target node:  {{ node_host.stdout }}"

@@ -79,6 +79,21 @@
 | Packer | 不可变镜像，变更走新镜像 | 1.16.2 + proxmox 1.2.4 已装；示例 validate 通过 |
 | 引导 | UEFI/Secure Boot/PXE/initramfs 驱动 | K8s Legacy；9010 UEFI 无 SecureBoot；Hyper-V Gen2 Off |
 
+## 一页速查（IaC / GitOps）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| Ansible 幂等 | 执行 1 次和 N 次结果一样 | 第一次 changed=1，第二次 changed=0 |
+| handlers | 只在 changed 时触发 | 第一次触发，第二次不触发 |
+| `--check --diff` | 预演+文件 diff；不真装包 | worker03 发现 hosts/chrony 漂移；check 假失败已修 |
+| delegate_to | 某一步委托给另一台主机 | teacher / worker03 |
+| 动态 inventory | 从 API 生成主机清单 | inventory_k8s.py 3 cp + 3 worker |
+| roles | tasks/defaults/handlers 打包复用 | roles/preflight |
+| 何时不用 Ansible | 大规模/频繁重建转镜像 | 6 节点合适；1000 节点需分批 |
+| Terraform state | 远端+锁+加密 | 当前本地 state，无 backend（反面） |
+| plan/drift | plan 带 refresh 才检测 drift | `-refresh=false` 无变化；真实 plan 3 台漂移 |
+| GitOps | Git 单一事实源 + selfHeal | ArgoCD 31 App；Flux 未部署 |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -174,6 +189,19 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 备份成功 ≠ 能恢复。本环境验证了每小时快照 133MB/8234 keys/上传 S3，
 但**没有做生产恢复演练**。
 
+### 11. “Ansible 一定幂等”
+
+只有用幂等模块才幂等；`shell`/`command` 默认不幂等，必须配 `creates/removes/changed_when`。
+
+### 12. “`terraform plan -refresh=false` 能检测 drift”
+
+不能。它只看 state；带 refresh 的 `terraform plan` 才发现 3 台 VM `started=false→true`。
+
+### 13. “GitOps 能管一切”
+
+数据库 migration、一次性 bootstrap、明文 Secret 不适合直接塞 GitOps；
+需要 Job/Operator/SealedSecret 等配合。
+
 ## 三、详细章节
 
 | 文件 | 内容 |
@@ -184,6 +212,7 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [04-storage.md](04-storage.md) | 分区、LVM、RAID、文件系统、fstab、NFS、Ceph、云盘、CSI、SMART |
 | [05-kubernetes.md](05-kubernetes.md) | 控制面/节点/资源/QoS/PDB/探针/升级/备份/扩展/多租户/进阶 |
 | [06-virtualization-boot.md](06-virtualization-boot.md) | KVM/QEMU/virtio/virsh、云 vs 物理、IMDSv2、cloud-init、Packer、云镜像 vs ISO、UEFI/PXE/initramfs |
+| [07-iac-gitops.md](07-iac-gitops.md) | Ansible 幂等/handlers/check/delegate/inventory/roles、Terraform state/plan/drift/import、GitOps、演进 |
 | [00-verification-matrix.md](00-verification-matrix.md) | 60+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |

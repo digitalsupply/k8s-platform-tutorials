@@ -133,7 +133,28 @@
 | PXE/网络引导 | ⚠️ | Hyper-V UEFI 有 EFI Network 项；本环境无 PXE 服务 |
 | initramfs 缺驱动会起不来 | ✅ | KVM virtio_scsi、Hyper-V hv_storvsc 均在 initramfs |
 
-## 六、结论
+## 六、IaC / Terraform / Ansible / GitOps
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| Ansible 幂等 | ✅ | 第一次 changed=1，第二次 changed=0 |
+| Ansible handlers | ✅ | 第一次触发，第二次不触发 |
+| `--check --diff` | ✅ | worker03 发现 hosts/chrony 漂移，check 模式假失败已修 |
+| delegate_to | ✅ | control node teacher / target worker03 |
+| 动态 inventory | ✅ | inventory_k8s.py 生成 3 cp + 3 worker |
+| roles 复用 | ✅ | roles/preflight 被 roles-demo 复用 |
+| 大规模不适合 Ansible | 📚 | 6 节点合适；1000 节点需分批/转镜像 |
+| Terraform state | ✅ | 3 台 VM 本地 state，无 backend/lock |
+| plan 审查 | ✅ | 3 台 VM started false→true，未 apply |
+| drift 检测 | ✅ | `-refresh=false` 无变化；带 refresh 发现 3 台漂移 |
+| 模块化 | 📚 | 当前单模块；生产建议 modules/envs |
+| import 存量资源 | 📚 | 文档命令；未 import 生产资源 |
+| ArgoCD/Flux | ✅ | ArgoCD 31 App；Flux 未部署 |
+| 单一事实源/selfHeal | ✅ | app-of-apps prune=false/selfHeal=true |
+| PR 即审批/可审计 | ✅ | git log + ArgoCD tracking |
+| 演进逻辑 | ✅ | 雪花→配置管理→不可变→GitOps，均有本环境证据 |
+
+## 七、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

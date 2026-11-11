@@ -1,0 +1,84 @@
+=== dynamic inventory --list
+{
+  "_meta": {
+    "hostvars": {
+      "m01": {
+        "ansible_host": "10.0.0.61",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "control-plane",
+        "zone": ""
+      },
+      "master01": {
+        "ansible_host": "10.0.0.121",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "control-plane",
+        "zone": ""
+      },
+      "master02": {
+        "ansible_host": "10.0.0.120",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "control-plane",
+        "zone": ""
+      },
+      "worker01": {
+        "ansible_host": "10.0.0.122",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "worker",
+        "zone": "test-a"
+      },
+      "worker02": {
+        "ansible_host": "10.0.0.123",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "worker",
+        "zone": "test-b"
+      },
+      "worker03": {
+        "ansible_host": "10.0.0.124",
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
+        "ansible_python_interpreter": "/usr/bin/python3",
+        "node_role": "worker",
+        "zone": "test-a"
+      }
+    }
+  },
+  "k8s_all": {
+    "children": [
+      "k8s_cp",
+      "k8s_worker"
+    ]
+  },
+  "k8s_cp": {
+
+=== ansible-inventory graph
+[WARNING]:  * Failed to parse /tmp/opencode/repo-check/docs/12-proxmox-
+pve/assets/iac/ansible/inventory_k8s.py with script plugin: You defined a group
+'k8s_cp' with bad data for the host list:  {'hosts': {'m01': {'ansible_host':
+'10.0.0.61', 'ansible_user': 'root', 'ansible_ssh_private_key_file':
+'~/.ssh/id_rsa', 'ansible_python_interpreter': '/usr/bin/python3', 'node_role':
+'control-plane', 'zone': ''}, 'master01': {'ansible_host': '10.0.0.121',
+'ansible_user': 'root', 'ansible_ssh_private_key_file': '~/.ssh/id_rsa',
+'ansible_python_interpreter': '/usr/bin/python3', 'node_role': 'control-plane',
+'zone': ''}, 'master02': {'ansible_host': '10.0.0.120', 'ansible_user': 'root',
+'ansible_ssh_private_key_file': '~/.ssh/id_rsa', 'ansible_python_interpreter':
+'/usr/bin/python3', 'node_role': 'control-plane', 'zone': ''}}}
+[WARNING]:  * Failed to parse /tmp/opencode/repo-check/docs/12-proxmox-
+pve/assets/iac/ansible/inventory_k8s.py with ini plugin: /tmp/opencode/repo-
+check/docs/12-proxmox-pve/assets/iac/ansible/inventory_k8s.py:2: Error parsing
+host definition '"""从 kubectl 动态生成 Ansible inventory（K8s 节点）。': No closing
+quotation
+[WARNING]: Unable to parse /tmp/opencode/repo-check/docs/12-proxmox-
+pve/assets/iac/ansible/inventory_k8s.py as an inventory source
+[WARNING]: No inventory was parsed, only implicit localhost is available
+@all:
+  |--@ungrouped:

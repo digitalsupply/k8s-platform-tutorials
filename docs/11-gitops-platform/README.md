@@ -240,6 +240,7 @@ python3 docs/11-gitops-platform/scripts/argocd_gitops_audit.py
 | [sealed-secrets-openwebui-2026-11-08.md](notes/sealed-secrets-openwebui-2026-11-08.md) | Sealed Secrets 安装、3 个 Secret 迁移、数据一致性验证 |
 | [vault-eso-feasibility-2026-11-08.md](notes/vault-eso-feasibility-2026-11-08.md) | Vault + ESO 的资源核算、unseal 代价、决策矩阵、POC 清单 |
 | [platform-gitops-repo/](notes/platform-gitops-repo/) | 平台仓原始文档：ArgoCD/Grafana/监控/日志/SSO/Secrets/etcd/网络 |
+| [10-iac-evolution.md](10-iac-evolution.md) | Ansible/Terraform/GitOps 能力边界、真机验证与演进逻辑 |
 | [2026-11-09-weekly-postmortem-index.md](../09-incidents-and-readiness/notes/2026-11-09-weekly-postmortem-index.md) | 7 轮改造总索引（跨分类） |
 
 ## 配套资产
@@ -253,6 +254,7 @@ python3 docs/11-gitops-platform/scripts/argocd_gitops_audit.py
 | [scripts/clean-k8s-yaml.py](scripts/clean-k8s-yaml.py) | 清洗 `kubectl get -o yaml` 的运行时字段，拒绝 Secret |
 | [scripts/argocd_gitops_audit.py](scripts/argocd_gitops_audit.py) | 只读审计 App 状态、仓库/路径、automated/prune/selfHeal |
 | [scripts/gitlab-create-grafana-oauth-app.sh](scripts/gitlab-create-grafana-oauth-app.sh) | 在 GitLab 创建 Grafana OAuth Application 并直接 seal |
+| [assets/iac-evolution/](assets/iac-evolution/README.md) | Ansible 幂等/handlers/check/delegate/roles、Terraform state/plan、ArgoCD 审计证据 |
 
 ```bash
 # 清洗一个 live 资源，生成可提交的 YAML

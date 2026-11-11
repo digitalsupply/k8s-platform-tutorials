@@ -1,0 +1,61 @@
+=== state list
+proxmox_virtual_environment_vm.node["lb01"]
+proxmox_virtual_environment_vm.node["sweb01"]
+proxmox_virtual_environment_vm.node["web01"]
+
+=== backend config
+no backend block -> local state
+
+=== state files
+-rw-r--r-- 1 root root 22K Oct 12 18:11 terraform.tfstate
+-rw-r--r-- 1 root root 22K Oct 12 18:11 terraform.tfstate.1791799878.backup
+-rw-r--r-- 1 root root 22K Oct 12 18:11 terraform.tfstate.backup
+
+=== plan with refresh=false (no drift check)
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+
+=== plan with refresh (real drift check)
+        name                                 = "lb01"
+      ~ network_interface_names              = [] -> (known after apply)
+      ~ started                              = false -> true
+        # (28 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # proxmox_virtual_environment_vm.node["sweb01"] will be updated in-place
+  ~ resource "proxmox_virtual_environment_vm" "node" {
+        id                                   = "126"
+      ~ ipv4_addresses                       = [] -> (known after apply)
+      ~ ipv6_addresses                       = [] -> (known after apply)
+        name                                 = "sweb01"
+      ~ network_interface_names              = [] -> (known after apply)
+      ~ started                              = false -> true
+        # (28 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # proxmox_virtual_environment_vm.node["web01"] will be updated in-place
+  ~ resource "proxmox_virtual_environment_vm" "node" {
+        id                                   = "125"
+      ~ ipv4_addresses                       = [] -> (known after apply)
+      ~ ipv6_addresses                       = [] -> (known after apply)
+        name                                 = "web01"
+      ~ network_interface_names              = [] -> (known after apply)
+      ~ started                              = false -> true
+        # (28 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 3 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

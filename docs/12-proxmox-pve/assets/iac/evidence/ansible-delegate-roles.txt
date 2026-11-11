@@ -1,0 +1,48 @@
+=== delegate-example
+
+PLAY [Show where delegated tasks run] ******************************************
+
+TASK [Run on the control node (localhost)] *************************************
+ok: [worker03 -> localhost]
+
+TASK [Run on the target node] **************************************************
+ok: [worker03]
+
+TASK [Print both] **************************************************************
+ok: [worker03] => {
+    "msg": [
+        "control node: teacher",
+        "target node:  worker03"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+worker03                   : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+=== roles-demo
+
+PLAY [Reuse preflight role] ****************************************************
+
+TASK [preflight : Collect kernel and runtime facts] ****************************
+ok: [worker03]
+
+TASK [preflight : Check kubelet config exists] *********************************
+ok: [worker03] => (item=/etc/kubernetes/kubelet.conf)
+ok: [worker03] => (item=/etc/containerd/config.toml)
+
+TASK [preflight : Check swap] **************************************************
+ok: [worker03]
+
+TASK [preflight : Print preflight summary] *************************************
+ok: [worker03] => {
+    "msg": [
+        "kernel: 5.15.0-202-generic",
+        "files: ['/etc/kubernetes/kubelet.conf', '/etc/containerd/config.toml']",
+        "swap: []"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+worker03                   : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

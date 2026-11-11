@@ -2,6 +2,9 @@
 
 > 本章目标：用 Terraform 把“手工 `qm clone` + `qm set`”变成可 review、可重复、可销毁的代码。
 > 代码在 [`../assets/xceuler/terraform/`](../assets/xceuler/terraform/)，本章解释每一段为什么这么写。
+>
+> state 后端、plan 审查、drift 检测、模块化、import 存量资源的实战与证据，
+> 见 [`../../11-gitops-platform/10-iac-evolution.md`](../../11-gitops-platform/10-iac-evolution.md) 第 2 节。
 
 ## 1. 当时的情况
 

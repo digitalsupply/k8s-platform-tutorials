@@ -1,0 +1,43 @@
+# ArgoCD GitOps 审计
+
+- Application 总数: 31
+- Synced: 31；Healthy: 31；automated: 31
+- 仓库: http://192.168.67.201/deeptutor/deeptutor-gitops.git, http://192.168.67.201/digitalsupply/china-study-free-gitops.git, http://192.168.67.201/digitalsupply/compassio-gitops.git, http://192.168.67.201/digitalsupply/openwebui-gitops.git, http://192.168.67.201/digitalsupply/platform-gitops.git, http://192.168.67.201/digitalsupply/tekton-platform-gitops.git, https://ceph.github.io/ceph-csi-operator, https://traefik.github.io/charts
+
+| Application | Sync | Health | Repo/Path | Automated | Prune | SelfHeal |
+|---|---|---|---|---|---|---|
+| app-of-apps | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `clusters/prod/applications` | True | False | True |
+| china-study-free | Synced | Healthy | `http://192.168.67.201/digitalsupply/china-study-free-gitops.git` / `overlays/prod` | True | True | True |
+| compassio | Synced | Healthy | `http://192.168.67.201/digitalsupply/compassio-gitops.git` / `overlays/prod` | True | False | True |
+| deeptutor | Synced | Healthy | `http://192.168.67.201/deeptutor/deeptutor-gitops.git` / `overlays/prod` | True | True | True |
+| open-webui | Synced | Healthy | `http://192.168.67.201/digitalsupply/openwebui-gitops.git` / `overlays/prod` | True | True | True |
+| platform-alloy-config | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/logging/alloy` | True | False | True |
+| platform-ceph-csi | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/ceph-csi/resources` | True | False | True |
+| platform-ceph-csi-drivers | Synced | Healthy | `https://ceph.github.io/ceph-csi-operator` / `None` | True | False | True |
+| platform-ceph-csi-operator | Synced | Healthy | `https://ceph.github.io/ceph-csi-operator` / `None` | True | False | True |
+| platform-cicd | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/cicd` | True | False | True |
+| platform-cilium-l2 | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/network/cilium/l2-policy` | True | False | True |
+| platform-cnpg-cluster | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/cnpg/cluster` | True | False | True |
+| platform-cnpg-operator | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/cnpg/operator` | True | False | True |
+| platform-cnpg-plugin | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/cnpg/plugin` | True | False | True |
+| platform-etcd-backup | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/backup/etcd` | True | False | True |
+| platform-gateway-api | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/gateway-api/crds` | True | False | True |
+| platform-grafana | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/grafana/resources` | True | True | True |
+| platform-grafana-operator | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/grafana/operator` | True | False | True |
+| platform-kafka-cluster | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/kafka/cluster` | True | False | True |
+| platform-kafka-operator | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/kafka/operator` | True | False | True |
+| platform-metallb | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/network/metallb` | True | False | True |
+| platform-monitoring-crds | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/monitoring/crds` | True | False | True |
+| platform-monitoring-rules | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/monitoring/rules` | True | True | True |
+| platform-monitoring-stack | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `None` | True | False | True |
+| platform-monitoring-wecom | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/monitoring/wecom` | True | True | True |
+| platform-sealed-secrets | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/secrets/sealed-secrets` | True | False | True |
+| platform-sso-oauth2-proxy | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/sso/oauth2-proxy` | True | True | True |
+| platform-traefik | Synced | Healthy | `https://traefik.github.io/charts` / `None` | True | False | True |
+| platform-ui | Synced | Healthy | `http://192.168.67.201/digitalsupply/platform-gitops.git` / `platform/ui` | True | False | True |
+| tekton-config | Synced | Healthy | `http://192.168.67.201/digitalsupply/tekton-platform-gitops.git` / `config` | True | False | True |
+| tekton-operator | Synced | Healthy | `http://192.168.67.201/digitalsupply/tekton-platform-gitops.git` / `operator` | True | False | True |
+
+## 警告
+
+- 无

@@ -1,0 +1,7 @@
+---
+# roles 复用示例：同一个 preflight role 可被 baseline / k8s-node / 自定义 play 调用。
+- name: Reuse preflight role
+  hosts: k8s_worker
+  gather_facts: false
+  roles:
+    - preflight

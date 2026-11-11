@@ -1,0 +1,4 @@
+---
+preflight_required_files:
+  - /etc/kubernetes/kubelet.conf
+  - /etc/containerd/config.toml

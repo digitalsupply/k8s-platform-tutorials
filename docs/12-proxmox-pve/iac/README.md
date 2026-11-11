@@ -36,6 +36,7 @@ Terraform（PVE API）
 | [04 K8s 节点](04-k8s-node-baseline.md) | 内核参数、containerd、kubelet、join、Cilium | 把新 VM 加入现有集群 |
 | [05 批量管理](05-batch-ops.md) | 安全重启、扩容、discard、巡检、销毁 | 日常运维/容量治理 |
 | [06 故障排查](06-troubleshooting.md) | 现象→根因→修复→验证 | 出问题时先查这里 |
+| [11 IaC 演进](../../11-gitops-platform/10-iac-evolution.md) | Ansible 幂等/handlers/check/delegate/inventory/roles、Terraform state/plan/drift/import、GitOps | 想搞清 IaC 边界与演进 |
 | [labs/](labs/README.md) | 5 个可动手实验（含清理） | 想按步骤练一遍 |
 
 推荐顺序：**01 → 02 → 03 → 04 → 05 → 06**。只看不练容易漏掉“模板/网络/版本”这些环境坑。

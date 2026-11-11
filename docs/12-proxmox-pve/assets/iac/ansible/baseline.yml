@@ -67,11 +67,14 @@
         enabled: true
         state: started
 
+    # --check 模式不会真正安装包，chrony 服务可能还不存在；
+    # 因此 check 模式跳过服务启动，避免假失败。
     - name: Enable time sync
       ansible.builtin.systemd:
         name: "{{ 'chronyd' if ansible_os_family == 'RedHat' else 'chrony' }}"
         enabled: true
         state: started
+      when: not ansible_check_mode
 
     - name: Disable swap immediately
       ansible.builtin.command: swapoff -a

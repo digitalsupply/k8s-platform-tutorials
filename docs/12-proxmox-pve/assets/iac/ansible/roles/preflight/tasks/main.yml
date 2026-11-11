@@ -1,0 +1,24 @@
+---
+# 可复用 role：K8s 节点只读预检。可被 baseline/k8s-node/自定义 play 复用。
+- name: Collect kernel and runtime facts
+  ansible.builtin.command: uname -r
+  register: preflight_kernel
+  changed_when: false
+
+- name: Check kubelet config exists
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ preflight_required_files }}"
+  register: preflight_files
+
+- name: Check swap
+  ansible.builtin.command: swapon --show
+  register: preflight_swap
+  changed_when: false
+
+- name: Print preflight summary
+  ansible.builtin.debug:
+    msg:
+      - "kernel: {{ preflight_kernel.stdout }}"
+      - "files: {{ preflight_files.results | map(attribute='stat.path') | list }}"
+      - "swap: {{ preflight_swap.stdout_lines | default([]) }}"

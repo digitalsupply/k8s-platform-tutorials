@@ -3,6 +3,11 @@
 > 本章目标：用 Ansible 管理现有 6 台 K8s 节点和新克隆的 VM。
 > 代码在 [`../assets/iac/ansible/`](../assets/iac/ansible/) 与
 > [`../assets/xceuler/ansible/`](../assets/xceuler/ansible/)。
+>
+> 幂等性、handlers、`--check --diff`、`delegate_to`、动态 inventory、roles 复用、
+> 以及“大规模为什么转不可变镜像”的真机输出，见
+> [`../../11-gitops-platform/10-iac-evolution.md`](../../11-gitops-platform/10-iac-evolution.md) 第 1 节，
+> 证据在 [`../assets/iac/evidence/`](../assets/iac/evidence/)。
 
 ## 1. 当时的情况
 
