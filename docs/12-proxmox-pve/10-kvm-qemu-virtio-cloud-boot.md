@@ -305,8 +305,9 @@ journalctl -u cloud-init --no-pager
 
 ### 6.4 Packer 金镜像 → 不可变基础设施
 
-本环境 **没有安装 Packer**（`packer not found`），金镜像由
-`virt-customize` + PVE 模板 9010 手工构建（见 [02 cloud-init](iac/02-cloudinit-golden-template.md)）。
+本环境最初没有 Packer；现已安装 **Packer 1.16.2 + packer-plugin-proxmox 1.2.4**。
+历史金镜像由 `virt-customize` + PVE 模板 9010 手工构建（见 [02 cloud-init](iac/02-cloudinit-golden-template.md)），
+Packer 示例已通过 `packer fmt/validate`，但尚未执行完整 build。
 
 Packer 化的目标：
 
@@ -329,7 +330,110 @@ Packer 构建一次镜像
 > 不可变基础设施的核心不是“Packer”这三个字，而是**运行实例不再被手工修改**，
 > 所有变更都通过新镜像/新版本发布。
 
-## 7. 引导细节：UEFI、Secure Boot、PXE、initramfs
+## 7. 云镜像 vs 普通 ISO 做模板
+
+### 7.1 结论：本环境两者都是云镜像
+
+| 对象 | 来源 | 证据 |
+|---|---|---|
+| PVE openEuler 模板 9010 | openEuler 24.03 LTS SP4 **qcow2 云镜像** | 40GiB qcow2、ext4 rootfs、`/etc/cloud/cloud.cfg`、`citype: nocloud`、cloud-init 盘 `scsi1` |
+| Hyper-V ubuntu01/02 | Ubuntu 24.04 **cloud image** | `/etc/cloud/build.info` = `server/20260826`、`LABEL=cloudimg-rootfs`、无 `/var/log/installer`、NoCloud seed `/dev/sr0` |
+
+PVE 模板 9010：
+
+```text
+$ qemu-img info openEuler-...qcow2
+virtual size: 40 GiB
+disk size: 2.86 GiB
+
+$ virt-filesystems ...
+/dev/sda1 vfat 2.0G
+/dev/sda2 ext4 rootfs 37G
+
+$ virt-cat ... /etc/cloud/cloud.cfg
+disable_root: true
+ssh_pwauth: false
+resize_rootfs_tmp: /dev
+```
+
+Hyper-V ubuntu01：
+
+```text
+$ cat /etc/cloud/build.info
+build_name: server
+serial: 20260826
+
+$ cat /etc/fstab
+LABEL=cloudimg-rootfs / ext4 discard,commit=30,errors=remount-ro 0 1
+
+$ ls /var/log/installer
+No such file or directory
+
+$ cloud-init query platform
+nocloud
+```
+
+> `/var/log/installer` 不存在 + `cloudimg-rootfs` + `build.info`，是“云镜像”而不是 ISO 安装的强证据。
+> ISO 安装通常会留下 installer/anaconda 日志、安装器生成的分区/用户/主机密钥。
+>
+> 完整证据与对比：[`assets/kvm-cloud-boot/cloud-image/README.md`](assets/kvm-cloud-boot/cloud-image/README.md)。
+
+### 7.2 云镜像和 ISO 模板的区别
+
+| 维度 | 云镜像（qcow2/vhdx） | 普通 ISO 安装成模板 |
+|---|---|---|
+| 本质 | 已装好的磁盘镜像 | 安装介质，需要跑安装器 |
+| 首次启动 | cloud-init 注入用户/网络/SSH | 安装器交互/自动应答（preseed/kickstart） |
+| 默认用户 | 镜像内置（如 `ubuntu`/`cloud-user`），通常禁 root | 安装时创建 |
+| 分区 | 镜像预定义（GPT/BIOS boot/EFI/root） | 安装器按配置生成（LVM/xfs/ext4 可选） |
+| 速度 | 克隆即用，秒级 | 安装 10–30 分钟 |
+| 可复现 | 强（镜像 digest/版本） | 依赖安装器/网络/应答文件 |
+| 定制 | cloud-init + 首次启动 | 安装时选包、分区、驱动 |
+| 不可变 | 天然适合（Packer 构建后不改） | 需要额外 sysprep/清理 |
+| 诊断 | `build.info`、`cloudimg-rootfs`、无 installer log | `/var/log/installer`、anaconda、安装器日志 |
+| 适用 | 云/虚拟化批量、弹性扩缩 | 需要特殊分区/包/硬件的模板 |
+
+### 7.3 本环境安装/验证工具
+
+已在 PVE 宿主安装并测试：
+
+```text
+qemu-img 9.2.0
+libguestfs 1.48.2（virt-customize/virt-filesystems/guestfish）
+cloud-localds（cloud-image-utils 0.33）
+Packer 1.16.2 + packer-plugin-proxmox 1.2.4
+```
+
+测试：
+
+```bash
+# 读云镜像
+qemu-img info openEuler-...qcow2
+virt-filesystems -a openEuler-...qcow2 --all --long -h
+virt-cat -a openEuler-...qcow2 /etc/cloud/cloud.cfg
+
+# 生成 NoCloud seed（user-data/meta-data → cidata ISO）
+cloud-localds seed.iso user-data.yaml meta-data.yaml
+file seed.iso        # ISO 9660 'cidata'
+isoinfo -l -i seed.iso
+
+# Packer 模板语法
+packer fmt -check packer-proxmox.pkr.hcl
+packer validate packer-proxmox.pkr.hcl
+```
+
+Packer 示例：[`assets/kvm-cloud-boot/cloud-image/packer-proxmox.pkr.hcl`](assets/kvm-cloud-boot/cloud-image/packer-proxmox.pkr.hcl)
+（`proxmox-clone` 从模板克隆，`packer validate` 已通过）。
+
+### 7.4 为什么“云镜像 ≠ 普通 ISO”
+
+- 云镜像已经包含分区表、bootloader、内核、initramfs、cloud-init；
+- ISO 只是安装介质，必须经过 installer 才变成磁盘；
+- 云镜像首启靠 **metadata/user-data**，ISO 模板靠 **安装器应答文件**；
+- 云镜像默认用户/SSH key 由 cloud-init 注入，ISO 模板用户由安装器创建；
+- 把 ISO 安装的机器当“云镜像”用，必须手动装 cloud-init、清 machine-id/SSH key、配 NoCloud。
+
+## 8. 引导细节：UEFI、Secure Boot、PXE、initramfs
 
 ### 7.1 本环境的引导方式
 
@@ -381,7 +485,7 @@ lsinitramfs /boot/initrd.img-$(uname -r) | grep -E 'virtio|hv_|xfs|ext4'
 lsinitrd /boot/initramfs-$(uname -r).img | grep -E 'virtio|hv_|xfs|ext4'
 ```
 
-## 8. 一页命令
+## 9. 一页命令
 
 ```bash
 # KVM/QEMU

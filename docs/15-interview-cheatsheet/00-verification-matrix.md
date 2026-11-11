@@ -127,7 +127,8 @@
 | IMDS 169.254.169.254 | ✅ | 所有 Guest curl 超时；无云元数据 |
 | IMDSv2 防 SSRF | 📚 | 本环境无 IMDS，按 AWS 通用流程 |
 | cloud-init 调试 | ✅ | status/analyze/log；201 首启 apt 121s |
-| Packer 金镜像 | ❌/📚 | Packer 未安装；用 virt-customize + 9010 手工模板 |
+| Packer 金镜像 | ⚠️ | Packer 1.16.2 + proxmox 1.2.4 已装；示例 validate 通过，未完整 build |
+| 云镜像 vs ISO | ✅ | openEuler qcow2 + cloud-init；Ubuntu build.info/cloudimg-rootfs；ISO 仅安装介质 |
 | UEFI/Secure Boot | ✅ | 9010 UEFI 无 SecureBoot；Hyper-V Gen2 Off；K8s Legacy |
 | PXE/网络引导 | ⚠️ | Hyper-V UEFI 有 EFI Network 项；本环境无 PXE 服务 |
 | initramfs 缺驱动会起不来 | ✅ | KVM virtio_scsi、Hyper-V hv_storvsc 均在 initramfs |

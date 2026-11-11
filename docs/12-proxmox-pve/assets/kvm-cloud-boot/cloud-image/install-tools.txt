@@ -1,0 +1,23 @@
+=== installed tools
+qemu-img version 9.2.0 (pve-qemu-kvm_9.2.0-7)
+virt-customize 1.48.2
+virt-filesystems 1.48.2
+Usage: cloud-localds [ options ] output user-data [meta-data]
+Packer v1.16.2
+
+=== dpkg
+ii cloud-image-utils 0.33-1
+ii libguestfs-hfsplus:amd64 1:1.48.6-2
+ii libguestfs-perl 1:1.48.6-2
+ii libguestfs-reiserfs:amd64 1:1.48.6-2
+rc libguestfs-tools 1:1.48.6-2
+ii libguestfs-xfs:amd64 1:1.48.6-2
+ii libguestfs0:amd64 1:1.48.6-2
+ii packer 1.16.2-1
+
+=== packer plugins
+/root/.config/packer/plugins/github.com/hashicorp/proxmox/packer-plugin-proxmox_v1.2.4_x5.0_linux_amd64
+
+=== validate
+The configuration is valid.
+validate=0

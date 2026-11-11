@@ -1,0 +1,17 @@
+=== ISO media
+total 8.4G
+-rw-r--r-- 1 root root 4.6G Sep 27 15:31 openEuler-24.03-LTS-SP4-x86_64-dvd.iso
+-rw-r--r-- 1 root root 3.9G Sep 27 15:33 ubuntu-24.04.5-live-server-amd64.iso
+
+--- /var/lib/vz/template/iso/openEuler-24.03-LTS-SP4-x86_64-dvd.iso
+/var/lib/vz/template/iso/openEuler-24.03-LTS-SP4-x86_64-dvd.iso: BLOCK_SIZE="2048" UUID="2026-06-28-18-23-27-00" LABEL="openEuler-24.03-LTS-SP4-x86_64" TYPE="iso9660" PTUUID="36c3da59" PTTYPE="dos"
+System id: 
+Volume id: openEuler-24.03-LTS-SP4-x86_64
+Volume set size is: 1
+Logical block size is: 2048
+--- /var/lib/vz/template/iso/ubuntu-24.04.5-live-server-amd64.iso
+/var/lib/vz/template/iso/ubuntu-24.04.5-live-server-amd64.iso: BLOCK_SIZE="2048" UUID="2026-09-09-09-12-22-00" LABEL="Ubuntu-Server 24.04.5 LTS amd64" TYPE="iso9660" PTUUID="4638f312-6bd4-4428-9dac-150b8b6885aa" PTTYPE="gpt"
+System id: 
+Volume id: Ubuntu-Server 24.04.5 LTS amd64
+Volume set size is: 1
+Logical block size is: 2048

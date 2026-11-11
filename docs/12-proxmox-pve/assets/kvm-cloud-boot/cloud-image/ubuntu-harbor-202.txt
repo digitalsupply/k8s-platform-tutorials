@@ -1,0 +1,36 @@
+=== harbor-202
+=== build.info
+build_name: server
+serial: 20260826
+=== cloud-init version
+/usr/bin/cloud-init 26.1-0ubuntu1~24.04.1
+=== installer logs
+ls: cannot access '/var/log/installer': No such file or directory
+=== fstab
+LABEL=cloudimg-rootfs	/	 ext4	discard,commit=30,errors=remount-ro	0 1
+LABEL=BOOT	/boot	ext4	defaults	0 2
+LABEL=UEFI	/boot/efi	vfat	umask=0077	0 1
+=== partitions
+NAME     SIZE TYPE FSTYPE  PARTTYPENAME        MOUNTPOINTS
+sda       60G disk                             
+├─sda1    59G part ext4    Linux filesystem    /
+├─sda14    4M part         BIOS boot           
+├─sda15  106M part vfat    EFI System          /boot/efi
+└─sda16  913M part ext4    Linux extended boot /boot
+sr0      368K rom  iso9660                     
+=== cloud status
+status: done
+extended_status: done
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:00:05 +0000
+detail: DataSourceNoCloud [seed=/dev/sr0]
+errors: []
+recoverable_errors: {}
+=== datasource
+nocloud
+config-disk (/dev/sr0)
+unknown
+=== cloud packages
+ii  cloud-init                                       26.1-0ubuntu1~24.04.1                            all          initialization and customization tool for cloud instances
+ii  cloud-initramfs-copymods                         0.49~24.04.1                                     all          copy initramfs modules into root filesystem for later use
+ii  cloud-initramfs-dyn-netconf                      0.49~24.04.1                                     all          write a network interface file in /run for BOOTIF

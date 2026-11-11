@@ -255,7 +255,7 @@ bash docs/12-proxmox-pve/scripts/apply_discard.sh <vmid> <node> <ip>
 | [vm-110-115-archive.md](notes/vm-110-115-archive.md) | 旧 6 台 LB/Web VM 删除前的完整配置归档 |
 | [openeuler-batch-deploy-2026-11.md](notes/openeuler-batch-deploy-2026-11.md) | Proxmox + cloud-init + Terraform + Ansible 批量部署 openEuler |
 | [xceuler-repo-readme.md](notes/xceuler-repo-readme.md) | openEuler VM 仓库的目录、模板、用法与 gotchas |
-| [10-kvm-qemu-virtio-cloud-boot.md](10-kvm-qemu-virtio-cloud-boot.md) | KVM/QEMU、virtio、virsh、云 vs 物理、IMDSv2、cloud-init、Packer、UEFI/PXE/initramfs |
+| [10-kvm-qemu-virtio-cloud-boot.md](10-kvm-qemu-virtio-cloud-boot.md) | KVM/QEMU、virtio、virsh、云 vs 物理、IMDSv2、cloud-init、Packer、云镜像 vs ISO、UEFI/PXE/initramfs |
 
 ## IaC 子教程
 

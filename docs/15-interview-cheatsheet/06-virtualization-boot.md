@@ -44,7 +44,7 @@
 
 **一句话**：Packer 构建一次镜像，运行期只注入 user-data，不再 SSH 改配置；变更 = 新镜像/新版本，回滚 = 换旧镜像。
 
-**本环境**：未安装 Packer；金镜像由 `virt-customize` + PVE 模板 9010 手工构建。
+**本环境**：已安装 Packer 1.16.2 + proxmox 1.2.4，示例 `packer validate` 通过；历史金镜像由 `virt-customize` + PVE 模板 9010 手工构建。
 
 **追问**：Packer + cloud-init + Terraform 的分工：镜像/首启/编排。
 
@@ -56,6 +56,14 @@
 
 **追问**：跨 KVM/Hyper-V 迁移要重建 initramfs；`lsinitramfs`/`lsinitrd` 检查驱动。
 
+## 8. 云镜像 vs 普通 ISO 模板
+
+**一句话**：云镜像是已装好的磁盘（cloud-init 首启注入）；ISO 是安装介质，必须经过 installer 才变成模板。
+
+**本环境**：PVE openEuler 模板 9010 来自 openEuler qcow2 云镜像（40GiB、ext4 rootfs、cloud-init、NoCloud）；Hyper-V ubuntu01/02 是 Ubuntu cloud image（`build.info=server/20260826`、`LABEL=cloudimg-rootfs`、无 `/var/log/installer`、NoCloud `/dev/sr0`）。
+
+**追问**：云镜像看 `build.info`/`cloudimg-rootfs`/cloud-init；ISO 安装看 installer/anaconda 日志；ISO 要当云镜像用需装 cloud-init + sysprep。
+
 ## 一句话总表
 
 | 题 | 一句话 |
@@ -66,4 +74,5 @@
 | IMDSv2 | PUT token + TTL + hop limit，防 SSRF |
 | cloud-init | status/analyze/log 三件套 |
 | Packer | 不可变镜像，变更走新镜像 |
+| 云镜像 vs ISO | 云镜像是已装好的磁盘；ISO 需要 installer |
 | 引导 | UEFI/Secure Boot/PXE/initramfs 驱动缺一不可 |

@@ -45,6 +45,10 @@ Windows 10 Pro 宿主 SYZX-HY2-TX  192.168.67.110
 | ubuntu03 | Off | 2 | 4GB | `ubuntu03-fresh.vhdx` | 8.2GB / 53.7GB | - | 未使用 |
 | kali-linux-2026.2 | Off | 4 | 4GB | `.avhdx` | - | - | 有 2 个检查点 |
 
+> ubuntu01/02 是 **Ubuntu 24.04 cloud image**（`/etc/cloud/build.info` = `server/20260826`，
+> 根文件系统 `LABEL=cloudimg-rootfs`，无 `/var/log/installer`），不是 ISO 安装。
+> 对比见 [12 KVM/云镜像](../../../12-proxmox-pve/assets/kvm-cloud-boot/cloud-image/README.md)。
+
 - 全部 Generation 2；
 - Secure Boot：**Off**；
 - `DynamicMemoryEnabled`：ubuntu01/02 为 **False**（固定内存），kali 为 True；

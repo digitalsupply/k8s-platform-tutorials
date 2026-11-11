@@ -1,0 +1,67 @@
+=== tools
+qemu-img version 9.2.0 (pve-qemu-kvm_9.2.0-7)
+virt-customize 1.48.2
+virt-filesystems 1.48.2
+Usage: cloud-localds [ options ] output user-data [meta-data]
+Packer v1.16.2
+
+=== packer plugins
+/root/.config/packer/plugins/github.com/hashicorp/proxmox/packer-plugin-proxmox_v1.2.4_x5.0_linux_amd64
+
+=== qemu-img openEuler
+image: /root/xceuler/images/openEuler-24.03-LTS-SP4-x86_64.qcow2
+file format: qcow2
+virtual size: 40 GiB (42949672960 bytes)
+disk size: 2.86 GiB
+cluster_size: 65536
+Format specific information:
+    compat: 1.1
+    compression type: zlib
+    lazy refcounts: false
+    refcount bits: 16
+    corrupt: false
+    extended l2: false
+
+=== virt-filesystems openEuler
+Name       Type        VFS   Label   MBR  Size  Parent
+/dev/sda1  filesystem  vfat  -       -    2.0G  -
+/dev/sda2  filesystem  ext4  rootfs  -    37G   -
+/dev/sda1  partition   -     -       0e   2.0G  /dev/sda
+/dev/sda2  partition   -     -       83   38G   /dev/sda
+/dev/sda   device      -     -       -    40G   -
+
+=== os-release
+NAME="openEuler"
+VERSION="24.03 (LTS-SP4)"
+ID="openEuler"
+VERSION_ID="24.03"
+PRETTY_NAME="openEuler 24.03 (LTS-SP4)"
+ANSI_COLOR="0;31"
+
+
+=== cloud.cfg head
+# The top level settings are used as module
+# and base configuration.
+
+# A set of users which may be applied and/or used by various modules
+# when a 'default' entry is found it will reference the 'default_user'
+# from the distro configuration specified below
+users:
+  - default
+
+# If this is set, 'root' will not be able to ssh in and they
+# will get a message to login instead as the default $user
+disable_root: true
+
+mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']
+resize_rootfs_tmp: /dev
+ssh_pwauth: false
+
+# This will cause the set+update hostname module to not operate (if true)
+preserve_hostname: false
+
+# If you use datasource_list array, keep array items in a single line.
+# If you use multi line array, ds-identify script won't read array items.
+# Example datasource config
+# datasource:
+#   Ec2:

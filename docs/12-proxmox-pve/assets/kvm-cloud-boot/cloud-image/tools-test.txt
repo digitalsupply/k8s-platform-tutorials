@@ -1,0 +1,15 @@
+=== cloud-localds test
+/tmp/nocloud-seed.iso: ISO 9660 CD-ROM filesystem data 'cidata'
+/tmp/nocloud-seed.iso: BLOCK_SIZE="2048" UUID="2026-11-11-10-47-55-00" LABEL="cidata" TYPE="iso9660"
+
+
+Directory listing of /
+d---------   0    0    0            2048 Nov 11 2026 [     28 02]  . 
+d---------   0    0    0            2048 Nov 11 2026 [     28 02]  .. 
+----------   0    0    0              55 Nov 11 2026 [     31 00]  META_DAT.;1 
+----------   0    0    0              89 Nov 11 2026 [     32 00]  USER_DAT.;1 
+
+=== packer fmt/validate
+fmt=0
+The configuration is valid.
+validate=0

@@ -11,7 +11,8 @@
 | `boot-efi.txt` | KVM 无 EFI、Ubuntu Hyper-V UEFI、SecureBoot disabled、EFI 启动项 |
 | `cloud-init-*.txt` | status/analyze/blame/datasource/output log |
 | `imds-*.txt` | 169.254.169.254 超时、路由走网关（无 IMDS） |
-| `packer-boot.txt` | Packer 未安装、Terraform 1.16.4、各 VM boot order |
+| `packer-boot.txt` | 安装前快照（Packer 未安装）、Terraform 1.16.4、各 VM boot order |
+| `cloud-image/` | 云镜像 vs ISO 证据、工具安装/测试、Packer 示例 |
 
 ## 关键结论
 
@@ -22,6 +23,6 @@
 - `vmstat` steal 当前 0，但机制存在；
 - 所有 Guest 访问 169.254.169.254 超时 → 无 IMDS；
 - cloud-init：201 done、首启 apt 121s；m01 degraded schema warning；
-- Packer 未安装，金镜像用 virt-customize + 模板 9010；
+- 已安装 Packer 1.16.2 + proxmox 1.2.4，示例 `packer validate` 通过；历史金镜像用 virt-customize + 模板 9010；
 - K8s VM Legacy BIOS；9010 UEFI 但 Secure Boot 关闭；Hyper-V Gen2 Secure Boot Off；
 - KVM initramfs 有 virtio_scsi，Hyper-V 有 hv_storvsc，换平台不重建 initramfs 会起不来。
