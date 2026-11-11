@@ -181,10 +181,12 @@ master02 的 **122 个 ConfigMap watch** 非常突出；master01 的 pods/servic
    当前 1,945 个。默认 `--event-ttl=1h`，说明最近事件 churn 很高（kubelet/CSI/驱逐）。  
    修复 churn 后事件会自然下降；也可在维护窗口评估 `--event-ttl=30m`。
 
-3. **设置 `--target-ram-mb`**
-   例如 2048 或 3072（按节点内存），让 apiserver 按目标内存调整缓存大小。  
-   它不是硬限制，但能避免缓存无界增长。  
-   通过 kubeadm `extraArgs` 或 `/etc/kubernetes/manifests/kube-apiserver.yaml` 修改，逐台滚动。
+3. ~~**设置 `--target-ram-mb`**~~ —— **已废止，不要执行**
+   1.35.9 的 kube-apiserver **没有这个参数**（`kube-apiserver --help | grep target-ram` 为空），
+   写进 static Pod 会让 apiserver `unknown flag` 直接起不来，控制面少一台。
+   真实可调的是 `--watch-cache-sizes`，但 help 原文说明「唯一有意义的取值是 0」（关闭该资源的 watch 缓存），
+   非 0 值等价于不限制；控制内存应走减少 watch/CRD 数量、清理 Helm 历史、加内存。
+   详见同目录 `apiserver-remediation-20261109/REPORT.md` 与本章 README「坑 8」。
 
 4. **调小 Events watch cache**
    ```text
@@ -246,4 +248,4 @@ master02 的 **122 个 ConfigMap watch** 非常突出；master01 的 pods/servic
 ## 5. 一句话总结
 
 **apiserver 内存大不是泄漏，而是 148 个 CRD、13.3MB OpenAPI、4,638 个对象、1,945 个 Events 和 600+ watch 共同造成的缓存/堆开销；三个实例的 watch 分布严重不均（m01 72 个，master01/02 600+ 个），所以 master01/02 到 1.5–1.7GiB，而 m01 只有 850MiB。**  
-优先做：清理 Helm 历史、减少 CRD/operator watch、设置 `--target-ram-mb`、给 control-plane 加内存。
+优先做：清理 Helm 历史、减少 CRD/operator watch、按需用 `--watch-cache-sizes` 关掉大资源的 watch 缓存、给 control-plane 加内存。（`--target-ram-mb` 在 1.35 已不存在，不要加。）

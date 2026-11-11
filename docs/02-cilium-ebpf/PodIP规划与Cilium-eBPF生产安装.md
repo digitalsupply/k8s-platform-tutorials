@@ -221,9 +221,9 @@ curl -sfL https://get.k3s.io | sh -s - server \
 helm repo add cilium https://helm.cilium.io
 helm install cilium cilium/cilium --namespace kube-system \
   --set ipam.mode=cluster-pool \
-  --set ipam.operator.clusterPoolIPv4PodCIDR=10.0.0.0/16 \
+  --set 'ipam.operator.clusterPoolIPv4PodCIDRList={10.0.0.0/16}' \
   --set ipam.operator.clusterPoolIPv4MaskSize=24 \
-  --set kubeProxyReplacement=strict \
+  --set kubeProxyReplacement=true \
   --set routingMode=tunnel \
   --set tunnelProtocol=vxlan \
   --set hubble.enabled=true

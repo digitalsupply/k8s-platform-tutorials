@@ -93,7 +93,7 @@ kubectl patch configmap -n kube-system kube-proxy --type=merge \
 ```
 kubectl patch ds -n kube-system kube-proxy --type=json \
   -p='[{"op":"replace","path":"/spec/template/spec/containers/0/command",
-        "values":["/usr/local/bin/kube-proxy","--proxy-mode=iptables",
+        "value":["/usr/local/bin/kube-proxy","--proxy-mode=iptables",
                    "--hostname-override=$(NODE_NAME)"]}]'
 ```
 
@@ -125,7 +125,7 @@ kubectl delete pods -n kube-system -l k8s-app=kube-proxy
 ```
 kubectl patch ds -n kube-system kube-proxy --type=json \
   -p='[{"op":"replace","path":"/spec/template/spec/containers/0/command",
-        "values":["/usr/local/bin/kube-proxy","--proxy-mode=iptables",
+        "value":["/usr/local/bin/kube-proxy","--proxy-mode=iptables",
                    "--hostname-override=$(NODE_NAME)",
                    "--kubeconfig=/var/lib/kube-proxy/kubeconfig.conf"]}]'
 ```

@@ -602,11 +602,23 @@ metadata:
   namespace: cnpg-system-restore
 spec:
   instances: 1
-  storage: { size: 10Gi }
-  recovery:
-    source: pg16-ceph
-    recoveryTarget:
-      targetTime: "2026-10-05 14:00:00+08"   # 恢复到误操作发生前
+  storage:
+    size: 10Gi
+    storageClass: ceph-rbd-sc
+  bootstrap:
+    recovery:                     # 注意：恢复在 spec.bootstrap.recovery，不是 spec.recovery
+      source: pg16-ceph
+      recoveryTarget:
+        targetTime: "2026-10-05 14:00:00+08"   # 恢复到误操作发生前
+  externalClusters:               # 必填：告诉新 Cluster 去哪个对象存储读备份
+    - name: pg16-ceph
+      barmanObjectStore:
+        destinationPath: s3://pg-backups/
+        endpointURL: http://10.0.0.31:7480
+        s3Credentials:
+          accessKeyId: { name: pg-backup-s3-creds, key: ACCESS_KEY_ID }
+          secretAccessKey: { name: pg-backup-s3-creds, key: ACCESS_SECRET_KEY }
+        serverName: pg16-ceph
 EOF
 ```
 

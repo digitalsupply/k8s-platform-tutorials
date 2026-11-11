@@ -32,7 +32,7 @@ Cilium agent/daemon 已经不再运行，但这些内核层面的 iptables/eBPF 
 
 ## 最终决定
 
-采用**端口变更**方式解决：将 `gitlab_rails['nginx']['listen_port']` 设置为 `8088`。
+采用**端口变更**方式解决：将 `nginx['listen_port']` 设置为 `8088`。
 
 **访问地址**：`http://192.168.67.201:8088/`
 

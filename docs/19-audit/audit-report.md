@@ -20,6 +20,13 @@
 
 ---
 
+## 0.1 修复进度（2026-11-11 晚更新）
+
+- **P0 12/12 已修**：第 2 章每条末尾都有「修复状态」，逐条的改动、验证命令、提交见 [fix-log.md](fix-log.md)。
+- 其中 2 条由仓库作者先修（burn-rate/SLO 模板 `41666d8`、kube-proxy 残留 `c201de5`），本轮沿用其写法未覆盖。
+- P1 顺带修了 6 条（VXLAN 开销、Traefik 301/308、etcd quota、etcd 恢复 runbook、GitLab 版本、PM/SM 口径）。
+- 现场故障：`KubeProxyDown` 与残留 Service 已随 `c201de5` 消失；**Ceph mgr 抓 standby、n8n webhook 指向死隧道** 两项待处理，根因与命令见 fix-log §5。
+
 ## 1. 文档说 vs 机器是（2026-11-11 实测）
 
 | 项 | 文档 | 实测 | 结论 |
@@ -51,37 +58,45 @@
 - 证据：`bash -n` → `行30: 未预期的符号"newline"附近有语法错误`；干净副本 `assets/wecom/apply.sh` 通过。
 - 修复：以 assets 版为准回填；脱敏只替换字面密钥，不要把标识符一起替换；把 `bash -n` + `shellcheck` 加进提交门禁。
 
+- 修复状态（2026-11-11）：已修。`notes/.../apply.sh` 回填 `AM_SECRET=alertmanager-prometheus-alertmanager`、补回两处被吃掉的收尾引号；两处占位符改成 `key=REPLACE_ME`。`bash -n` 两个脚本均通过。
 ### 2.2 `kubeProxyReplacement=strict` 在 Cilium 1.20 上装不上
 - 位置：`docs/02-cilium-ebpf/Cilium-EBPF数据面实战教程.md:339`、`…-完整版.md:346`、`PodIP规划与Cilium-eBPF生产安装.md:226`
 - 证据（本机渲染官方 chart 实测）：`helm template … --set kubeProxyReplacement=strict` → `Error: kubeProxyReplacement must be explicitly set to a valid value (true or false)`。
 - 正确：`--set kubeProxyReplacement=true`（与集群 `kube-proxy-replacement: "true"` 一致）。
 
+- 修复状态（2026-11-11）：已修。三篇安装命令改 `--set kubeProxyReplacement=true`；`helm template` 渲染通过。
 ### 2.3 `ipam.operator.clusterPoolIPv4PodCIDR` 是废弃键，`--set` 静默不生效
 - 位置：同上三篇的安装命令（`:337` / `:344` / `:224`），另 `:307` 写"默认 10.0.0.0/16"
 - 证据：`helm template … --set ipam.operator.clusterPoolIPv4PodCIDR=10.0.0.0/16` → 渲染出 `cluster-pool-ipv4-cidr: "10.0.0.0/8"`（**设了等于没设**，也不报错）；正确键是 `clusterPoolIPv4PodCIDRList={10.0.0.0/16}`，渲染结果才变。chart 默认值是 `10.0.0.0/8`，不是文档写的 /16。
 
+- 修复状态（2026-11-11）：已修。改 `--set 'ipam.operator.clusterPoolIPv4PodCIDRList={10.0.0.0/16}'`，并把「默认 10.0.0.0/16」改成 chart 实际的 `10.0.0.0/8`；渲染输出 `cluster-pool-ipv4-cidr: 10.0.0.0/16` 已验证。
 ### 2.4 kube-proxy JSON Patch 用了非法成员 `values`
 - 位置：`docs/07-networking/notes/kube-proxy-nftables-diagnosis.md:96,128`
 - 问题：RFC 6902 只认 `value`；写 `values` 会被 apiserver 拒绝，文档后面"结果已改为 iptables"不可能发生。另外 `command` 原本不存在时应 `add` 而不是 `replace`。
 
+- 修复状态（2026-11-11）：已修。两处 `"values"` 改 `"value"`（RFC 6902 合法成员）。
 ### 2.5 `preserveVipOnLeadershipLoss` 作为 **env 名**不存在，整篇 08 的核心修复等于没做
 - 位置：`docs/08-control-plane-ha/README.md:92,161`
 - 实测集群：`vip_preserve_on_leadership_loss=true`、`vip_leaseduration=15 / renewdeadline=10 / retryperiod=2`、`limits.memory=512Mi`、无 CPU limit。
 - 问题：`preserveVipOnLeadershipLoss` 只是 **CLI flag** 名；写成 env 会被静默忽略。同文档给的 `5s/3s/1s→10s/8s/5s` 与 200m/128Mi 也和实际（15/10/2、512Mi、无 cpu limit）不一致。
 
+- 修复状态（2026-11-11）：已修。env 名改 `vip_preserve_on_leadership_loss`，超时改 `15/10/2`、资源改 `limits.memory=512Mi`（无 CPU limit），与集群实测一致。
 ### 2.6 `--target-ram-mb` 在 1.35 不存在，写进 static Pod 会让 apiserver 起不来
 - 位置：`docs/08-control-plane-ha/notes/apiserver-memory-analysis-20261109.md:184,248`（列为"优先做"第 3 项）
 - 证据：`kube-apiserver --help | grep -c target-ram` → **0**；同目录 README 坑 8 与 remediation 报告都已否定该参数 —— 只有这份"分析"没改。
 
+- 修复状态（2026-11-11）：已修。该条改成「已废止，不要执行」，保留 `--watch-cache-sizes` 的真实语义（唯一有意义的取值是 0），并指向 `apiserver-remediation-20261109/REPORT.md`。
 ### 2.7 Alertmanager 生成配置里 `inhibit_rules` 不是空的，而模板是空的 → 重跑一次会清空线上抑制规则
 - 位置：`docs/04-monitoring-gitops/notes/prometheus-promql-alerting-tutorial.md:1933,2050`、`assets/wecom/alertmanager.yaml:29`
 - 实测：生成配置有 3 条 inhibit_rules（`grep -c source_matchers` = 3）；`apply.sh` 会把整份模板渲染进 Secret。文档却写"当前没有任何抑制规则"。
 
+- 修复状态（2026-11-11）：已修。`assets/wecom/alertmanager.yaml` 补回线上那 3 条 inhibit_rules；教程正文的「当前 []」改为「线上 3 条」，`改进②` 改成核对 `equal` 维度。
 ### 2.8 告警规则只写 `release: prometheus` 会被静默丢弃
 - 位置：`…/prometheus-promql-alerting-tutorial.md:883`（另 :896/:1255/:1871/:2201/:2270）
 - 实测：`ruleSelector = {release: prometheus, platform.gitops/managed: "true"}` 两标签 **AND**；44/44 条规则都带后者。
 - 后果：§11.4 的"全链路自检"规则永远不加载 → 自检假通过。
 
+- 修复状态（2026-11-11）：已修。示例 CR、说明段、检查清单、坑表共 6 处补上 `platform.gitops/managed: "true"`，并说明 ruleSelector 是 AND。
 ### 2.9 burn rate 四档"多久烧光预算"全错（量级差一个数量级）
 - 位置：`…/prometheus-promql-alerting-tutorial.md:2111-2122`
 - 原文："14.4× → 1 小时烧光" / "6× → 6 小时" / "3× → 1 天" / "1× → 3 天"
@@ -98,13 +113,19 @@
 - 位置：`docs/03-gitlab/gitlab-19.4-install.md:166` 等（共 12 处 `gitlab_rails['nginx'][…]`）
 - 问题：Omnibus 没有 `gitlab_rails['nginx']` 这一层，写了不报错也不生效；端口由 `external_url` 或 `nginx['listen_port']` 决定 —— 同仓 `notes/install-and-port.md:33,38` 用的就是正确键。整条"Cilium 残留 nft 规则导致 127.0.0.1:80 超时"的归因也站不住：那条规则是 `! -o lo`（出接口**不是** lo），永远匹配不到回环流量。
 
+- 修复状态（2026-11-11）：已修。12 处 `gitlab_rails['nginx']['listen_port']` 全改 `nginx['listen_port']`，`sed -i` 的替换方向也改对了。线上核实：`external_url "http://192.168.67.201"`（无端口）、nginx 监听 `0.0.0.0:80`，`gitlab-ce 19.5.0`。
 ### 2.12 CNPG 恢复 runbook 用不存在的 `spec.recovery`
 - 位置：`docs/06-storage-ceph/notes/ceph-rbd-released-pg-backup-implementation-20261005.md:606`
 - 问题：CNPG 的恢复是 `spec.bootstrap.recovery` + 顶层 `externalClusters`；这里写成 `spec.recovery` 且没有 `externalClusters`，apply 后 Cluster 不会进恢复流程。同仓 `cnpg-operator-how-it-works-2026-11-09.md:760` 的写法是对的 —— 两份 runbook 一份能跑一份不能。
 
+- 修复状态（2026-11-11）：已修。改成 `spec.bootstrap.recovery` + 顶层 `externalClusters`（barmanObjectStore + s3Credentials），并补 `storageClass: ceph-rbd-sc`。
 ---
 
 ## 3. P1：事实性错误（版本 / 数量 / 关键行为）
+
+> **口径说明**：本章区分两种「对不上」。①**描述当前状态**的表格/句子写错值 → 是错误（本轮已改的见 fix-log §3）；
+> ②**过程记录**里出现低版本（1.29、Calico 3.27.4、containerd 1.7.22、etcd 3.5.12、Kaniko）→ 那是当时的事实，
+> 属版本演进，不算错误，缺的只是「日期 + 版本」标注。下表只保留 ① 类。
 
 ### 3.1 版本与拓扑
 | 位置 | 文档 | 实际 |
@@ -215,12 +236,12 @@
 
 ## 7. 建议的修复批次
 
-| 批次 | 内容 | 预估 |
+| 批次 | 内容 | 状态 |
 |---|---|---|
-| 立刻（P0） | §2 的 12 条：3 个安装/补丁命令、脱敏脚本、kube-vip env 名、target-ram-mb、CNPG 恢复 YAML、inhibit 模板、rule label | 半天 |
-| 本周 | §3 的版本/数量/机制类（尤其 kube-proxy IPVS 三处、VXLAN 50 字节、quota 2GiB、Calico VNI） | 1–2 天 |
-| 结构性 | 给 notes 加 `状态/采集时间/集群版本` front-matter；数字统一到 current-state 并附命令；CI 加 `bash -n`/`shellcheck`/`helm template` 冒烟 | 2–3 天 |
-| 现场 | §6 的 4 个真实故障 | 2 小时 |
+| 立刻（P0） | §2 的 12 条：3 个安装/补丁命令、脱敏脚本、kube-vip env 名、target-ram-mb、CNPG 恢复 YAML、inhibit 模板、rule label | **已完成（12/12）** |
+| 本周 | §3 的版本/数量/机制类（尤其 kube-proxy IPVS 三处、VXLAN 50 字节、quota 2GiB、Calico VNI） | 已修 6 条，余 89 条待排 |
+| 结构性 | 给 notes 加 `状态/采集时间/集群版本` front-matter；数字统一到 current-state 并附命令；CI 加 `bash -n`/`shellcheck`/`helm template` 冒烟 | 未开始 |
+| 现场 | §6 的真实故障 | 2/5 已修（KubeProxyDown、残留 Service）；Ceph mgr、n8n webhook 待处理 |
 
 ---
 
@@ -237,6 +258,7 @@
 
 ## 9. 附：审计产物
 
+- 修复台账：[`fix-log.md`](fix-log.md)（P0 逐条改动 + 验证命令 + 现场故障根因 + 对报告自身的 3 处更正）
 - 逐条明细（169 条，含 file:line、原文、证据、正确说法）：[`findings/g1-overview-k8s.md`](findings/g1-overview-k8s.md) … [`findings/g8-cheatsheet-readme.md`](findings/g8-cheatsheet-readme.md)
 - 实测基准：[`assets/ground-truth.md`](assets/ground-truth.md)
 - 静态检查结果：[`assets/static-findings.txt`](assets/static-findings.txt)（py/yaml/json/sh/链接/围栏，仅 1 处 shell 语法错）

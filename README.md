@@ -15,7 +15,7 @@
 > 案例环境：kubeadm Kubernetes `v1.35.9`，3 control-plane + 3 worker；  
 > Cilium `1.20.4`（KPR + Host BPF + BPF masquerade + native routing）；  
 > ArgoCD `v3.5.3`；kube-prometheus-stack `83.7.0`；prometheus-operator `0.90.1`；  
-> Ceph Reef `18.2.8`（外部 3 节点）；Traefik `v3.7.17`；GitLab CE `19.4.2`。
+> Ceph Reef `18.2.8`（外部 3 节点）；Traefik `v3.7.17`；GitLab CE `19.5.0`。
 
 ---
 
@@ -85,7 +85,7 @@
 | kube-proxy | 已移除（DaemonSet/CM/ServiceMonitor 均不存在） |
 | 入口 | Traefik `10.0.0.252`，Cilium L2 宣告；MetalLB Speaker 已缩容到 0，Controller 保留 |
 | ArgoCD | 31 个 Application，全部 Synced/Healthy |
-| 监控 | Prometheus/Alertmanager/Grafana 正常；PrometheusRule 41 个；ServiceMonitor 14 个 |
+| 监控 | Prometheus/Alertmanager/Grafana 正常；PrometheusRule 44 个（monitoring 41 + deeptutor 2 + compassio 1）；ServiceMonitor 27 个（monitoring 14 + 其余 13） |
 | 日志 | Loki `3.6.7` + Alloy `v1.20.0` |
 | 追踪 | Tempo `3.0.3`（tempo-distributed） |
 | 存储 | Ceph Reef `18.2.8`，`HEALTH_OK`；17 个 PV 全部 Bound |

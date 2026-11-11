@@ -3,7 +3,7 @@
 # 部署「企业微信群机器人适配器」并把 Alertmanager 第二出口切过去
 #
 # 用法:
-#   ./apply.sh --webhook-url 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<redacted>
+#   ./apply.sh --webhook-url 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=XXXX'
 #       完整流程: 适配器 + Alertmanager 配置切换 + 端到端实测
 #
 #   ./apply.sh --webhook-url '...' --no-switch-am
@@ -27,12 +27,12 @@ NS=monitoring
 CM_NAME=wecom-adapter-script
 SECRET_NAME=wecom-adapter
 DEPLOY=wecom-adapter
-AM_SECRET=<redacted>
+AM_SECRET=alertmanager-prometheus-alertmanager
 AM_CONFIGMAP=amcfg-check
 AM_POD="$(kubectl get pod -n "$NS" -l app.kubernetes.io/name=alertmanager \
   -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
 BACKUP_DIR="$HERE/backup"
-PLACEHOLDER='https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<redacted>
+PLACEHOLDER='https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=REPLACE_ME'
 
 WEBHOOK_URL=""
 SWITCH_AM=1
@@ -69,7 +69,7 @@ validate_url() {
   fi
   if ! [[ "$u" =~ ^https://qyapi\.weixin\.qq\.com/cgi-bin/webhook/send\?key=[A-Za-z0-9_-]+$ ]]; then
     red "webhook URL 格式不对。"
-    red "  期望: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<redacted>
+    red "  期望: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<UUID>"
     red "  实际: ${u:0:60}..."
     red "获取方式: 企业微信客户端 -> 目标群 -> 群设置 -> 群机器人 -> 添加 -> 复制 Webhook 地址"
     exit 1

@@ -86,9 +86,9 @@ curl -s -o /dev/null -w "HTTP:%{http_code}\n" http://127.0.0.1:80/users/sign_in
 
 ### 6.1 修改 GitLab 配置
 ```bash
-sed -i "s/gitlab_rails\['nginx'\]\['listen_port'\] = 80/gitlab_rails['nginx']['listen_port'\] = 8088/" /etc/gitlab/gitlab.rb
+sed -i "s/^nginx\['listen_port'\] = 80/nginx['listen_port'] = 8088/" /etc/gitlab/gitlab.rb
 grep "nginx.*listen_port" /etc/gitlab/gitlab.rb
-# gitlab_rails['nginx']['listen_port'] = 8088
+# nginx['listen_port'] = 8088
 ```
 
 ### 6.2 应用配置

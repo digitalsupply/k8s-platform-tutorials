@@ -32,7 +32,7 @@ AM_CONFIGMAP=amcfg-check
 AM_POD="$(kubectl get pod -n "$NS" -l app.kubernetes.io/name=alertmanager \
   -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
 BACKUP_DIR="$HERE/backup"
-PLACEHOLDER='https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<redacted>'
+PLACEHOLDER='https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=REPLACE_ME'
 
 WEBHOOK_URL=""
 SWITCH_AM=1

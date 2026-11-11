@@ -30,7 +30,7 @@ API VIP：`10.0.0.168:6443`，由 **kube-vip** 以 ARP 模式在 `eth0` 上宣�
 ### 2. 为什么 kube-vip 会 `panic`
 
 kube-vip 在**丢失 leader 租约**时会主动 `panic` 退出（上游硬编码行为，升级版本也不会改变）。
-默认还会 **删除 VIP**（`preserveVipOnLeadershipLoss=false`）。
+默认还会 **删除 VIP**（`vip_preserve_on_leadership_loss=false`）。
 
 如果此时 kubelet 正好通过这个 VIP 访问 apiserver，就会形成放大循环：
 
@@ -80,7 +80,7 @@ apiserver/controller-manager/scheduler/etcd 都是 static Pod，清单在
 
 **真正要修的是**：不要让 VIP 消失、不要让 kubelet 依赖 VIP、给足选举超时和资源。
 
-### 坑 2：`preserveVipOnLeadershipLoss=false`
+### 坑 2：`vip_preserve_on_leadership_loss=false`
 
 默认值会在失去领导权时删除 VIP。对“kubelet 通过 VIP 访问 apiserver”的节点，
 这等于拔掉自己的 API 通路。
@@ -89,14 +89,16 @@ apiserver/controller-manager/scheduler/etcd 都是 static Pod，清单在
 
 ```yaml
 env:
-  - name: preserveVipOnLeadershipLoss
+  # 注意：kube-vip 从 env 读的是下划线全小写形式；`preserveVipOnLeadershipLoss`
+  # 只是 CLI flag 名，写成 env 会被静默忽略（等于没开）。
+  - name: vip_preserve_on_leadership_loss
     value: "true"
 ```
 
 ### 坑 3：选举超时太紧
 
-原来 `5s/3s/1s`，API 只要卡 3 秒就判失败。调整为更宽松的值（如 `10s/8s/5s`），
-并给 kube-vip 配 requests/limits，避免被节流。
+原来 `5s/3s/1s`，API 只要卡 3 秒就判失败。调整为 `vip_leaseduration=15 / vip_renewdeadline=10 / vip_retryperiod=2`，
+并给 kube-vip 配 requests/limits（本环境实际：`limits.memory=512Mi`，刻意不设 CPU limit），避免被节流。
 
 ### 坑 4：m01 的 kubelet 指向 VIP
 

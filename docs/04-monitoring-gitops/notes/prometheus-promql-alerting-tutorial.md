@@ -644,7 +644,8 @@ for: 10m
 10.0.0.61:2381  -> 104984576  (~100 MB)
 10.0.0.120:2381 -> 105046016
 10.0.0.121:2381 -> 105250816
-# 默认 quota 8GB，距离告警还有很远；一旦 watch/写入暴涨，4 小时外推会立刻超限
+# 默认 quota 2GiB（--quota-backend-bytes=2147483648，本集群未覆盖）；当前 ~105MB 看着很远，
+# 但 etcd 的碎片不会自动回收，写入暴涨 + 4 小时外推就会接近上限
 ```
 
 **本集群案例二：磁盘 24 小时内会写满（`NodeFilesystemSpaceFillingUp`，上游，for 1h）**
@@ -880,7 +881,8 @@ metadata:
   name: my-new-rules
   namespace: monitoring
   labels:
-    release: prometheus          # ← 必须！Prometheus CR 的 ruleSelector 匹配这个 label
+    release: prometheus                  # ← 必须
+    platform.gitops/managed: "true"      # ← 也必须（ruleSelector 是两个 label 的 AND）
 spec:
   groups:
     - name: my-app.rules
@@ -893,7 +895,9 @@ spec:
           for: 5m
 ```
 
-> ⚠️ **没有 `release: prometheus` 这个 label 的 PrometheusRule 不会被加载**（`ruleSelector.matchLabels: {release: prometheus}`）。这是"我写了规则怎么不生效"的第一嫌疑。
+> ⚠️ **`release` 和 `platform.gitops/managed` 两个 label 缺一不可**：本集群 `ruleSelector.matchLabels` 是
+> `{release: prometheus, platform.gitops/managed: "true"}`（AND）。少任何一个，规则会被静默丢弃（operator 不报错、
+> `/api/v1/rules` 里看不到）。这是"我写了规则怎么不生效"的第一嫌疑。
 
 ### 5.5 什么时候**不该**用录制规则
 
@@ -1252,7 +1256,7 @@ promtool test rules my-rules_test.yml                # 语义（会真的模拟�
 ### Step 6：部署 + 验证生效
 
 ```bash
-# 1) 建 CR（注意 release: prometheus 标签）
+# 1) 建 CR（注意 release + platform.gitops/managed 两个标签）
 kubectl apply -f my-new-rules.yaml
 
 # 2) 确认 Operator 已加载
@@ -1828,7 +1832,10 @@ kind: PrometheusRule
 metadata:
   name: alert-pipeline-selftest
   namespace: monitoring
-  labels: {release: prometheus}
+  labels: {
+    release: prometheus,
+    platform.gitops/managed: "true",
+  }
 spec:
   groups:
     - name: selftest.rules
@@ -1868,7 +1875,7 @@ kubectl -n monitoring delete prometheusrule alert-pipeline-selftest
 □ 7. severity 分级合理，critical 必须"需要叫醒人"
 □ 8. annotations 有 summary + description，description 含可复制的处置命令
 □ 9. 同类语义没有重复规则（累计 vs 增量要分清）
-□ 10. PrometheusRule 带 release: prometheus 标签
+□ 10. PrometheusRule 带 release + platform.gitops/managed 两个标签
 □ 11. 部署后 curl /api/v1/rules 确认 health == "ok"
 □ 12. 跑一次全链路自检，确认通知真的发出去了
 □ 13. 决定了这条告警的 Resolved 路径（怎么自动/手动消除）
@@ -1930,7 +1937,10 @@ receivers:
     webhook_configs:
       - send_resolved: true
         url: http://wecom-adapter.monitoring.svc.cluster.local:8080/alerts
-inhibit_rules: []                    # ⚠️ 当前没有任何抑制规则
+inhibit_rules:                      # 线上实际有 3 条（critical>warning>info + InfoInhibitor）
+  - target_matchers: [severity =~ "warning|info"]
+    source_matchers: [severity = "critical"]
+    equal: [namespace, alertname]
 templates: [/etc/alertmanager/config/*.tmpl]
 ```
 
@@ -2047,7 +2057,7 @@ route:
       repeat_interval: 24h
 ```
 
-**改进 ②：补上 12.4 的 `inhibit_rules`**（当前 `[]`，节点故障会产生级联轰炸）。
+**改进 ②：核对 `inhibit_rules` 的 `equal` 维度**（线上已有 3 条：critical→warning/info、warning→info、InfoInhibitor；`equal` 只按 `namespace`+`alertname`，跨 namespace 的同一故障仍会各自告警）。
 
 **改进 ③：给通知加上下文链接**（模板里带上 runbook 与直跳链接）：
 
@@ -2223,7 +2233,7 @@ groups:
 | 10 | 窗口 < 4 × scrapeInterval | 曲线锯齿、rate 抖动误报 | 本集群窗口 ≥ 2m，推荐 5m |
 | 11 | `for` 太短（< 2 个求值周期） | 等于没设 `for` | 本集群 `for ≥ 1m`，推荐 5m |
 | 12 | 正则没想清楚"完全匹配 vs 包含" | `job=~"loki-write"` 匹配不上 `logging/loki-write` | 用 `.*xxx.*` 或写全 |
-| 13 | 缺少 `release: prometheus` 标签 | PrometheusRule 不被加载 | `kubectl get prometheusrule -o yaml` 检查 label |
+| 13 | 缺 `release` 或 `platform.gitops/managed` 标签 | PrometheusRule 不被加载 | `kubectl get prometheusrule -o yaml` 检查 label |
 | 14 | 除零产生 `+Inf` / `NaN` | 告警值显示 Inf | 分母加 `> 0` 条件（参考 PV 规则） |
 | 15 | 阈值未按本集群基线校准 | 全集群 CPU 才 11%，却按 90% 阈值 → 永不告警或过松 | 先看 P95 再定阈值 |
 | 16 | 同一语义写了两条规则 | 同一 Pod 收到重复通知 | 审计 alertname 语义重叠 |
@@ -2252,7 +2262,7 @@ curl -s "$P/api/v1/query" --data-urlencode \
 | 根分区使用率 | 41.8% ~ 65.7% | 85%（NodeDiskPressure） | 合理 |
 | PV 使用率 | 0.17% ~ 37.28% | 3%（填满预警） | 合理（3% 是"快满了"，不是"当前用量"） |
 | API Server p99 | 49.6ms | SLO 燃烧率 | 合理 |
-| etcd db | ~105MB / 8GB quota | 外推 4h 超限 | 合理 |
+| etcd db | ~105MB / 2GiB quota | 外推 4h 超限 | 合理 |
 | Pod 重启累计 | 最高 64 次（262 天） | >10 次 | **口径偏松**且永不恢复（§10.3） |
 
 > 📌 **阈值方法论**：`阈值 = P95(基线) + 安全余量`，并按 severity 分两档：
@@ -2292,7 +2302,7 @@ curl -s "$P/api/v1/query" --data-urlencode \
 
 工程层
   □ promtool check + test 通过
-  □ CR 带 release: prometheus 标签
+  □ CR 带 release + platform.gitops/managed 标签
   □ /api/v1/rules 里 health = ok
   □ 全链路自检通过（AlertPipelineSelfTest）
   □ 通知分组符合预期（同 namespace 同类告警合并）

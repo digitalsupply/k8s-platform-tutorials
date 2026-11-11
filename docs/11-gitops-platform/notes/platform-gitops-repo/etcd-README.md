@@ -118,15 +118,24 @@ etcdctl snapshot status /tmp/check.db -w table
    ```bash
    mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak
    ```
-3. 在 m01 恢复：
+3. **三台 control-plane 都要恢复**（只恢复一台 → 另两台还是旧 cluster ID，peer 握手 `cluster ID mismatch`，集群起不来）。
+   用 `etcdutl`（etcd 3.6 已移除 `etcdctl snapshot restore`），三台用**同一份快照**，
+   `--initial-cluster` / `--initial-cluster-token` 逐字一致，只有 `--name`、`--initial-advertise-peer-urls`、`--data-dir` 不同：
    ```bash
-   etcdctl snapshot restore /var/backups/etcd/restore.db \
+   # 每台各执行一次（以 m01 为例；master01/02 换 --name 与 peer-urls）
+   etcdutl snapshot restore /var/backups/etcd/restore.db \
      --name m01 \
      --initial-cluster m01=https://10.0.0.61:2380,master01=https://10.0.0.121:2380,master02=https://10.0.0.120:2380 \
+     --initial-cluster-token k8s-etcd-restore \
      --initial-advertise-peer-urls https://10.0.0.61:2380 \
+     --bump-revision=0 \
+     --mark-compacted=false \
      --data-dir /var/lib/etcd-restore
    ```
-4. 备份并替换 `/var/lib/etcd`，恢复 `/etc/kubernetes/manifests`。
+   > `--bump-revision` / `--mark-compacted`：恢复到同一集群的旧快照时用默认值即可；
+   > 若是恢复到「已新建过对象」的集群，需要它们避免 revision 回退导致 watch 失效。
+4. 每台：备份并替换 `/var/lib/etcd`（`mv /var/lib/etcd /var/lib/etcd.old && mv /var/lib/etcd-restore /var/lib/etcd`），
+   再恢复 `/etc/kubernetes/manifests`，等三台静态 Pod 起来、`etcdctl endpoint health` 三绿。
 5. 验证：
    ```bash
    kubectl get nodes

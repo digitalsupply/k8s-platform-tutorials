@@ -39,6 +39,13 @@
 3. **"监控正常"要用运行态验**：`ALERTS{alertstate="firing"}` 里 4 条是假告警——组件删了但 `absent()` 规则还在；`up==1` 但指标为空则说明 target 指向了 standby 实例。
 4. **同一台机器两个 IP**：PVE `10.0.0.1` 与 `192.168.67.156` 靠证书指纹确认是同一台，不是两台。
 
+## 修复结果（2026-11-11）
+
+- **P0 12/12 已修**：Cilium 安装参数、kube-vip env 名、`--target-ram-mb`、JSON Patch 成员、脱敏脚本、AM 抑制模板、rule 标签、GitLab nginx 键、CNPG 恢复字段。每条都有可复现验证（`bash -n` / `helm template` / 线上配置文件）。
+- 作者先修了 2 条（burn-rate 与 SLO 模板、kube-proxy 残留），本轮沿用其「修复状态」写法，不覆盖原文。
+- 顺带修了 6 条 P1：VXLAN 开销 76→50 字节、Traefik GET 301/非 GET 308、etcd quota 2GiB、etcd 恢复改 `etcdutl` + 三节点、GitLab 19.5.0、PM/SM 口径。
+- **未修但已定位**：Ceph mgr 抓的是 standby（`ScrapeConfig` 硬编码 ceph-01）、n8n webhook 指向已死的公网隧道（集群内 `n8n-svc` 返回 200）。根因与修复命令见 fix-log §5。
+
 ## 修复关键
 
 见报告第 7 节的四个批次。最有价值的两条工程化建议：
@@ -51,6 +58,7 @@
 | 文件 | 内容 |
 |---|---|
 | [audit-report.md](audit-report.md) | 主报告：结论、P0 12 条、P1 事实错误、内部矛盾清单、现场真实故障、修复批次 |
+| [fix-log.md](fix-log.md) | 修复台账：P0 12/12 逐条改动与验证命令、现场故障根因、对报告自身的 3 处更正 |
 | [findings/g1-overview-k8s.md](findings/g1-overview-k8s.md) | 00 全景 + 01 K8s（24 条） |
 | [findings/g2-cilium-networking.md](findings/g2-cilium-networking.md) | 02 Cilium + 07 网络（25 条） |
 | [findings/g3-gitlab-cicd-sso.md](findings/g3-gitlab-cicd-sso.md) | 03 GitLab + 10 CI/CD + 13 SSO（23 条） |

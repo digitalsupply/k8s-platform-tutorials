@@ -304,7 +304,7 @@ ubuntu01→10.42.0.0/24  ubuntu02→10.42.1.0/24  ubuntu03→10.42.3.0/24
 
 | ipam.mode | 分配来源 |
 |-----------|---------|
-| cluster-pool（默认） | 从 `--cluster-pool-ipv4-cidr`（默认 10.0.0.0/16）按 `--cluster-pool-ipv4-mask-size`（默认 24）自动分 /24 |
+| cluster-pool（默认） | 从 `--cluster-pool-ipv4-cidr`（chart 默认 `10.0.0.0/8`）按 `--cluster-pool-ipv4-mask-size`（默认 24）自动分 /24 |
 | kubernetes | 直接消费 node.spec.podCIDR |
 
 本案例 `10.0.0.0/24→.201、10.0.1.0/24→本机(.202)、10.0.2.0/24→.203` 正是 cluster-pool 按**节点加入顺序**自动分的。
@@ -334,9 +334,9 @@ k3s server --flannel-backend=none --disable-kube-proxy \
 
 helm install cilium cilium/cilium -n kube-system \
   --set ipam.mode=cluster-pool \
-  --set ipam.operator.clusterPoolIPv4PodCIDR=10.0.0.0/16 \
+  --set 'ipam.operator.clusterPoolIPv4PodCIDRList={10.0.0.0/16}' \
   --set ipam.operator.clusterPoolIPv4MaskSize=24 \
-  --set kubeProxyReplacement=strict \
+  --set kubeProxyReplacement=true \
   --set routingMode=tunnel --set tunnelProtocol=vxlan
 ```
 

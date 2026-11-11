@@ -9,7 +9,7 @@
 
 | 宿主机 | 地址 | 角色 | 承载 |
 |---|---|---|---|
-| Proxmox `teacher` | 192.168.67.156 | PVE 8.4.13 | K8s 6 节点、Ceph 3 节点、NFS/DB 等 VM |
+| Proxmox `teacher` | 192.168.67.156 / 10.0.0.1（同机，两个网段） | PVE 8.4.13 | K8s 6 节点、Ceph 3 节点、NFS/DB 等 VM |
 | Windows `SYZX-HY2-TX` | 192.168.67.110 | Windows 10 Pro + Hyper-V | `ubuntu01`（GitLab 201）、`ubuntu02`（Harbor 202）、`ubuntu03`、kali |
 
 K8s/Ceph 侧：
@@ -40,7 +40,7 @@ PVE teacher 192.168.67.156
 └─ Ceph ceph-01/02/03                         (10.0.0.31/41/51)
 
 Windows Hyper-V SYZX-HY2-TX 192.168.67.110
-├─ ubuntu01 192.168.67.201  GitLab CE 19.4
+├─ ubuntu01 192.168.67.201  GitLab CE 19.5.0
 ├─ ubuntu02 192.168.67.202  Harbor 2.14.5
 ├─ ubuntu03 (Off)
 └─ kali-linux-2026.2 (Off)

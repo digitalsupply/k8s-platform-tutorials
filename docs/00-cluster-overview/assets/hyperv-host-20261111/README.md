@@ -12,7 +12,7 @@
 
 ```text
 Windows 10 Pro 宿主 SYZX-HY2-TX  192.168.67.110
-├─ ubuntu01  Running  192.168.67.201  GitLab CE 19.4
+├─ ubuntu01  Running  192.168.67.201  GitLab CE 19.5.0
 ├─ ubuntu02  Running  192.168.67.202  Harbor 2.14.5
 ├─ ubuntu03  Off
 └─ kali-linux-2026.2  Off

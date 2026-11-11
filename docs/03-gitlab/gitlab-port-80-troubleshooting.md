@@ -133,8 +133,8 @@ grep -nE "external_url|listen_port|..." /etc/gitlab/gitlab.rb | grep -v "^\s*#"
 ```
 32:   external_url "http://192.168.67.201"      ← 期望的 80
 
-2049: gitlab_rails['nginx']['listen_port'] = 8088
-3816: gitlab_rails['nginx']['listen_port'] = 8088   ← 重复！
+2049: nginx['listen_port'] = 8088
+3816: nginx['listen_port'] = 8088   ← 重复！
 ```
 
 第 3816 行的上下文（文件末尾追加处）：
@@ -142,7 +142,7 @@ grep -nE "external_url|listen_port|..." /etc/gitlab/gitlab.rb | grep -v "^\s*#"
 ```ruby
 ## Path where the generated Helm values file is written.
 # oak['components']['openbao']['helm_values_path'] = '/etc/gitlab/openbao-helm-values.yaml'
-gitlab_rails['nginx']['listen_port'] = 8088     # ← 误留的第二处
+nginx['listen_port'] = 8088     # ← 误留的第二处
 ```
 
 第 2049 行是 Omnibus 默认模板中的反代覆盖项，位于文档注释下方：
@@ -150,7 +150,7 @@ gitlab_rails['nginx']['listen_port'] = 8088     # ← 误留的第二处
 ```ruby
 ##! **Override only if you use a reverse proxy**
 ##! Docs: https://docs.gitlab.com/omnibus/settings/nginx.html#setting-the-nginx-listen-port
-gitlab_rails['nginx']['listen_port'] = 8088
+nginx['listen_port'] = 8088
 ```
 
 **关键发现 —— 配置从未生效**
@@ -195,7 +195,7 @@ grep -rn "listen" /var/opt/gitlab/nginx/conf/
 ```bash
 cp -a /etc/gitlab/gitlab.rb /etc/gitlab/gitlab.rb.bak.$(date +%Y%m%d-%H%M%S)
 /opt/gitlab/embedded/bin/ruby -c /etc/gitlab/gitlab.rb   # → Syntax OK
-grep -nE "^\s*gitlab_rails\['nginx'\]\['listen_port'\]" /etc/gitlab/gitlab.rb
+grep -nE "^\s*nginx['listen_port']" /etc/gitlab/gitlab.rb
 # → 无输出（覆盖已清除）
 /opt/gitlab/bin/gitlab-ctl reconfigure
 ```
@@ -516,8 +516,8 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/users/sign_in  # 200
 ```
 external_url "http://192.168.67.201"      →  期望端口 80
        │
-       ├─ 被覆盖 ─→ gitlab_rails['nginx']['listen_port'] = 8088   (第 2049 行)
-       │             gitlab_rails['nginx']['listen_port'] = 8088   (第 3816 行，重复)
+       ├─ 被覆盖 ─→ nginx['listen_port'] = 8088   (第 2049 行)
+       │             nginx['listen_port'] = 8088   (第 3816 行，重复)
        ▼
 nginx 实际监听 8088
 ```
@@ -572,7 +572,7 @@ external_url "http://192.168.67.201"   # 第 32 行，端口 80
 ##! **Override only if you use a reverse proxy**
 ##! Docs: https://docs.gitlab.com/omnibus/settings/nginx.html#setting-the-nginx-listen-port
 ##! 2026-10-13: 已移除 8088 覆盖，端口改由 external_url 决定(80)。原值 8088。
-# gitlab_rails['nginx']['listen_port'] = 8088     # 第 2049 行
+# nginx['listen_port'] = 8088     # 第 2049 行
 ```
 
 ```nginx

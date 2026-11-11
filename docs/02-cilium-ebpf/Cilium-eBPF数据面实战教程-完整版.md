@@ -317,7 +317,7 @@ kubectl get nodes/pods → 上层控制面事实
 
 **k3s 层（kubectl 看到的 10.42.x）**：默认 `--cluster-cidr=10.42.0.0/16`，节点按**加入顺序**自动分 /24（ubuntu01→0、02→1、03→3）；`10.42.2.0/24` 空缺＝被删节点"用过不回收"。
 
-**Cilium 层（ipcache 实际走的 10.0.x）**：`ipam.mode=cluster-pool` 从 `--cluster-pool-ipv4-cidr`（默认 10.0.0.0/16）按 `--cluster-pool-ipv4-mask-size`（默认 24）**自动给每节点分 /24**。
+**Cilium 层（ipcache 实际走的 10.0.x）**：`ipam.mode=cluster-pool` 从 `--cluster-pool-ipv4-cidr`（chart 默认 `10.0.0.0/8`）按 `--cluster-pool-ipv4-mask-size`（默认 24）**自动给每节点分 /24**。
 
 > 因此 ipcache 显示 `10.0.0.0/24→.201、10.0.1.0/24→本机、10.0.2.0/24→.203` 是按加入顺序自动分配的。
 
@@ -341,9 +341,9 @@ k3s server --flannel-backend=none --disable-kube-proxy --disable-network-policy 
 
 helm install cilium cilium/cilium -n kube-system \
   --set ipam.mode=cluster-pool \
-  --set ipam.operator.clusterPoolIPv4PodCIDR=10.0.0.0/16 \
+  --set 'ipam.operator.clusterPoolIPv4PodCIDRList={10.0.0.0/16}' \
   --set ipam.operator.clusterPoolIPv4MaskSize=24 \
-  --set kubeProxyReplacement=strict \
+  --set kubeProxyReplacement=true \
   --set routingMode=tunnel --set tunnelProtocol=vxlan
 ```
 

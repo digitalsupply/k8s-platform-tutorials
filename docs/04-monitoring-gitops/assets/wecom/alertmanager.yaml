@@ -26,6 +26,17 @@ receivers:
   webhook_configs:
   - send_resolved: true
     url: http://wecom-adapter.monitoring.svc.cluster.local:8080/alerts
-inhibit_rules: []
+inhibit_rules:
+# 与线上生成的配置保持一致（3 条）：critical 抑制同 namespace+alertname 的 warning/info，
+# warning 抑制 info，InfoInhibitor 抑制所在 namespace 的 info。
+- target_matchers: [severity =~ "warning|info"]
+  source_matchers: [severity = "critical"]
+  equal: [namespace, alertname]
+- target_matchers: [severity = "info"]
+  source_matchers: [severity = "warning"]
+  equal: [namespace, alertname]
+- target_matchers: [alertname = "InfoInhibitor"]
+  source_matchers: [alertname = "InfoInhibitor"]
+  equal: [namespace]
 templates:
 - /etc/alertmanager/config/*.tmpl

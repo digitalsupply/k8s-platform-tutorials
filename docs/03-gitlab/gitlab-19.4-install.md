@@ -163,7 +163,7 @@ GitLab Nginx 配置本身语法正确（`nginx -t` 通过），且 Workhorse/Pum
 
 为解决端口 80 访问问题，在 `/etc/gitlab/gitlab.rb` 中添加配置：
 ```bash
-gitlab_rails['nginx']['listen_port'] = 8088
+nginx['listen_port'] = 8088   # 注意：不是 gitlab_rails['nginx'][...]，那一层不存在，写了不生效
 ```
 
 重新配置应用更改：

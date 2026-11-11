@@ -113,7 +113,7 @@ metadata:
 spec:
   redirectScheme:
     scheme: https
-    permanent: true            # → 返回 308，而非 307
+    permanent: true            # → GET/HEAD 返回 301，其它方法返回 308（实测：curl GET=301，-X POST=308）
 ```
 
 **效果**：`http://grafana.example.local/` → 308 → `https://grafana.example.local/`。

@@ -21,7 +21,7 @@
 
 在清理 eBPF 程序后，将 GitLab Nginx 配置改回监听 80 端口：
 ```bash
-gitlab_rails['nginx']['listen_port'] = 80
+nginx['listen_port'] = 80
 /opt/gitlab/bin/gitlab-ctl reconfigure
 ```
 
