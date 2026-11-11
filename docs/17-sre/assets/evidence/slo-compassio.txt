@@ -1,0 +1,24 @@
+Compassio SLI/SLO baseline (Prometheus 7d, 2026-11-11)
+total requests (all routes)      : 93,698,918
+health + /metrics                : 93,631,932 (99.929%)
+business routes                  : 1,948 (0.0021%)
+5xx business                     : 0
+4xx business                     : 0
+health p99                       : 0.0211 s (21 ms)
+business p99                     : 0.2191 s (219 ms)
+business p95                     : 0.0499 s (50 ms)
+total rate (1h, health dominated): 124.2 req/s
+business rate                    : 0.0032 req/s
+
+error budget math (business routes only):
+SLO 99.9%: budget=0.1000%; 7d allowed=1.95 errors; 30d allowed=8.35
+SLO 99.95%: budget=0.0500%; 7d allowed=0.97 errors; 30d allowed=4.17
+SLO 99.99%: budget=0.0100%; 7d allowed=0.19 errors; 30d allowed=0.83
+
+if you include health checks (wrong):
+  99.9% budget on 93,698,918 requests = 93,699 errors
+  health p99 21ms looks 10x better than business p99 219ms
+
+current burn rate (1h and 5m, 99.9%): 0.0 (no 5xx)
+99.9% => 43m/month; 99.95% => 21.6m; 99.99% => 4.3m
+top business routes: /api/notify/unread-count 717, /api/notify/list 569, /api/assess/{id}/answer 203

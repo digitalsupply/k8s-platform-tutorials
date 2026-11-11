@@ -270,6 +270,7 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 | 文档 | 内容 |
 |---|---|
 | [10-observability-engineering.md](10-observability-engineering.md) | 可观测性工程：指标类型/基数爆炸、PromQL 坑、黑盒/白盒分层、日志生命周期、Trace 采样、长期存储、成本治理 |
+| [17 SRE](../17-sre/README.md) | SLO/Error Budget、burn rate、症状告警、SEV/IC、postmortem、变更相关性 |
 | [observability-lab.md](notes/observability-lab.md) | 可观测性实战实验手册（基于本集群实测） |
 | [observability-stack-full-audit.md](notes/observability-stack-full-audit.md) | LGTM 全栈审计：组件、链路、P0/P1 问题 |
 | [cluster-observability-report.md](notes/cluster-observability-report.md) | LGTM 运行状态与三支柱关联分析 |

@@ -1,0 +1,16 @@
+Alertmanager config (safe fields; receiver URLs/tokens omitted)
+route:
+  group_by = ['alertname', 'namespace', 'severity']
+  group_wait = 30s
+  group_interval = 5m
+  repeat_interval = 12h
+  receiver = n8n-webhook
+routes:
+  {'receiver': 'n8n-webhook', 'matchers': ['severity =~ "critical|warning"'], 'continue': True}
+  {'receiver': 'wecom', 'matchers': ['severity =~ "critical|warning"'], 'continue': True}
+inhibit_rules:
+  {'source_matchers': ['severity = critical'], 'target_matchers': ['severity =~ warning|info'], 'equal': ['namespace', 'alertname']}
+  {'source_matchers': ['severity = warning'], 'target_matchers': ['severity = info'], 'equal': ['namespace', 'alertname']}
+  {'source_matchers': ['alertname = InfoInhibitor'], 'target_matchers': ['severity = info'], 'equal': ['namespace']}
+  {'source_matchers': None, 'target_matchers': ['alertname = InfoInhibitor'], 'equal': None}
+receivers: ['wecom', 'n8n-webhook']

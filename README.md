@@ -40,6 +40,7 @@
 | [14 Containers](docs/14-containers/README.md) | Docker/containerd/CRI/OCI、镜像层、overlay、生命周期、网络、存储、capability、排障 | 管容器运行时、镜像、Pod 安全与 CI 构建的人 |
 | [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性/三个不可逆 一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
 | [16 中间件 OS 层](docs/16-middleware-os/README.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、overcommit、page cache、fd、cgroup、JVM 容器化 | 管中间件、做 OS 调优的人 |
+| [17 SRE](docs/17-sre/README.md) | SLI/SLO/Error Budget、burn rate 多窗口、症状告警、SEV/IC、Postmortem、变更相关性 | 做 SRE、值班、事故管理的人 |
 
 ---
 
@@ -116,6 +117,7 @@
 | 14 Containers | [`collect_container_evidence.sh`](docs/14-containers/scripts/collect_container_evidence.sh)、[`assets/evidence/`](docs/14-containers/assets/evidence/README.md)、[`labs/`](docs/14-containers/labs/README.md) |
 | 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性/不可逆 一句话答案 |
 | 16 中间件 OS | [`assets/evidence/`](docs/16-middleware-os/assets/evidence/README.md)、[`collect_middleware_os.sh`](docs/16-middleware-os/scripts/collect_middleware_os.sh)、Redis/Kafka/Nginx/Java 真机配置 |
+| 17 SRE | [`10-slo-incident-alerting.md`](docs/17-sre/10-slo-incident-alerting.md)、[`slo/`](docs/17-sre/assets/slo/compassio-slo-rules.yaml)、[`templates/`](docs/17-sre/assets/templates/postmortem.md)、[`evidence/`](docs/17-sre/assets/evidence/README.md) |
 
 说明：
 
@@ -152,7 +154,8 @@ k8s-platform-tutorials/
     ├── 13-sso-oidc/
     ├── 14-containers/
     ├── 15-interview-cheatsheet/
-    └── 16-middleware-os/
+    ├── 16-middleware-os/
+    └── 17-sre/
 ```
 
 每个分类目录的统一约定：

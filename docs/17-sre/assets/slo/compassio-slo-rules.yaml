@@ -1,0 +1,147 @@
+# SLO / Burn Rate 规则示例（Compassio）
+#
+# 示例，不直接 apply。先确认指标存在、SLI 排除健康检查，再按团队 SLO 调整阈值。
+# 对应教程：docs/17-sre/10-slo-incident-alerting.md
+
+groups:
+  - name: compassio-slo
+    interval: 30s
+    rules:
+      # 只统计业务路由；排除 /api/health* 与 /metrics
+      - record: compassio:sli_requests:rate5m
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics"
+          }[5m]))
+
+      - record: compassio:sli_errors:rate5m
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics",
+            status=~"5.."
+          }[5m]))
+
+      - record: compassio:sli_error_ratio:rate5m
+        expr: |
+          compassio:sli_errors:rate5m
+          /
+          compassio:sli_requests:rate5m
+
+      - record: compassio:sli_error_ratio:rate1h
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics", status=~"5.."
+          }[1h]))
+          /
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics"
+          }[1h]))
+
+      - record: compassio:sli_error_ratio:rate6h
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics", status=~"5.."
+          }[6h]))
+          /
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics"
+          }[6h]))
+
+      - record: compassio:sli_error_ratio:rate30m
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics", status=~"5.."
+          }[30m]))
+          /
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics"
+          }[30m]))
+
+      - record: compassio:sli_error_ratio:rate3d
+        expr: |
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics", status=~"5.."
+          }[3d]))
+          /
+          sum(rate(compassio_http_requests_total{
+            route!~"/api/health.*|/metrics"
+          }[3d]))
+
+      # SLO = 99.9% -> error budget = 0.001
+      - record: compassio:slo_burn_rate:1h
+        expr: compassio:sli_error_ratio:rate1h / 0.001
+      - record: compassio:slo_burn_rate:5m
+        expr: compassio:sli_error_ratio:rate5m / 0.001
+      - record: compassio:slo_burn_rate:6h
+        expr: compassio:sli_error_ratio:rate6h / 0.001
+      - record: compassio:slo_burn_rate:30m
+        expr: compassio:sli_error_ratio:rate30m / 0.001
+      - record: compassio:slo_burn_rate:3d
+        expr: compassio:sli_error_ratio:rate3d / 0.001
+
+      # 业务 p99（必须 sum by (le)）
+      - record: compassio:sli_latency_p99:5m
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(compassio_http_request_duration_seconds_bucket{
+              route!~"/api/health.*|/metrics"
+            }[5m])))
+
+  - name: compassio-slo-alerts
+    rules:
+      # 快烧：1h > 14.4 且 5m > 14.4（1h 烧掉 2% 月预算）
+      - alert: CompassioErrorBudgetFastBurn
+        expr: |
+          compassio:slo_burn_rate:1h > 14.4
+          and
+          compassio:slo_burn_rate:5m > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          service: compassio
+        annotations:
+          summary: "Compassio 错误预算快速燃烧（1h/5m）"
+          description: "burn rate 1h={{ $value }}, SLO=99.9%, 立即止血/回滚。"
+          runbook_url: "https://example.internal/runbooks/compassio-slo"
+
+      # 中烧：6h > 6 且 30m > 6（6h 烧掉 5% 月预算）
+      - alert: CompassioErrorBudgetMediumBurn
+        expr: |
+          compassio:slo_burn_rate:6h > 6
+          and
+          compassio:slo_burn_rate:30m > 6
+        for: 15m
+        labels:
+          severity: warning
+          service: compassio
+        annotations:
+          summary: "Compassio 错误预算中速燃烧（6h/30m）"
+          description: "burn rate 6h={{ $value }}，当天处理，不需要立刻 page。"
+          runbook_url: "https://example.internal/runbooks/compassio-slo"
+
+      # 慢烧：3d > 1 且 6h > 1（3d 烧掉 10% 月预算）
+      - alert: CompassioErrorBudgetSlowBurn
+        expr: |
+          compassio:slo_burn_rate:3d > 1
+          and
+          compassio:slo_burn_rate:6h > 1
+        for: 1h
+        labels:
+          severity: warning
+          service: compassio
+        annotations:
+          summary: "Compassio 错误预算慢速燃烧（3d/6h）"
+          description: "burn rate 3d={{ $value }}，进入排期治理。"
+          runbook_url: "https://example.internal/runbooks/compassio-slo"
+
+      # 延迟 SLO：p99 > 300ms 持续 10m
+      - alert: CompassioLatencySLOBreach
+        expr: compassio:sli_latency_p99:5m > 0.3
+        for: 10m
+        labels:
+          severity: warning
+          service: compassio
+        annotations:
+          summary: "Compassio 业务 p99 超过 300ms"
+          description: "p99={{ $value }}s；先看 DB/Redis/LLM 依赖，再看入口。"
+          runbook_url: "https://example.internal/runbooks/compassio-latency"

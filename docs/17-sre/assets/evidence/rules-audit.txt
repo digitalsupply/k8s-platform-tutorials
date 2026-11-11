@@ -1,0 +1,26 @@
+alerting rules: 251
+severity: {'critical': 82, 'warning': 160, 'none': 2, 'info': 7}
+for: {'5m': 72, '10m': 51, '15m': 74, '1m': 8, '30m': 5, '2h': 1, '1h': 14, '2m': 7, '3m': 2, '20m': 3, '(none)': 10, '3h': 1, '0s': 1, '4h': 2}
+runbook annotations: 137 / 251
+no-for alerts: 10 ['Watchdog', 'InfoInhibitor', 'KubeJobNotCompleted', 'KubeletClientCertificateExpiration', 'KubeletClientCertificateExpiration', 'KubeletServerCertificateExpiration', 'KubeletServerCertificateExpiration', 'NodeHighNumberConntrackEntriesUsed', 'NodeTextFileCollectorScrapeError', 'NodeRAIDDiskFailure']
+heuristic categories: {'availability/cause-ish': 61, 'latency/symptom': 19, 'other': 88, 'error/symptom': 26, 'workload': 29, 'resource': 28}
+SLO/burn rules: 5
+  ('monitoring', 'prometheus-kube-apiserver-slos', 'KubeAPIErrorBudgetBurn', 'sum by (cluster) (apiserver_request:burnrate1h) > (14.40 * 0.01000) and on (cluster) sum by (cluster) (apiserver_request:burnrate5m) > (14.40 * 0.01000)')
+  ('monitoring', 'prometheus-kube-apiserver-slos', 'KubeAPIErrorBudgetBurn', 'sum by (cluster) (apiserver_request:burnrate6h) > (6.00 * 0.01000) and on (cluster) sum by (cluster) (apiserver_request:burnrate30m) > (6.00 * 0.01000)')
+  ('monitoring', 'prometheus-kube-apiserver-slos', 'KubeAPIErrorBudgetBurn', 'sum by (cluster) (apiserver_request:burnrate1d) > (3.00 * 0.01000) and on (cluster) sum by (cluster) (apiserver_request:burnrate2h) > (3.00 * 0.01000)')
+  ('monitoring', 'prometheus-kube-apiserver-slos', 'KubeAPIErrorBudgetBurn', 'sum by (cluster) (apiserver_request:burnrate3d) > (1.00 * 0.01000) and on (cluster) sum by (cluster) (apiserver_request:burnrate6h) > (1.00 * 0.01000)')
+  ('monitoring', 'prometheus-kubernetes-apps', 'KubePdbNotEnoughHealthyPods', '(   kube_poddisruptionbudget_status_desired_healthy{job="kube-state-metrics", namespace=~".*"}   -   kube_poddisruptionbudget_status_current_healthy{job="kube-s')
+
+selected rules:
+## KubeProxyDown ns=monitoring for=15m sev=critical
+  absent(up{job="kube-proxy"})
+## CephMGRMetricsMissing ns=monitoring for=5m sev=critical
+  absent(ceph_mon_quorum_status{cluster="ceph-prod"})
+## CephClusterHealthUnknown ns=monitoring for=5m sev=critical
+  absent(ceph_health_status{cluster="ceph-prod"})
+## AlertmanagerFailedToSendAlerts ns=monitoring for=5m sev=warning
+  (   rate(alertmanager_notifications_failed_total{job="prometheus-alertmanager",container="alertmanager",namespace="monitoring"}[15m]) /   ignoring (reason) group_left rate(alertmanager_notifications_t
+## AlertmanagerClusterFailedToSendAlerts ns=monitoring for=5m sev=critical
+  min by (namespace,service, integration) (   rate(alertmanager_notifications_failed_total{job="prometheus-alertmanager",container="alertmanager",namespace="monitoring", integration=~`.*`}[15m]) /   ign
+## KubePodHighRestartCount ns=monitoring for=10m sev=warning
+  max by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[15m])) > 5

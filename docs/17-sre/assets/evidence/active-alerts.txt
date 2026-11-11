@@ -1,0 +1,32 @@
+=== current firing alerts and duration
+--- ALERTS{alertstate="firing"}
+series 7
+  {'__name__': 'ALERTS', 'alertname': 'Watchdog', 'alertstate': 'firing', 'severity': 'none'} 1
+  {'__name__': 'ALERTS', 'alertname': 'CephClusterHealthUnknown', 'alertstate': 'firing', 'cluster': 'ceph-prod', 'severity': 'critical'} 1
+  {'__name__': 'ALERTS', 'alertname': 'CephMGRMetricsMissing', 'alertstate': 'firing', 'cluster': 'ceph-prod', 'severity': 'critical'} 1
+  {'__name__': 'ALERTS', 'alertname': 'AlertmanagerClusterFailedToSendAlerts', 'alertstate': 'firing', 'integration': 'webhook', 'namespace': 'monitoring', 'service': 'prometheus-alertmanager', 'severity': 'critical'} 1
+  {'__name__': 'ALERTS', 'alertname': 'KubeProxyDown', 'alertstate': 'firing', 'job': 'kube-proxy', 'severity': 'critical'} 1
+  {'__name__': 'ALERTS', 'alertname': 'InfoInhibitor', 'alertstate': 'firing', 'namespace': 'logging', 'severity': 'none'} 1
+  {'__name__': 'ALERTS', 'alertname': 'AlertmanagerFailedToSendAlerts', 'alertstate': 'firing', 'container': 'alertmanager', 'endpoint': 'http-web', 'instance': '10.244.4.77:9093', 'integration': 'webhook', 'job': 'prometheus-alertmanager', 'namespace': 'monitoring', 'pod': 'alertmanager-prometheus-alertmanager-0', 'reason': 'serverError', 'service': 'prometheus-alertmanager', 'severity': 'warning'} 1
+--- time() - ALERTS_FOR_STATE
+series 9
+  {'alertname': 'CephClusterHealthUnknown', 'cluster': 'ceph-prod', 'severity': 'critical'} 140402.2809998989
+  {'alertname': 'CephMGRMetricsMissing', 'cluster': 'ceph-prod', 'severity': 'critical'} 140402.2809998989
+  {'alertname': 'Watchdog', 'severity': 'none'} 140388.2809998989
+  {'alertname': 'AlertmanagerClusterFailedToSendAlerts', 'integration': 'webhook', 'namespace': 'monitoring', 'service': 'prometheus-alertmanager', 'severity': 'critical'} 140391.2809998989
+  {'alertname': 'KubeProxyDown', 'job': 'kube-proxy', 'severity': 'critical'} 183217.2809998989
+  {'alertname': 'InfoInhibitor', 'namespace': 'logging', 'severity': 'none'} 348.2809998989105
+  {'alertname': 'CPUThrottlingHigh', 'container': 'config-reloader', 'instance': '10.0.0.120:10250', 'namespace': 'logging', 'pod': 'alloy-pptz2', 'service': 'prometheus-kubelet', 'severity': 'info'} 356.2809998989105
+  {'alertname': 'CPUThrottlingHigh', 'container': 'config-reloader', 'instance': '10.0.0.61:10250', 'namespace': 'logging', 'pod': 'alloy-lgmwg', 'service': 'prometheus-kubelet', 'severity': 'info'} 56.28099989891052
+  {'alertname': 'AlertmanagerFailedToSendAlerts', 'container': 'alertmanager', 'endpoint': 'http-web', 'instance': '10.244.4.77:9093', 'integration': 'webhook', 'job': 'prometheus-alertmanager', 'namespace': 'monitoring', 'pod': 'alertmanager-prometheus-alertmanager-0', 'reason': 'serverError', 'service': 'prometheus-alertmanager', 'severity': 'warning'} 7221.2809998989105
+
+=== kube-proxy / ceph exports
+--- up{job="kube-proxy"}
+series 0
+--- up{job="ceph-mgr"}
+series 1
+  {'__name__': 'up', 'ceph_role': 'mgr', 'cluster': 'ceph-prod', 'instance': '10.0.0.31:9283', 'job': 'ceph-mgr', 'mgr_node': 'ceph-01'} 1
+--- ceph_health_status{cluster="ceph-prod"}
+series 0
+--- ceph_mon_quorum_status{cluster="ceph-prod"}
+series 0

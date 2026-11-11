@@ -253,7 +253,32 @@
 | metaspace/direct | ✅ | Kafka MaxMetaspace unlimited、MaxDirect 0 |
 | 连接池公式 | ✅ | 10×20 > 100 会打满 |
 
-## 十一、结论
+## 十一、SRE / SLO / 事故
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| SLI 排除健康检查 | ✅ | 总请求 p99 21ms，业务 p99 219ms；健康占 99.93% |
+| 业务低流量 | ✅ | 1,948 请求/7d，约 0.0032 req/s |
+| 99.9% budget | ✅ | 1.95 错误/7d、8.35/30d；当前 0 个 5xx |
+| 99.9% 现实性 | ✅ | backend/Redis 单副本，CNPG 单区域 |
+| Burn rate 公式 | ✅ | `error_ratio/(1-SLO)`；当前 burn=0 |
+| 多窗口 burn | ⚠️ | 只有 apiserver 4 条；业务 0 条 |
+| 告警规则画像 | ✅ | 251 条；critical 82；runbook 137/251 |
+| 长期 firing | ✅ | 5 条非 Watchdog；最长 50.9h |
+| `KubeProxyDown` 误报 | ✅ | `absent(up{job="kube-proxy"})`；Cilium KPR 无此 job |
+| Ceph 告警误报 | ✅ | `ceph_health_status`/`ceph_mon_quorum_status` 0 series |
+| Alertmanager 同根因 | ✅ | 两条发送失败告警各发一次；inhibit 只匹配同名 |
+| Alertmanager 配置 | ✅ | group_by alertname/ns/sev；wait 30s；repeat 12h |
+| 无 for 规则 | ✅ | 10 条（含 Watchdog/InfoInhibitor） |
+| MTTD 案例 | ✅ | 重启告警 FIRING 16h~1.5d |
+| MTTR 案例 | ✅ | 人工处置约 2h05m |
+| SEV/IC 模板 | 📚 | 已补模板；环境无正式 on-call/status page |
+| Postmortem 模板 | ✅ | 时间线/影响/5 Whys/行动项模板 |
+| 变更相关性 | ✅ | 7 轮中 3 轮直接触发故障（43%） |
+| Blackbox/Probe | ❌ | 0 Probe，无 blackbox |
+| 业务 SLO | ❌ | 无正式 SLO/burn 规则 |
+
+## 十二、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

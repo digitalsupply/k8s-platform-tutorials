@@ -1,0 +1,24 @@
+Current firing alerts (Prometheus ALERTS, 2026-11-11)
+alertname                                severity  duration(s)  duration
+KubeProxyDown                            critical  183217      50.9h
+CephClusterHealthUnknown                 critical  140402      39.0h
+CephMGRMetricsMissing                    critical  140402      39.0h
+AlertmanagerClusterFailedToSendAlerts    critical  140391      39.0h
+AlertmanagerFailedToSendAlerts           warning     7221       2.0h
+Watchdog                                 none      140388      39.0h (dead-man, expected)
+InfoInhibitor                            none         348       5.8m
+
+Evidence / interpretation:
+- up{job="kube-proxy"} = 0 series. Cilium KPR replaces kube-proxy; rule absent(up{job="kube-proxy"}) is always true.
+- up{job="ceph-mgr"} = 1, but ceph_health_status and ceph_mon_quorum_status have 0 series.
+  So CephClusterHealthUnknown / CephMGRMetricsMissing are exporter gaps, not user-facing symptoms.
+- AlertmanagerClusterFailedToSendAlerts and AlertmanagerFailedToSendAlerts are the same webhook
+  failure at two scopes (cluster vs instance). group_by includes alertname, so they do not group;
+  inhibition only matches equal alertname, so one root cause creates two notifications.
+- These 5 non-Watchdog alerts have been firing for 2h-51h. This is alert fatigue, not detection.
+- 251 alerting rules: 82 critical, 160 warning, 7 info, 2 none.
+- Only 137/251 have runbook annotations.
+- Only 4 kube-apiserver burn-rate rules; no business SLO burn-rate rules.
+- Alertmanager: group_by=[alertname,namespace,severity], group_wait=30s,
+  group_interval=5m, repeat_interval=12h; dual route n8n + wecom (continue=true).
+- Inhibition: critical suppresses warning/info with same namespace+alertname only.

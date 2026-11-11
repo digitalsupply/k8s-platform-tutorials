@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -11,7 +11,7 @@
 > 详细原理：[04 Monitoring](../04-monitoring-gitops/README.md)、[05 Linux](../05-linux/README.md)、
 > [07 Networking](../07-networking/README.md)、[09 生命周期](../09-incidents-and-readiness/README.md)、
 > [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)、
-> [16 中间件 OS](../16-middleware-os/README.md)。
+> [16 中间件 OS](../16-middleware-os/README.md)、[17 SRE](../17-sre/README.md)。
 
 ## 一页速查
 
@@ -170,6 +170,24 @@
 | CPU limit/GC | 决定 GC/JIT | 500m：GC=0，CICompilerCount=2 |
 | 连接池 | 总和 < DB 上限 | PG 13/100 |
 
+## 一页速查（SRE / SLO / 事故）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| SLI | 用户旅程的成功率/延迟/新鲜度 | 业务 p99 219ms；健康 p99 21ms |
+| SLO | 内部目标，先 99.9% | 单副本/单区域，不承诺 99.99% |
+| Error Budget | 1-SLO，花完冻结发布 | 业务 1,948/7d，99.9% 仅容 1.95 错误 |
+| Burn Rate | error_ratio/(1-SLO) | 当前 0 个 5xx，burn=0 |
+| 多窗口 | 1h/5m 14.4、6h/30m 6、3d/6h 1 | 只有 apiserver 4 条，业务 0 条 |
+| 症状告警 | 错误率/延迟，不是 CPU | 5 条长期 firing 全非用户症状 |
+| 坏告警 | absent() 用于不存在的 job | KubeProxyDown 50.9h |
+| 分组/抑制 | 同根因聚合 | Alertmanager 两条各发一次 |
+| Runbook | 每条 page 都要有 | 137/251 |
+| MTTD | 通常比 MTTR 更致命 | 重启告警 firing 16h~1.5d |
+| SEV/IC | 1/2 page，IC/Scribe/Comms | 无正式 on-call/status page |
+| Postmortem | 时间线/影响/5 Whys/行动项 | 模板已补，owner 待完善 |
+| 变更相关性 | 80% 经验值 + deploy marker | 7 轮中 3 轮直接触发故障 |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -293,7 +311,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [09-observability.md](09-observability.md) | 指标类型/基数、PromQL、黑盒/白盒分层、日志/轮转、Trace 采样、长期存储、成本治理 |
 | [10-irreversibles.md](10-irreversibles.md) | 不可逆操作/状态/决策：dry-run、XFS/LVM、etcd、证书、CIDR、分区、命名、区域 |
 | [11-middleware-os.md](11-middleware-os.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、page cache、fd、cgroup、JVM 容器化 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 120+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [12-sre.md](12-sre.md) | SLI/SLO/Error Budget、burn rate、症状告警、MTTD/MTTA/MTTR、SEV/IC、postmortem、变更相关性 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 140+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 
