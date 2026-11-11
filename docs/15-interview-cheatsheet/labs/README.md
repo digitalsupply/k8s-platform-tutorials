@@ -188,4 +188,41 @@ getenforce
 ls /etc/sysconfig/network-scripts
 ```
 
+## 15. 存储 / 分区 / 文件系统
+
+```bash
+# 分区与设备
+lsblk -o NAME,SIZE,TYPE,FSTYPE,PARTTYPENAME,UUID,MOUNTPOINTS
+blkid
+parted -l
+ls -l /dev/disk/by-uuid /dev/disk/by-id
+
+# LVM / thin pool
+pvs; vgs -o vg_name,vg_size,vg_free
+lvs -a -o lv_name,vg_name,lv_size,segtype,pool_lv,data_percent,metadata_percent
+grep -E 'thin_pool_autoextend' /etc/lvm/lvm.conf
+
+# 文件系统 / 挂载
+cat /etc/fstab
+findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS
+xfs_info / 2>/dev/null | head
+tune2fs -l $(findmnt -n -o SOURCE /) 2>/dev/null | head -20
+
+# RAID / NFS / Ceph
+cat /proc/mdstat
+mount | grep -i nfs
+ceph -s 2>/dev/null
+ceph pg stat 2>/dev/null
+
+# CSI / PV / PVC
+kubectl get sc,pv,pvc -A
+kubectl get csidriver
+
+# SMART / 介质错误
+smartctl -a /dev/nvme0n1 2>/dev/null | grep -E 'Percentage Used|Media and Data Integrity|Unsafe Shutdowns'
+dmesg -T | grep -iE 'medium error|i/o error|blk_update_request|nvme.*error'
+```
+
+> 详细解释见 [06 Storage 10-storage-basics](../../06-storage-ceph/10-storage-basics.md)。
+
 > 本手册的命令都可以在仓库 `assets/evidence/` 找到对应输出。

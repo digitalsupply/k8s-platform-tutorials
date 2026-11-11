@@ -1,0 +1,57 @@
+=== m01 ===
+Warning: Permanently added '10.0.0.61' (ED25519) to the list of known hosts.
+m01
+5.14.0-570.58.1.el9_6.x86_64
+=== lsblk
+NAME        SIZE TYPE FSTYPE      PARTTYPENAME UUID                                   MOUNTPOINTS ROTA
+sda          50G disk                                                                                0
+├─sda1        1G part xfs         Linux        5447ab43-7b85-41cd-be26-5d42bf395ec1   /boot          0
+└─sda2       49G part LVM2_member Linux LVM    hHlH00-SYAC-pY0x-XJJo-ZnXu-2XRX-0ceCxj                0
+  ├─rl-root  47G lvm  xfs                      67a9eea3-bf74-44ea-90b8-97b47da265e9   /              0
+  └─rl-swap   2G lvm  swap                     384a9a43-918f-4758-b1f2-0572a9a255a8                  0
+sr0           4M rom  iso9660                  2026-11-09-20-52-40-00                                0
+=== fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Sep 29 10:27:49 2025
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+/dev/mapper/rl-root     /                       xfs     defaults        0 0
+UUID=5447ab43-7b85-41cd-be26-5d42bf395ec1 /boot                   xfs     defaults        0 0
+##/dev/mapper/rl-swap     none                    swap    defaults        0 0
+=== findmnt
+TARGET                                                                                                                           SOURCE                 FSTYPE      OPTIONS
+/                                                                                                                                /dev/mapper/rl-root    xfs         rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota
+├─/proc                                                                                                                          proc                   proc        rw,nosuid,nodev,noexec,relatime
+│ ├─/proc/sys/fs/binfmt_misc                                                                                                     systemd-1              autofs      rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=20646
+│ │ └─/proc/sys/fs/binfmt_misc                                                                                                   binfmt_misc            binfmt_misc rw,nosuid,nodev,noexec,relatime
+│ └─/proc/fs/nfsd                                                                                                                nfsd                   nfsd        rw,relatime
+├─/sys                                                                                                                           sysfs                  sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                                                                                         securityfs             securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                                                                                               cgroup2                cgroup2     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/pstore                                                                                                               pstore                 pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                                                                                                  bpf                    bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                                                                                            debugfs                debugfs     rw,nosuid,nodev,noexec,relatime
+│ │ └─/sys/kernel/debug/tracing                                                                                                  tracefs                tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                                                                                          tracefs                tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/fuse/connections                                                                                                     fusectl                fusectl     rw,nosuid,nodev,noexec,relatime
+│ └─/sys/kernel/config                                                                                                           configfs               configfs    rw,nosuid,nodev,noexec,relatime
+├─/dev                                                                                                                           devtmpfs               devtmpfs    rw,nosuid,size=4096k,nr_inodes=719548,mode=755,inode64
+│ ├─/dev/shm                                                                                                                     tmpfs                  tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/pts                                                                                                                     devpts                 devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/hugepages                                                                                                               hugetlbfs              hugetlbfs   rw,relatime,pagesize=2M
+=== mdstat
+Personalities : 
+unused devices: <none>
+=== nfs mounts
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+=== dmesg medium/io
+=== smart
+smartctl not installed

@@ -1,0 +1,18 @@
+=== PVE thin pool
+  LV   VG  LSize   Data%  Meta%  Monitor  
+  data pve 794.30g 66.35  2.17   monitored
+
+Name             Type     Status           Total            Used       Available        %
+local             dir     active        98497780        29108576        64339656   29.55%
+local-lvm     lvmthin     active       832888832       552621740       280267091   66.35%
+
+  VG  VSize    VFree 
+  pve <930.51g 16.00g
+
+	# Configuration option activation/thin_pool_autoextend_threshold.
+	# Also see thin_pool_autoextend_percent.
+	 thin_pool_autoextend_threshold = 70
+	# thin_pool_autoextend_threshold = 100
+	# Configuration option activation/thin_pool_autoextend_percent.
+	 thin_pool_autoextend_percent = 20
+	# thin_pool_autoextend_percent = 20

@@ -1,0 +1,726 @@
+=== PVE host ===
+teacher
+6.8.12-15-pve
+=== lsblk
+NAME                              SIZE TYPE FSTYPE      PARTTYPENAME UUID                                   MOUNTPOINTS ROTA SCHED
+nvme0n1                         931.5G disk                                                                                0 none
+├─nvme0n1p1                      1007K part             BIOS boot                                                          0 none
+├─nvme0n1p2                         1G part vfat        EFI System   D7C0-606F                              /boot/efi      0 none
+└─nvme0n1p3                     930.5G part LVM2_member Linux LVM    5S0dr8-EB3F-rOBf-hkxQ-uXzS-T8dt-xB0cGc                0 none
+  ├─pve-swap                        8G lvm  swap                     c59bc52e-5a12-426b-9349-29017d20b8f5   [SWAP]         0 
+  ├─pve-root                       96G lvm  ext4                     0444de59-6c5f-4d85-a2c5-2b7778f2a08f   /              0 
+  ├─pve-data_tmeta                8.1G lvm                                                                                 0 
+  │ └─pve-data-tpool            794.3G lvm                                                                                 0 
+  │   ├─pve-data                794.3G lvm                                                                                 0 
+  │   ├─pve-vm--101--disk--1      200G lvm                                                                                 0 
+  │   ├─pve-vm--100--cloudinit      4M lvm  iso9660                  2025-09-29-19-08-21-00                                0 
+  │   ├─pve-vm--116--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-06-00                                0 
+  │   ├─pve-vm--116--disk--0       80G lvm                                                                                 0 
+  │   ├─pve-vm--117--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-07-00                                0 
+  │   ├─pve-vm--117--disk--0       80G lvm                                                                                 0 
+  │   ├─pve-vm--118--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-08-00                                0 
+  │   ├─pve-vm--118--disk--0       80G lvm                                                                                 0 
+  │   ├─pve-vm--119--cloudinit      4M lvm  iso9660                  2026-11-09-20-52-40-00                                0 
+  │   ├─pve-vm--119--disk--0       50G lvm                                                                                 0 
+  │   ├─pve-vm--9000--cloudinit     4M lvm  iso9660                  2025-11-22-12-57-04-00                                0 
+  │   ├─pve-vm--121--cloudinit      4M lvm  iso9660                  2026-11-09-20-50-59-00                                0 
+  │   ├─pve-vm--121--disk--0       50G lvm                                                                                 0 
+  │   ├─pve-vm--122--cloudinit      4M lvm  iso9660                  2026-11-09-20-28-41-00                                0 
+  │   ├─pve-vm--122--disk--0       60G lvm                                                                                 0 
+  │   ├─pve-vm--123--cloudinit      4M lvm  iso9660                  2026-11-09-20-35-56-00                                0 
+  │   ├─pve-vm--123--disk--0       60G lvm                                                                                 0 
+  │   ├─pve-vm--124--cloudinit      4M lvm  iso9660                  2026-11-09-20-17-18-00                                0 
+  │   ├─pve-vm--124--disk--0       60G lvm                                                                                 0 
+  │   ├─pve-vm--120--cloudinit      4M lvm  iso9660                  2026-11-09-20-49-55-00                                0 
+  │   ├─pve-vm--120--disk--0       40G lvm                                                                                 0 
+  │   ├─pve-vm--118--disk--1       30G lvm  LVM2_member              Gel3jz-8UiY-DxhY-IXvU-lyMq-Du2h-2F3eZY                0 
+  │   ├─pve-vm--117--disk--1       30G lvm  LVM2_member              QwCItO-HULm-cUAN-QYtZ-qH2Y-Aelm-GmO31P                0 
+  │   ├─pve-vm--116--disk--1       30G lvm  LVM2_member              4M3u6D-49qx-M3lE-sNL5-r0PA-NaNM-UXD10w                0 
+  │   ├─pve-vm--118--disk--2       30G lvm  LVM2_member              bgjEsj-oGm8-BeqQ-2pQg-tZg6-IWlw-1Q2XiY                0 
+  │   ├─pve-vm--116--disk--2       30G lvm  LVM2_member              K9BdQn-2Uey-jpJL-Rhdl-w3HX-o0mi-Mz0Av0                0 
+  │   ├─pve-vm--117--disk--2       30G lvm  LVM2_member              vWQ3wm-fU7w-EeRb-odBJ-xVAf-1F4X-d3uP3W                0 
+  │   ├─pve-vm--600--cloudinit      4M lvm  iso9660                  2026-01-13-20-49-13-00                                0 
+  │   ├─pve-vm--600--disk--0       40G lvm                                                                                 0 
+  │   ├─pve-vm--9010--cloudinit     4M lvm  iso9660                  2026-10-12-17-08-57-00                                0 
+  │   ├─pve-vm--125--disk--0        4M lvm                                                                                 0 
+  │   ├─pve-vm--127--disk--0        4M lvm                                                                                 0 
+  │   ├─pve-vm--126--disk--0        4M lvm                                                                                 0 
+  │   ├─pve-vm--125--disk--1       40G lvm                                                                                 0 
+  │   ├─pve-vm--127--disk--1       40G lvm                                                                                 0 
+  │   ├─pve-vm--126--disk--1       40G lvm                                                                                 0 
+  │   ├─pve-vm--125--cloudinit      4M lvm  iso9660                  2026-11-04-19-50-59-00                                0 
+  │   ├─pve-vm--127--cloudinit      4M lvm  iso9660                  2026-11-04-19-51-09-00                                0 
+  │   └─pve-vm--126--cloudinit      4M lvm  iso9660                  2026-11-04-19-51-04-00                                0 
+  └─pve-data_tdata              794.3G lvm                                                                                 0 
+    └─pve-data-tpool            794.3G lvm                                                                                 0 
+      ├─pve-data                794.3G lvm                                                                                 0 
+      ├─pve-vm--101--disk--1      200G lvm                                                                                 0 
+      ├─pve-vm--100--cloudinit      4M lvm  iso9660                  2025-09-29-19-08-21-00                                0 
+      ├─pve-vm--116--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-06-00                                0 
+      ├─pve-vm--116--disk--0       80G lvm                                                                                 0 
+      ├─pve-vm--117--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-07-00                                0 
+      ├─pve-vm--117--disk--0       80G lvm                                                                                 0 
+      ├─pve-vm--118--cloudinit      4M lvm  iso9660                  2026-11-04-19-59-08-00                                0 
+      ├─pve-vm--118--disk--0       80G lvm                                                                                 0 
+      ├─pve-vm--119--cloudinit      4M lvm  iso9660                  2026-11-09-20-52-40-00                                0 
+      ├─pve-vm--119--disk--0       50G lvm                                                                                 0 
+      ├─pve-vm--9000--cloudinit     4M lvm  iso9660                  2025-11-22-12-57-04-00                                0 
+      ├─pve-vm--121--cloudinit      4M lvm  iso9660                  2026-11-09-20-50-59-00                                0 
+      ├─pve-vm--121--disk--0       50G lvm                                                                                 0 
+      ├─pve-vm--122--cloudinit      4M lvm  iso9660                  2026-11-09-20-28-41-00                                0 
+      ├─pve-vm--122--disk--0       60G lvm                                                                                 0 
+      ├─pve-vm--123--cloudinit      4M lvm  iso9660                  2026-11-09-20-35-56-00                                0 
+      ├─pve-vm--123--disk--0       60G lvm                                                                                 0 
+      ├─pve-vm--124--cloudinit      4M lvm  iso9660                  2026-11-09-20-17-18-00                                0 
+      ├─pve-vm--124--disk--0       60G lvm                                                                                 0 
+      ├─pve-vm--120--cloudinit      4M lvm  iso9660                  2026-11-09-20-49-55-00                                0 
+      ├─pve-vm--120--disk--0       40G lvm                                                                                 0 
+      ├─pve-vm--118--disk--1       30G lvm  LVM2_member              Gel3jz-8UiY-DxhY-IXvU-lyMq-Du2h-2F3eZY                0 
+      ├─pve-vm--117--disk--1       30G lvm  LVM2_member              QwCItO-HULm-cUAN-QYtZ-qH2Y-Aelm-GmO31P                0 
+      ├─pve-vm--116--disk--1       30G lvm  LVM2_member              4M3u6D-49qx-M3lE-sNL5-r0PA-NaNM-UXD10w                0 
+      ├─pve-vm--118--disk--2       30G lvm  LVM2_member              bgjEsj-oGm8-BeqQ-2pQg-tZg6-IWlw-1Q2XiY                0 
+      ├─pve-vm--116--disk--2       30G lvm  LVM2_member              K9BdQn-2Uey-jpJL-Rhdl-w3HX-o0mi-Mz0Av0                0 
+      ├─pve-vm--117--disk--2       30G lvm  LVM2_member              vWQ3wm-fU7w-EeRb-odBJ-xVAf-1F4X-d3uP3W                0 
+      ├─pve-vm--600--cloudinit      4M lvm  iso9660                  2026-01-13-20-49-13-00                                0 
+      ├─pve-vm--600--disk--0       40G lvm                                                                                 0 
+      ├─pve-vm--9010--cloudinit     4M lvm  iso9660                  2026-10-12-17-08-57-00                                0 
+      ├─pve-vm--125--disk--0        4M lvm                                                                                 0 
+      ├─pve-vm--127--disk--0        4M lvm                                                                                 0 
+      ├─pve-vm--126--disk--0        4M lvm                                                                                 0 
+      ├─pve-vm--125--disk--1       40G lvm                                                                                 0 
+      ├─pve-vm--127--disk--1       40G lvm                                                                                 0 
+      ├─pve-vm--126--disk--1       40G lvm                                                                                 0 
+      ├─pve-vm--125--cloudinit      4M lvm  iso9660                  2026-11-04-19-50-59-00                                0 
+      ├─pve-vm--127--cloudinit      4M lvm  iso9660                  2026-11-04-19-51-09-00                                0 
+      └─pve-vm--126--cloudinit      4M lvm  iso9660                  2026-11-04-19-51-04-00                                0 
+=== blkid
+/dev/mapper/pve-root: UUID="0444de59-6c5f-4d85-a2c5-2b7778f2a08f" BLOCK_SIZE="4096" TYPE="ext4"
+/dev/mapper/pve-vm--117--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-59-07-00" LABEL="cidata" TYPE="iso9660"
+/dev/nvme0n1p3: UUID="5S0dr8-EB3F-rOBf-hkxQ-uXzS-T8dt-xB0cGc" TYPE="LVM2_member" PARTUUID="b33aa6d9-8fb2-48f6-895a-922e3d93e412"
+/dev/nvme0n1p2: UUID="D7C0-606F" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="0639e230-a98d-4b9f-9264-f938e66ba7a6"
+/dev/mapper/pve-vm--116--disk--1: UUID="4M3u6D-49qx-M3lE-sNL5-r0PA-NaNM-UXD10w" TYPE="LVM2_member"
+/dev/mapper/pve-vm--122--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-28-41-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--118--disk--1: UUID="Gel3jz-8UiY-DxhY-IXvU-lyMq-Du2h-2F3eZY" TYPE="LVM2_member"
+/dev/mapper/pve-vm--116--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-59-06-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--121--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-50-59-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--9010--cloudinit: BLOCK_SIZE="2048" UUID="2026-10-12-17-08-57-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--120--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-49-55-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--127--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-51-09-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--600--cloudinit: BLOCK_SIZE="2048" UUID="2026-01-13-20-49-13-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--124--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-17-18-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--116--disk--2: UUID="K9BdQn-2Uey-jpJL-Rhdl-w3HX-o0mi-Mz0Av0" TYPE="LVM2_member"
+/dev/mapper/pve-vm--123--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-35-56-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-swap: UUID="c59bc52e-5a12-426b-9349-29017d20b8f5" TYPE="swap"
+/dev/mapper/pve-vm--117--disk--1: UUID="QwCItO-HULm-cUAN-QYtZ-qH2Y-Aelm-GmO31P" TYPE="LVM2_member"
+/dev/mapper/pve-vm--100--cloudinit: BLOCK_SIZE="2048" UUID="2025-09-29-19-08-21-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--9000--cloudinit: BLOCK_SIZE="2048" UUID="2025-11-22-12-57-04-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--126--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-51-04-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--119--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-09-20-52-40-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--125--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-50-59-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--117--disk--2: UUID="vWQ3wm-fU7w-EeRb-odBJ-xVAf-1F4X-d3uP3W" TYPE="LVM2_member"
+/dev/mapper/pve-vm--118--cloudinit: BLOCK_SIZE="2048" UUID="2026-11-04-19-59-08-00" LABEL="cidata" TYPE="iso9660"
+/dev/mapper/pve-vm--118--disk--2: UUID="bgjEsj-oGm8-BeqQ-2pQg-tZg6-IWlw-1Q2XiY" TYPE="LVM2_member"
+/dev/mapper/pve-vm--122--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--125--disk--1: PTUUID="031bef61" PTTYPE="dos"
+/dev/nvme0n1p1: PARTUUID="6d36c922-b7de-4d47-a6de-ce8f0c939373"
+/dev/mapper/pve-vm--101--disk--1: PTUUID="e8334b5c-6085-4f03-88e7-5a5fef86a617" PTTYPE="gpt"
+/dev/mapper/pve-vm--119--disk--0: PTUUID="aef21a88" PTTYPE="dos"
+/dev/mapper/pve-vm--118--disk--0: PTUUID="aef21a88" PTTYPE="dos"
+/dev/mapper/pve-vm--126--disk--1: PTUUID="031bef61" PTTYPE="dos"
+/dev/mapper/pve-vm--117--disk--0: PTUUID="aef21a88" PTTYPE="dos"
+/dev/mapper/pve-vm--116--disk--0: PTUUID="aef21a88" PTTYPE="dos"
+/dev/mapper/pve-vm--121--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--120--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--600--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--124--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--123--disk--0: PTUUID="e86c4906-c1d8-4032-b240-1fd128717ca0" PTTYPE="gpt"
+/dev/mapper/pve-vm--127--disk--1: PTUUID="031bef61" PTTYPE="dos"
+=== parted -l
+Error: /dev/mapper/pve-vm--119--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--121--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--120--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--123--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--122--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--124--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--126--disk--0: unrecognised disk label
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--119--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--119--disk--0: 53.7GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary  xfs          boot
+ 2      1075MB  53.7GB  52.6GB  primary               lvm
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--121--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--121--disk--0: 53.7GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  53.7GB  51.5GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--120--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--120--disk--0: 42.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  42.9GB  40.8GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--123--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--123--disk--0: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  64.4GB  62.3GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--122--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--122--disk--0: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  64.4GB  62.3GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--124--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--124--disk--0: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  64.4GB  62.3GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--126--disk--0: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--126--disk--1: 42.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  2147MB  2146MB  primary  fat32        lba
+ 2      2147MB Error: /dev/mapper/pve-vm--125--disk--0: unrecognised disk label
+Error: /dev/mapper/pve-vm--127--disk--0: unrecognised disk label
+Error: /dev/mapper/pve-vm--118--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--117--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--116--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--127--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--126--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--125--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--117--disk--1: unrecognised disk label
+Error: /dev/mapper/pve-vm--116--disk--2: unrecognised disk label
+Error: /dev/mapper/pve-vm--116--disk--1: unrecognised disk label
+Error: /dev/mapper/pve-vm--117--disk--2: unrecognised disk label
+Error: /dev/mapper/pve-vm--118--disk--2: unrecognised disk label
+Error: /dev/mapper/pve-vm--118--disk--1: unrecognised disk label
+ 42.9GB  40.8GB  primary  ext4
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--125--disk--0: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--125--disk--1: 42.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  2147MB  2146MB  primary  fat32        lba
+ 2      2147MB  42.9GB  40.8GB  primary  ext4
+
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--127--disk--1: 42.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  2147MB  2146MB  primary  fat32        lba
+ 2      2147MB  42.9GB  40.8GB  primary  ext4
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--127--disk--0: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--118--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--117--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--116--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--127--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--126--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--125--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--117--disk--1: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--116--disk--2: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--116--disk--1: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--117--disk--2: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--118--disk--2: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--118--disk--1: 32.2GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+ModError: /dev/mapper/pve-vm--100--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--600--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-vm--9010--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-data: unrecognised disk label
+Error: /dev/mapper/pve-data-tpool: unrecognised disk label
+Error: /dev/mapper/pve-vm--9000--cloudinit: unrecognised disk label
+Error: /dev/mapper/pve-data_tdata: unrecognised disk label
+Error: /dev/mapper/pve-data_tmeta: unrecognised disk label
+el: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--116--disk--0: 85.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary  xfs          boot
+ 2      1075MB  85.9GB  84.8GB  primary               lvm
+
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--101--disk--1: 215GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  215GB   213GB
+
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--600--disk--0: 42.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2097kB  1049kB                     bios_grub
+ 2      2097kB  2150MB  2147MB  ext4
+ 3      2150MB  42.9GB  40.8GB
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--100--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--600--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--9010--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/pve-data: 853GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (thin-pool) (dm)
+Disk /dev/mapper/pve-data-tpool: 853GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/pve-swap: 8590MB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+Disk Flags: 
+
+Number  Start  End     Size    File system     Flags
+ 1      0.00B  8590MB  8590MB  linux-swap(v1)
+
+
+                                                                          Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--9000--cloudinit: 4194kB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+                                                                          Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/pve-data_tdata: 853GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--118--disk--0: 85.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary  xfs          boot
+ 2      1075MB  85.9GB  84.8GB  primary               lvm
+
+
+Model: Linux device-mapper (thin) (dm)
+Disk /dev/mapper/pve-vm--117--disk--0: 85.9GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary  xfs          boot
+ 2      1075MB  85.9GB  84.8GB  primary               lvm
+
+
+                                                                          Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/pve-data_tmeta: 8699MB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags: 
+
+Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/pve-root: 103GB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+Disk Flags: 
+
+Number  Start  End    Size   File system  Flags
+ 1      0.00B  103GB  103GB  ext4
+
+
+Model: INTEL SSDPE2KX010T8 (nvme)
+Disk /dev/nvme0n1: 1000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      17.4kB  1049kB  1031kB                     bios_grub
+ 2      1049kB  1075MB  1074MB  fat32              boot, esp
+ 3      1075MB  1000GB  999GB                      lvm
+
+
+=== fstab
+# <file system> <mount point> <type> <options> <dump> <pass>
+/dev/pve/root / ext4 errors=remount-ro 0 1
+UUID=D7C0-606F /boot/efi vfat defaults 0 1
+/dev/pve/swap none swap sw 0 0
+proc /proc proc defaults 0 0
+=== findmnt
+TARGET                                                  SOURCE               FSTYPE      OPTIONS
+/                                                       /dev/mapper/pve-root ext4        rw,relatime,errors=remount-ro
+├─/sys                                                  sysfs                sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                securityfs           securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                      cgroup2              cgroup2     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/pstore                                      pstore               pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/firmware/efi/efivars                           efivarfs             efivarfs    rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                         bpf                  bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                   debugfs              debugfs     rw,nosuid,nodev,noexec,relatime
+│ │ └─/sys/kernel/debug/tracing                         tracefs              tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                 tracefs              tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/fuse/connections                            fusectl              fusectl     rw,nosuid,nodev,noexec,relatime
+│ └─/sys/kernel/config                                  configfs             configfs    rw,nosuid,nodev,noexec,relatime
+├─/proc                                                 proc                 proc        rw,relatime
+│ ├─/proc/sys/fs/binfmt_misc                            systemd-1            autofs      rw,relatime,fd=30,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=75497
+│ │ └─/proc/sys/fs/binfmt_misc                          binfmt_misc          binfmt_misc rw,nosuid,nodev,noexec,relatime
+│ └─/proc/fs/nfsd                                       nfsd                 nfsd        rw,relatime
+├─/dev                                                  udev                 devtmpfs    rw,nosuid,relatime,size=32748460k,nr_inodes=8187115,mode=755,inode64
+│ ├─/dev/pts                                            devpts               devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                                            tmpfs                tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/hugepages                                      hugetlbfs            hugetlbfs   rw,relatime,pagesize=2M
+│ └─/dev/mqueue                                         mqueue               mqueue      rw,nosuid,nodev,noexec,relatime
+├─/run                                                  tmpfs                tmpfs       rw,nosuid,nodev,noexec,relatime,size=6556540k,mode=755,inode64
+│ ├─/run/lock                                           tmpfs                tmpfs       rw,nosuid,nodev,noexec,relatime,size=5120k,inode64
+│ ├─/run/credentials/systemd-sysusers.service           ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/credentials/systemd-tmpfiles-setup-dev.service ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/rpc_pipefs                                     sunrpc               rpc_pipefs  rw,relatime
+│ ├─/run/credentials/systemd-sysctl.service             ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/run/credentials/systemd-tmpfiles-setup.service     ramfs                ramfs       ro,nosuid,nodev,noexec,relatime,mode=700
+│ └─/run/user/0                                         tmpfs                tmpfs       rw,nosuid,nodev,relatime,size=6556536k,nr_inodes=1639134,mode=700,inode64
+=== mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4] [raid10] 
+unused devices: <none>
+=== pvs/vgs/lvs
+  PV             VG  Fmt  Attr PSize    PFree 
+  /dev/nvme0n1p3 pve lvm2 a--  <930.51g 16.00g
+  VG  #PV #LV #SN Attr   VSize    VFree 
+  pve   1  47   0 wz--n- <930.51g 16.00g
+  LV                               VG  LSize   Type      Pool Data%  Meta% 
+  base-100-disk-0                  pve  20.00g thin      data              
+  base-9000-disk-0                 pve  40.00g thin      data              
+  base-9010-disk-0                 pve   4.00m thin      data              
+  base-9010-disk-1                 pve  40.00g thin      data              
+  data                             pve 794.30g thin-pool      66.35  2.17  
+  [data_tdata]                     pve 794.30g linear                      
+  [data_tmeta]                     pve   8.10g linear                      
+  [lvol0_pmspare]                  pve   8.10g linear                      
+  root                             pve  96.00g linear                      
+  snap_vm-119-disk-0_before_resize pve  50.00g thin      data              
+  swap                             pve   8.00g linear                      
+  vm-100-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-101-disk-1                    pve 200.00g thin      data 21.78        
+  vm-116-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-116-disk-0                    pve  80.00g thin      data 28.56        
+  vm-116-disk-1                    pve  30.00g thin      data 99.99        
+  vm-116-disk-2                    pve  30.00g thin      data 99.99        
+  vm-117-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-117-disk-0                    pve  80.00g thin      data 38.85        
+  vm-117-disk-1                    pve  30.00g thin      data 99.99        
+  vm-117-disk-2                    pve  30.00g thin      data 99.99        
+  vm-118-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-118-disk-0                    pve  80.00g thin      data 23.24        
+  vm-118-disk-1                    pve  30.00g thin      data 99.99        
+  vm-118-disk-2                    pve  30.00g thin      data 99.99        
+  vm-119-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-119-disk-0                    pve  50.00g thin      data 63.48        
+  vm-120-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-120-disk-0                    pve  40.00g thin      data 42.99        
+  vm-121-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-121-disk-0                    pve  50.00g thin      data 43.56        
+  vm-122-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-122-disk-0                    pve  60.00g thin      data 77.72        
+  vm-123-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-123-disk-0                    pve  60.00g thin      data 62.54        
+  vm-124-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-124-disk-0                    pve  60.00g thin      data 68.28        
+  vm-125-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-125-disk-0                    pve   4.00m thin      data 14.06        
+  vm-125-disk-1                    pve  40.00g thin      data 6.57         
+  vm-126-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-126-disk-0                    pve   4.00m thin      data 14.06        
+  vm-126-disk-1                    pve  40.00g thin      data 6.49         
+  vm-127-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-127-disk-0                    pve   4.00m thin      data 14.06        
+  vm-127-disk-1                    pve  40.00g thin      data 6.48         
+  vm-600-cloudinit                 pve   4.00m thin      data 9.38         
+  vm-600-disk-0                    pve  40.00g thin      data 35.88        
+  vm-9000-cloudinit                pve   4.00m thin      data 9.38         
+  vm-9010-cloudinit                pve   4.00m thin      data 9.38         
+=== lvm autoextend
+	# Configuration option activation/thin_pool_autoextend_threshold.
+	# Also see thin_pool_autoextend_percent.
+	 thin_pool_autoextend_threshold = 70
+	# thin_pool_autoextend_threshold = 100
+	# Configuration option activation/thin_pool_autoextend_percent.
+	 thin_pool_autoextend_percent = 20
+	# thin_pool_autoextend_percent = 20
+=== dmesg medium/io
+=== smartctl
+/usr/sbin/smartctl
+smartctl 7.3 2022-02-28 r5338 [x86_64-linux-6.8.12-15-pve] (local build)
+Copyright (C) 2002-22, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Model Number:                       INTEL SSDPE2KX010T8
+Serial Number:                      <redacted-serial>
+Firmware Version:                   VDV10131
+PCI Vendor/Subsystem ID:            0x8086
+IEEE OUI Identifier:                0x5cd2e4
+Total NVM Capacity:                 1,000,204,886,016 [1.00 TB]
+Unallocated NVM Capacity:           0
+Controller ID:                      0
+NVMe Version:                       1.2
+Number of Namespaces:               1
+Namespace 1 Size/Capacity:          1,000,204,886,016 [1.00 TB]
+Namespace 1 Formatted LBA Size:     512
+Namespace 1 IEEE EUI-64:            5cd2e4 f07a780100
+Local Time is:                      Wed Nov 11 09:27:51 2026 CST
+Firmware Updates (0x02):            1 Slot
+Optional Admin Commands (0x000e):   Format Frmw_DL NS_Mngmt
+Optional NVM Commands (0x0006):     Wr_Unc DS_Mngmt
+Log Page Attributes (0x02):         Cmd_Eff_Lg
+Maximum Data Transfer Size:         32 Pages
+Warning  Comp. Temp. Threshold:     70 Celsius
+Critical Comp. Temp. Threshold:     80 Celsius
+
+Supported Power States
+St Op     Max   Active     Idle   RL RT WL WT  Ent_Lat  Ex_Lat
+ 0 +    25.00W       -        -    0  0  0  0        0       0
+
+Supported LBA Sizes (NSID 0x1)
+Id Fmt  Data  Metadt  Rel_Perf
+ 0 +     512       0         2
+ 1 -    4096       0         0
+
+=== START OF SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED
+
+SMART/Health Information (NVMe Log 0x02)
+Critical Warning:                   0x00
+Temperature:                        30 Celsius
+Available Spare:                    100%
+Available Spare Threshold:          10%
+Percentage Used:                    0%
+Data Units Read:                    35,325,419 [18.0 TB]
+Data Units Written:                 43,556,530 [22.3 TB]
+Host Read Commands:                 577,825,747
+Host Write Commands:                1,690,407,312
+Controller Busy Time:               332
+Power Cycles:                       159
+Power On Hours:                     2,374
+Unsafe Shutdowns:                   7
+Media and Data Integrity Errors:    0
+Error Information Log Entries:      0
+Warning  Comp. Temperature Time:    0
+Critical Comp. Temperature Time:    0
+
+Error Information (NVMe Log 0x01, 16 of 64 entries)
+No Errors Logged
+
+=== nvme smart
+/usr/sbin/nvme
+Smart Log for NVME device:nvme0n1 namespace-id:ffffffff
+critical_warning			: 0
+temperature				: 30°C (303 Kelvin)
+available_spare				: 100%
+available_spare_threshold		: 10%
+percentage_used				: 0%
+endurance group critical warning summary: 0
+Data Units Read				: 35,325,421 (18.09 TB)
+Data Units Written			: 43,556,530 (22.30 TB)
+host_read_commands			: 577,825,768
+host_write_commands			: 1,690,407,312
+controller_busy_time			: 332
+power_cycles				: 159
+power_on_hours				: 2,374
+unsafe_shutdowns			: 7
+media_errors				: 0
+num_err_log_entries			: 0
+Warning Temperature Time		: 0
+Critical Composite Temperature Time	: 0
+Thermal Management T1 Trans Count	: 0
+Thermal Management T2 Trans Count	: 0
+Thermal Management T1 Total Time	: 0
+Thermal Management T2 Total Time	: 0

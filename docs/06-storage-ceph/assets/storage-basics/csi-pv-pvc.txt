@@ -1,0 +1,48 @@
+=== StorageClass
+NAME          PROVISIONER        RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+ceph-rbd-sc   rbd.csi.ceph.com   Retain          Immediate           true                   221d
+nfs-sc        example.com/nfs    Delete          Immediate           false                  296d
+
+=== PV access modes
+NAME                                       SC            MODE              CLAIM
+pvc-13f428e3-02ba-4af7-90d3-a28285a67c02   ceph-rbd-sc   [ReadWriteOnce]   data-loki-write-0
+pvc-271e64b9-9e9b-46d9-9901-487a5927734c   ceph-rbd-sc   [ReadWriteOnce]   prometheus-db-ceph-prometheus-prometheus-prometheus-0
+pvc-303f4698-f55c-4e88-92bb-1a5e683a1a60   ceph-rbd-sc   [ReadWriteOnce]   deeptutor-data
+pvc-312f456c-85da-4c85-b6a4-3aa2a682900a   ceph-rbd-sc   [ReadWriteOnce]   pg16-ceph-3
+pvc-5dc9836b-d585-4bdf-87c5-5bbe632031e9   ceph-rbd-sc   [ReadWriteOnce]   data-loki-backend-0
+pvc-6b229b52-650d-4edc-aa53-dbf57b90b044   ceph-rbd-sc   [ReadWriteOnce]   pg16-ceph-3-wal
+pvc-6d3e4030-94a0-435b-b382-a6158e8caefd   ceph-rbd-sc   [ReadWriteOnce]   alertmanager-db-ceph-alertmanager-prometheus-alertmanager-0
+pvc-7787aabb-c5e9-4e2e-acad-51ac7ac1deaa   ceph-rbd-sc   [ReadWriteOnce]   pg16-ceph-4-wal
+pvc-89160268-67a4-43d0-8922-6c4f3701f556   ceph-rbd-sc   [ReadWriteOnce]   n8n-pvc
+pvc-aebfac42-a961-4b21-9440-b175989ba2dc   ceph-rbd-sc   [ReadWriteOnce]   prometheus-grafana-ceph
+pvc-b0b33b5d-3d00-4726-aa5f-4694f16036c7   ceph-rbd-sc   [ReadWriteOnce]   redis-data
+pvc-b2c92062-62d7-4363-92c6-abfe4cf0c2af   ceph-rbd-sc   [ReadWriteOnce]   open-webui-data
+pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af   nfs-sc        [ReadWriteOnce]   china-study-free-reports
+pvc-ca401649-424e-436a-9253-31375c373f07   nfs-sc        [ReadWriteOnce]   china-study-free-assets
+pvc-d2b40fc6-926f-4c51-baeb-8372a36cd890   nfs-sc        [ReadWriteOnce]   frpc-build-ctx
+pvc-d6c725e4-41a5-4092-b143-19271639db6b   ceph-rbd-sc   [ReadWriteOnce]   pg16-ceph-4
+pvc-e6337758-28f8-49e1-9672-5b4e751c118f   ceph-rbd-sc   [ReadWriteOnce]   data-my-cluster-single-pool-0
+
+=== PVC access modes
+NS                 NAME                                                          SC            MODE              STATUS
+china-study-free   china-study-free-assets                                       nfs-sc        [ReadWriteOnce]   Bound
+china-study-free   china-study-free-reports                                      nfs-sc        [ReadWriteOnce]   Bound
+cicd               frpc-build-ctx                                                nfs-sc        [ReadWriteOnce]   Bound
+cnpg-system        pg16-ceph-3                                                   ceph-rbd-sc   [ReadWriteOnce]   Bound
+cnpg-system        pg16-ceph-3-wal                                               ceph-rbd-sc   [ReadWriteOnce]   Bound
+cnpg-system        pg16-ceph-4                                                   ceph-rbd-sc   [ReadWriteOnce]   Bound
+cnpg-system        pg16-ceph-4-wal                                               ceph-rbd-sc   [ReadWriteOnce]   Bound
+deeptutor          deeptutor-data                                                ceph-rbd-sc   [ReadWriteOnce]   Bound
+deeptutor          redis-data                                                    ceph-rbd-sc   [ReadWriteOnce]   Bound
+kafka              data-my-cluster-single-pool-0                                 ceph-rbd-sc   [ReadWriteOnce]   Bound
+logging            data-loki-backend-0                                           ceph-rbd-sc   [ReadWriteOnce]   Bound
+logging            data-loki-write-0                                             ceph-rbd-sc   [ReadWriteOnce]   Bound
+monitoring         alertmanager-db-ceph-alertmanager-prometheus-alertmanager-0   ceph-rbd-sc   [ReadWriteOnce]   Bound
+monitoring         prometheus-db-ceph-prometheus-prometheus-prometheus-0         ceph-rbd-sc   [ReadWriteOnce]   Bound
+monitoring         prometheus-grafana-ceph                                       ceph-rbd-sc   [ReadWriteOnce]   Bound
+n8n                n8n-pvc                                                       ceph-rbd-sc   [ReadWriteOnce]   Bound
+open-webui         open-webui-data                                               ceph-rbd-sc   [ReadWriteOnce]   Bound
+
+=== CSI drivers
+NAME               ATTACHREQUIRED   PODINFOONMOUNT   STORAGECAPACITY   TOKENREQUESTS   REQUIRESREPUBLISH   MODES        AGE
+rbd.csi.ceph.com   true             true             false             <unset>         false               Persistent   38h

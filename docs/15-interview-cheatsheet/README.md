@@ -32,6 +32,24 @@
 | 容器为什么要 tini | PID 1 不自动回收僵尸、默认不处理 SIGTERM | frpc `NSpid: 2236 1`，没有 tini |
 | epoll 为什么快 | 红黑树 + 就绪链表，只返回就绪 fd | Harbor nginx worker `anon_inode:[eventpoll]`；注意“零拷贝”说法不准确 |
 
+## 一页速查（存储专题）
+
+| 知识点 | 一句话答案 | 本环境实证/纠偏 |
+|---|---|---|
+| 分区与设备 | GPT/MBR 要懂；`lsblk`/`blkid`/`parted`；设备名会漂移，用 UUID/by-id/udev | PVE GPT、m01 MBR、worker GPT；`by-uuid`/`by-id` 都有 |
+| LVM 核心 | PV→VG→LV；扩通常在线，缩通常离线；`pvmove` | PVE VG 930.51G，root 96G，pool 794.3G，VG 空闲 16G |
+| LVM thin pool 满 | 可能 I/O 挂起/不可写，业务连锁；不是绝对整个 VG 只读 | pool 66.35%，autoextend 需 158.9G，VG 只剩 16G |
+| RAID 选型 | 0/1/5/6/10；看容量、故障域、重建窗口、write hole | PVE 单 NVMe，无 md RAID；冗余靠 Ceph 副本 |
+| 文件系统选型 | XFS 不能缩；ext4 离线可缩；ZFS/btrfs 复杂 | PVE/worker/GitLab/Harbor ext4；m01 XFS |
+| fstab 挂载 | `noatime`；`nobarrier`/`barrier=0` 有风险；外部盘必须 `nofail` | 本机无外部 fstab 数据盘；K8s 卷由 runtime 挂 |
+| 安全挂载 | 数据盘 `noexec,nosuid,nodev` | 通用建议 |
+| NFS | hard/soft/timeo/retrans；`intr` 基本无效；stale handle 重挂 | NFSv4.2 `hard,timeo=600,retrans=2` |
+| Ceph 排障 | `ceph -s` + PG 状态 + OSD up/in | HEALTH_OK，6 OSD up/in，465 PG active+clean |
+| 云盘 | IOPS/吞吐/突发积分/快照一致性 | 本环境无云盘，仅原理 |
+| 容器存储 CSI | CSI + PV/PVC/StorageClass；emptyDir 节点临时 | `ceph-rbd-sc`/`nfs-sc`，17 PV Bound |
+| RWO 语义 | 单节点读写，不是单 Pod | 17 个 PVC 全 RWO；无 local-path |
+| 数据可靠性 | SMART 看寿命/坏道；dmesg medium error 先备份换盘 | NVMe 0% used、0 media errors、7 unsafe shutdowns |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -110,6 +128,7 @@ ModuleNotFoundError: No module named 'distutils'
 | [01-linux.md](01-linux.md) | 硬/软链接、僵尸、load、free、df/du、ulimit、cgroup、Ubuntu/Rocky、SELinux/AppArmor、epoll |
 | [02-network.md](02-network.md) | TIME_WAIT/CLOSE_WAIT、三次握手、refused/timeout/reset |
 | [03-cloud-native.md](03-cloud-native.md) | OOMKilled vs Evicted、tini、cgroup 与容器 |
+| [04-storage.md](04-storage.md) | 分区、LVM、RAID、文件系统、fstab、NFS、Ceph、云盘、CSI、SMART |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

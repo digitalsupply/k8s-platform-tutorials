@@ -350,6 +350,7 @@ fstrim -av
 | [minio-vs-ceph-rgw-analysis.md](notes/minio-vs-ceph-rgw-analysis.md) | “MinIO”命名错误的排查与 RGW 两种访问路径 |
 | [compassio-pg-redis-ops-plan.md](notes/compassio-pg-redis-ops-plan.md) | PostgreSQL/Redis 运维、主库故障切换、RTO/RPO |
 | [ceph-csi-operator-how-it-works-2026-11-09.md](notes/ceph-csi-operator-how-it-works-2026-11-09.md) | 以 Ceph-CSI 为例讲 Operator/CRD/reconcile、RBAC、leader election |
+| [10-storage-basics.md](10-storage-basics.md) | 分区/LVM/RAID/文件系统/fstab/NFS/Ceph/云盘/CSI/SMART 基础与真机证据 |
 | [ceph-csi-upgrade-to-operator-2026-11-09.md](notes/ceph-csi-upgrade-to-operator-2026-11-09.md) | 3.16.2 → 3.17.2 → 3.18.2 → Operator 1.1.0 的分阶段升级与回滚 |
 | [cnpg-operator-how-it-works-2026-11-09.md](notes/cnpg-operator-how-it-works-2026-11-09.md) | CNPG Operator、Instance Manager、Plugin、reconcile 全过程 |
 | [cnpg-upgrade-postmortem-2026-11-08.md](notes/cnpg-upgrade-postmortem-2026-11-08.md) | CNPG 1.22 → 1.30.1、rp_filter、barman plugin、switchover |
@@ -371,6 +372,7 @@ fstrim -av
 | [scripts/ceph_csi_inventory.py](scripts/ceph_csi_inventory.py) | 只读盘点 Operator/Driver/CephConnection/ClientProfile/PV/PVC |
 | [assets/ceph-csi-operator/](assets/ceph-csi-operator/) | 升级前备份、Helm values、imageset、StorageClass、实时 CR |
 | [assets/cnpg/](assets/cnpg/) | CNPG Cluster/ObjectStore/ScheduledBackup/Plugin 清单与实时导出 |
+| [assets/storage-basics/](assets/storage-basics/README.md) | 分区/LVM/RAID/fstab/NFS/CSI/SMART 真机证据 |
 | [scripts/enforce-rp-filter.sh](scripts/enforce-rp-filter.sh) | 将节点 rp_filter 改为 loose(2) 并持久化，修复 CNPG webhook 超时 |
 
 ```bash

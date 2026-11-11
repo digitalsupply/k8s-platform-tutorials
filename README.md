@@ -29,7 +29,7 @@
 | [03 GitLab / Harbor](docs/03-gitlab/README.md) | GitLab 安装/端口、账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 GitLab 运维、CI/CD、镜像仓库与权限治理的人 |
 | [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps | 做 K8s 可观测性与告警治理的人 |
 | [05 Linux](docs/05-linux/README.md) | 内核、用户态、文件系统、权限 UGO→capability、进程、内存、systemd、参数限制 | Linux 基础与主机层运维 |
-| [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏 | 管存储、PVC、数据库备份的人 |
+| [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏、分区/LVM/RAID/文件系统基础 | 管存储、PVC、数据库备份、磁盘/文件系统的人 |
 | [07 Networking](docs/07-networking/README.md) | Traefik/IngressRoute、Service/iptables、DNS、隧道、IPIP/VXLAN | 排查入口、DNS、Service 不通的人 |
 | [08 Control Plane HA](docs/08-control-plane-ha/README.md) | kube-vip、API VIP、apiserver 内存、etcd 备份/恢复 | 管控制面高可用的人 |
 | [09 生命周期与生产化](docs/09-incidents-and-readiness/README.md) | Knative/Tekton/宿主机应用下线、清理、生产化审计 | 做组件治理与生产化的人 |
@@ -38,7 +38,7 @@
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC | 管宿主机、VM、磁盘容量与批量建机的人 |
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
 | [14 Containers](docs/14-containers/README.md) | Docker/containerd/CRI/OCI、镜像层、overlay、生命周期、网络、存储、capability、排障 | 管容器运行时、镜像、Pod 安全与 CI 构建的人 |
-| [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/云原生一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
+| [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/存储/云原生一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
 
 ---
 
@@ -112,7 +112,7 @@
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
 | 14 Containers | [`collect_container_evidence.sh`](docs/14-containers/scripts/collect_container_evidence.sh)、[`assets/evidence/`](docs/14-containers/assets/evidence/README.md)、[`labs/`](docs/14-containers/labs/README.md) |
-| 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/云原生一句话答案 |
+| 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/存储/云原生一句话答案 |
 
 说明：
 

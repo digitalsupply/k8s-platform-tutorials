@@ -1,0 +1,43 @@
+=== NFS PV spec
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    pv.kubernetes.io/provisioned-by: example.com/nfs
+  creationTimestamp: "2026-11-05T14:13:57Z"
+  finalizers:
+  - kubernetes.io/pv-protection
+  name: pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+  resourceVersion: "54739950"
+  uid: f5613f18-ee3c-4be1-acd8-3e99bb691bb4
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: china-study-free-reports
+    namespace: china-study-free
+    resourceVersion: "54739943"
+    uid: b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+  nfs:
+    path: /data/nfs/china-study-free-china-study-free-reports-pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af
+    server: 10.0.0.1
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: nfs-sc
+  volumeMode: Filesystem
+status:
+  lastPhaseTransitionTime: "2026-11-05T14:13:57Z"
+  phase: Bound
+
+=== NFS mounts on nodes
+--- 10.0.0.122
+none
+--- 10.0.0.123
+none
+--- 10.0.0.124
+10.0.0.1:/data/nfs/china-study-free-china-study-free-assets-pvc-ca401649-424e-436a-9253-31375c373f07 on /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-ca401649-424e-436a-9253-31375c373f07 type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=10.0.0.124,local_lock=none,addr=10.0.0.1)
+10.0.0.1:/data/nfs/china-study-free-china-study-free-reports-pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af on /var/lib/kubelet/pods/41659e37-f5a3-414f-8f43-204ae9b5cbb6/volumes/kubernetes.io~nfs/pvc-b9ca9a17-fcfc-44a8-ab4e-f00b90a079af type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=10.0.0.124,local_lock=none,addr=10.0.0.1)
+10.0.0.1:/data/nfs on /var/lib/kubelet/pods/66a8fc57-a93f-4972-aeaa-3dc3874e028d/volumes/kubernetes.io~nfs/nfs-volume type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=10.0.0.124,local_lock=none,addr=10.0.0.1)

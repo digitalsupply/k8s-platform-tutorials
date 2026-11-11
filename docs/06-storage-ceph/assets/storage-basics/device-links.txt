@@ -1,0 +1,35 @@
+=== by-uuid
+total 0
+lrwxrwxrwx 1 root root 10 Nov 11 09:27 0444de59-6c5f-4d85-a2c5-2b7778f2a08f -> ../../dm-1
+lrwxrwxrwx 1 root root 10 Nov 11 09:27 2025-09-29-19-08-21-00 -> ../../dm-7
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2025-11-22-12-57-04-00 -> ../../dm-16
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2026-01-13-20-49-13-00 -> ../../dm-33
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2026-10-12-17-08-57-00 -> ../../dm-35
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2026-11-04-19-50-59-00 -> ../../dm-42
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2026-11-04-19-51-04-00 -> ../../dm-44
+lrwxrwxrwx 1 root root 11 Nov 11 09:27 2026-11-04-19-51-09-00 -> ../../dm-43
+lrwxrwxrwx 1 root root 10 Nov 11 09:27 2026-11-04-19-59-06-00 -> ../../dm-8
+
+=== udev property
+DEVNAME=/dev/nvme0n1p3
+ID_FS_UUID=5S0dr8-EB3F-rOBf-hkxQ-uXzS-T8dt-xB0cGc
+ID_FS_UUID_ENC=5S0dr8-EB3F-rOBf-hkxQ-uXzS-T8dt-xB0cGc
+ID_FS_TYPE=LVM2_member
+ID_PART_ENTRY_SCHEME=gpt
+ID_PART_ENTRY_UUID=b33aa6d9-8fb2-48f6-895a-922e3d93e412
+ID_PART_ENTRY_TYPE=e6d6d379-f507-44c2-a23c-238f2a3df928
+ID_PART_ENTRY_NUMBER=3
+ID_PART_ENTRY_OFFSET=2099200
+ID_PART_ENTRY_SIZE=1951425935
+
+=== by-id
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 lvm-pv-uuid-5S0dr8-EB3F-rOBf-hkxQ-uXzS-T8dt-xB0cGc -> ../../nvme0n1p3
+lrwxrwxrwx 1 root root 13 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial> -> ../../nvme0n1
+lrwxrwxrwx 1 root root 13 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>_1 -> ../../nvme0n1
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>_1-part1 -> ../../nvme0n1p1
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>_1-part2 -> ../../nvme0n1p2
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>_1-part3 -> ../../nvme0n1p3
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>-part1 -> ../../nvme0n1p1
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>-part2 -> ../../nvme0n1p2
+lrwxrwxrwx 1 root root 15 Nov 11 09:28 nvme-INTEL_SSDPE2KX010T8_<redacted-serial>-part3 -> ../../nvme0n1p3
+lrwxrwxrwx 1 root root 13 Nov 11 09:28 nvme-nvme.8086-50484c4a313335313033594631503055474e-494e54454c205353445045324b583031305438-00000001 -> ../../nvme0n1

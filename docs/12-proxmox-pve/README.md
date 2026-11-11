@@ -6,6 +6,9 @@ thin pool 快满、VM 没开 discard、根分区被 NFS/ISO 占满、autoextend 
 
 > **IaC 实践子章节**：Terraform + cloud-init + Ansible 创建虚拟机、批量管理、接入现有 K8s 集群，
 > 见 [iac/README.md](iac/README.md)。
+>
+> 更完整的存储基础（分区/LVM/RAID/文件系统/fstab/NFS/CSI/SMART）见
+> [06 Storage 10-storage-basics](../06-storage-ceph/10-storage-basics.md)。
 
 ## 当时的情况
 

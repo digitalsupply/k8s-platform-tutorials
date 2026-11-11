@@ -1,0 +1,45 @@
+=== harbor-202 ===
+Warning: Permanently added '192.168.67.202' (ED25519) to the list of known hosts.
+ubuntu02
+6.8.0-147-generic
+=== lsblk
+NAME     SIZE TYPE FSTYPE  PARTTYPENAME        UUID                                 MOUNTPOINTS ROTA
+sda       60G disk                                                                                 1
+├─sda1    59G part ext4    Linux filesystem    9d238549-a2c4-41a5-97de-f89c4c45ec32 /              1
+├─sda14    4M part         BIOS boot                                                               1
+├─sda15  106M part vfat    EFI System          3060-F246                            /boot/efi      1
+└─sda16  913M part ext4    Linux extended boot 0e597855-065c-43ea-a0ec-433b1f5b0be2 /boot          1
+sr0      368K rom  iso9660                     2026-09-07-15-57-48-00                              1
+=== fstab
+LABEL=cloudimg-rootfs	/	 ext4	discard,commit=30,errors=remount-ro	0 1
+LABEL=BOOT	/boot	ext4	defaults	0 2
+LABEL=UEFI	/boot/efi	vfat	umask=0077	0 1
+=== findmnt
+TARGET                                                                                              SOURCE                 FSTYPE      OPTIONS
+/                                                                                                   /dev/sda1              ext4        rw,relatime,discard,errors=remount-ro,commit=30
+├─/sys                                                                                              sysfs                  sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/firmware/efi/efivars                                                                       efivarfs               efivarfs    rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                                                            securityfs             securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                                                                  cgroup2                cgroup2     rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot
+│ ├─/sys/fs/pstore                                                                                  pstore                 pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/bpf                                                                                     bpf                    bpf         rw,nosuid,nodev,noexec,relatime,mode=700
+│ ├─/sys/kernel/debug                                                                               debugfs                debugfs     rw,nosuid,nodev,noexec,relatime
+│ │ └─/sys/kernel/debug/tracing                                                                     tracefs                tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/tracing                                                                             tracefs                tracefs     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/config                                                                              configfs               configfs    rw,nosuid,nodev,noexec,relatime
+│ └─/sys/fs/fuse/connections                                                                        fusectl                fusectl     rw,nosuid,nodev,noexec,relatime
+├─/proc                                                                                             proc                   proc        rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                                        systemd-1              autofs      rw,relatime,fd=32,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=2016
+│   └─/proc/sys/fs/binfmt_misc                                                                      binfmt_misc            binfmt_misc rw,nosuid,nodev,noexec,relatime
+├─/dev                                                                                              udev                   devtmpfs    rw,nosuid,relatime,size=3008640k,nr_inodes=752160,mode=755,inode64
+│ ├─/dev/pts                                                                                        devpts                 devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                                                                                        tmpfs                  tmpfs       rw,nosuid,nodev,inode64
+│ ├─/dev/hugepages                                                                                  hugetlbfs              hugetlbfs   rw,nosuid,nodev,relatime,pagesize=2M
+=== mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4] [raid10] 
+unused devices: <none>
+=== nfs mounts
+none
+=== dmesg medium/io
+=== smart
+smartctl not installed

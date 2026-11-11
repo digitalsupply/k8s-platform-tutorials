@@ -1,0 +1,59 @@
+=== ceph status
+  cluster:
+    id:     594e535e-d82c-11f0-afa7-bc24112b746f
+    health: HEALTH_OK
+ 
+  services:
+    mon: 3 daemons, quorum ceph-02,ceph-03,ceph-01 (age 6d)
+    mgr: ceph-02.wzbtbx(active, since 6d), standbys: ceph-01.egryfx
+    mds: 1/1 daemons up, 2 standby
+    osd: 6 osds: 6 up (since 6d), 6 in (since 10M)
+    rgw: 2 daemons active (2 hosts, 1 zones)
+ 
+  data:
+    volumes: 1/1 healthy
+    pools:   15 pools, 465 pgs
+    objects: 19.19k objects, 29 GiB
+    usage:   88 GiB used, 92 GiB / 180 GiB avail
+    pgs:     465 active+clean
+ 
+  io:
+    client:   20 KiB/s rd, 237 KiB/s wr, 1 op/s rd, 11 op/s wr
+ 
+
+465 pgs: 465 active+clean; 29 GiB data, 88 GiB used, 92 GiB / 180 GiB avail; 20 KiB/s rd, 200 KiB/s wr, 8 op/s
+
+ID  CLASS  WEIGHT   TYPE NAME         STATUS  REWEIGHT  PRI-AFF
+-1         0.17578  root default                               
+-7         0.05859      host ceph-01                           
+ 0    hdd  0.02930          osd.0         up   1.00000  1.00000
+ 5    hdd  0.02930          osd.5         up   1.00000  1.00000
+-3         0.05859      host ceph-02                           
+ 1    hdd  0.02930          osd.1         up   1.00000  1.00000
+ 4    hdd  0.02930          osd.4         up   1.00000  1.00000
+-5         0.05859      host ceph-03                           
+ 2    hdd  0.02930          osd.2         up   1.00000  1.00000
+ 3    hdd  0.02930          osd.3         up   1.00000  1.00000
+
+--- RAW STORAGE ---
+CLASS     SIZE   AVAIL    USED  RAW USED  %RAW USED
+hdd    180 GiB  92 GiB  88 GiB    88 GiB      49.07
+TOTAL  180 GiB  92 GiB  88 GiB    88 GiB      49.07
+ 
+--- POOLS ---
+POOL                        ID  PGS   STORED   (DATA)   (OMAP)  OBJECTS     USED   (DATA)   (OMAP)  %USED  MAX AVAIL  QUOTA OBJECTS  QUOTA BYTES  DIRTY  USED COMPR  UNDER COMPR
+.mgr                         1    1  1.1 MiB  1.1 MiB      0 B        2  3.4 MiB  3.4 MiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+cephfs_metadata             13   16   53 KiB   52 KiB  1.0 KiB       22  243 KiB  240 KiB  3.1 KiB      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+cephfs_data                 14   64   10 MiB   10 MiB      0 B        3   30 MiB   30 MiB      0 B   0.05     20 GiB            N/A          N/A    N/A         0 B          0 B
+.rgw.root                   34   32  5.7 KiB  5.7 KiB      0 B       20  228 KiB  228 KiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+default.rgw.log             35   32    182 B    182 B      0 B        2   24 KiB   24 KiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+default.rgw.control         36   32      0 B      0 B      0 B        8      0 B      0 B      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+default.rgw.meta            37   32      0 B      0 B      0 B        0      0 B      0 B      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.log             38   32   55 KiB   55 KiB      0 B      338  2.4 MiB  2.4 MiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.control         39   32      0 B      0 B      0 B        8      0 B      0 B      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.meta            40   32  6.4 KiB  6.4 KiB      0 B       37  360 KiB  360 KiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.buckets.index   41   32  2.5 MiB      0 B  2.5 MiB       77  7.5 MiB      0 B  7.5 MiB   0.01     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.buckets.data    42   32  6.4 GiB  6.4 GiB      0 B   12.22k   19 GiB   19 GiB      0 B  24.14     20 GiB            N/A          N/A    N/A         0 B          0 B
+rbd                         43   32     19 B     19 B      0 B        2   12 KiB   12 KiB      0 B      0     20 GiB            N/A          N/A    N/A         0 B          0 B
+k8s-rbd                     44   32   22 GiB   22 GiB   18 KiB    6.46k   65 GiB   65 GiB   53 KiB  52.12     20 GiB            N/A          N/A    N/A         0 B          0 B
+my-zone.rgw.buckets.non-ec  45   32   48 KiB      0 B   48 KiB        0  144 KiB      0 B  144 KiB      0     20 GiB            N/A          N/A    N/A         0 B          0 B

@@ -4,7 +4,8 @@
 > [`docker/gitlab-201.txt`](assets/evidence/docker/gitlab-201.txt)、
 > [`docker/harbor-202.txt`](assets/evidence/docker/harbor-202.txt)、
 > [`pve/host-runtime.txt`](assets/evidence/pve/host-runtime.txt)、
-> [05 Linux 文件系统章](../05-linux/03-filesystem-storage.md)。
+> [05 Linux 文件系统章](../05-linux/03-filesystem-storage.md)、
+> [06 Storage 基础](../06-storage-ceph/10-storage-basics.md)。
 
 ## 1. 容器的三层存储
 
