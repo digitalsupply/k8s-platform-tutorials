@@ -1,0 +1,18 @@
+Loki log volume / cost baseline (24h, 2026-11-11)
+bytes/day       : 617,035,852 (588.5 MiB)
+lines/day       : 2,112,322
+avg line size   : 292 B
+avg rate        : 6.97 KiB/s
+retention       : 5d
+steady raw      : 2.87 GiB (before index/compression)
+
+comparison in this environment:
+  Prometheus metrics: 17.9 GiB / 15d, 260k series
+  Loki logs         : ~3 GiB / 5d, 0.6 GiB/day
+  => logs are NOT always 1000x metrics; depends on traffic/debug level
+
+cost drivers:
+  - bytes ingested / line size
+  - number of streams (labels: namespace/pod/container/filename)
+  - retention (5d here)
+  - index/label cardinality and query load

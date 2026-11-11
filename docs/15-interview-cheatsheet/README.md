@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE / 安全
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS / SRE / 安全 / 日志
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -208,6 +208,25 @@
 | mTLS | SPIFFE/mesh | Cilium mesh-auth=false |
 | 供应链 | 扫描+阻断+签名 | 扫描部分开；阻断/签名无 |
 
+## 一页速查（日志体系）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| copytruncate | 不中断，窗口可能丢 | 真机 inode 不变 |
+| create | 可靠，但要 HUP 重开 | 旧 inode 被 rename，写进程继续写 `.1` |
+| logrotate su | 目录属主不对时用 | Ubuntu `su root adm` |
+| postrotate | HUP/USR1 重开 | nginx USR1、mariadb -1 |
+| journald | 默认可能易失 | `/var/log/journal` 不存在 |
+| journald 容量 | SystemMaxUse/KeepFree | 未设置 |
+| json-file | 必须 max-size/max-file | Harbor 用 syslog；无全局限制 |
+| kubelet | containerLogMaxSize/MaxFiles | 默认 10Mi×5；17 个轮转 |
+| DaemonSet/Sidecar | 节点级 vs Pod 级 | Alloy DaemonSet 6 Pod |
+| JSON | 结构化、少正则 | backend JSON；frontend/redis 文本 |
+| 采样 | 按级别/服务/租户 | Alloy sampling=0 |
+| 脱敏 | 采集侧处理 | Alloy replace/regex=0 |
+| Loki 标签 | 低基数 | 75 streams；filename 102/pod 97 |
+| 成本 | 字节/stream/retention | 0.6GB/天、5d ≈ 2.87GiB |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -333,7 +352,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [11-middleware-os.md](11-middleware-os.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、page cache、fd、cgroup、JVM 容器化 |
 | [12-sre.md](12-sre.md) | SLI/SLO/Error Budget、burn rate、症状告警、MTTD/MTTA/MTTR、SEV/IC、postmortem、变更相关性 |
 | [13-security.md](13-security.md) | sudo/capability/NNP、SSH CA、auditd/AIDE/Falco、PAM、补丁、CIS/等保/国密、供应链、PSA/NetworkPolicy/mTLS |
-| [00-verification-matrix.md](00-verification-matrix.md) | 160+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [14-logging.md](14-logging.md) | logrotate copytruncate/create、journald、json-file/kubelet、Alloy/Loki、采样/脱敏/成本 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 180+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

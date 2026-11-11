@@ -310,7 +310,28 @@
 | CIS/OpenSCAP | ❌ | 未安装 oscap/lynis |
 | 等保/国密 | 📚 | 有要求/方法，环境未实现 |
 
-## 十三、结论
+## 十三、日志体系
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| `copytruncate` 不中断但可能丢日志 | ✅ | 真机 inode 不变、复制/截断窗口 |
+| `create` 需 HUP 重开 | ✅ | 旧 inode 被 rename；nginx USR1/mariadb -1 |
+| logrotate `su` | ✅ | Ubuntu `su root adm`；Ceph `su root ceph` |
+| journald 持久化 | ❌ | `/var/log/journal` 不存在 |
+| journald 容量控制 | ❌ | 无 `Storage/SystemMaxUse` |
+| json-file max-size | ⚠️ | Harbor 用 syslog；无 daemon.json 全局限制 |
+| kubelet 日志限制 | ⚠️ | 未显式设置；默认 10Mi×5 |
+| 容器日志轮转 | ✅ | worker 17 个轮转文件，最大约 10.5MB |
+| DaemonSet vs Sidecar | ✅ | Alloy DaemonSet 6 Pod；无应用 sidecar |
+| 结构化 JSON | ⚠️ | backend JSON；frontend/redis 文本 |
+| 日志采样 | ❌ | Alloy `sampling=0` |
+| 采集侧脱敏 | ❌ | Alloy `stage.replace/regex=0` |
+| Loki 标签基数 | ⚠️ | 75 streams；filename 102/pod 97 |
+| Loki 保留 | ✅ | 5d / 120h |
+| 日志成本量化 | ✅ | 0.6GB/天、2.1M 行/天、5d ≈ 2.87GiB |
+| trace_id 关联 | ⚠️ | 日志有 trace_id，但未提取为 metadata |
+
+## 十四、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

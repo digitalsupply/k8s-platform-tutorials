@@ -1,0 +1,29 @@
+=== before
+1071418 231 copy.log
+1071419 251 create.log
+
+=== force rotate
+
+=== after
+total 20
+1071418 -rw-r--r-- 1 root root 120 Nov 11 14:57 copy.log
+1071422 -rw-r--r-- 1 root root 231 Nov 11 14:57 copy.log.1
+1071423 -rw-r----- 1 root root   0 Nov 11 14:57 create.log
+1071419 -rw-r--r-- 1 root root 381 Nov 11 14:57 create.log.1
+1071420 -rw-r--r-- 1 root root 147 Nov 11 14:57 logrotate.conf
+1071424 -rw-r----- 1 root root 131 Nov 11 14:57 state
+
+--- copy.log content tail
+copy line 14 1794380252
+copy line 15 1794380252
+--- copy.log.1 tail
+copy line 9 1794380251
+copy line 10 1794380251
+--- create.log size/content
+0 create.log
+--- create.log.1 size/content
+381 create.log.1
+create line 14 1794380252
+create line 15 1794380252
+
+结论: copytruncate 的 inode 不变，create 的旧 inode 被 rename，写进程仍写旧文件，需 postrotate HUP 重新打开。

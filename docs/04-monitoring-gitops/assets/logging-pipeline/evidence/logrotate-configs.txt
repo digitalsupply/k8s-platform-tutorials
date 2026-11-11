@@ -1,0 +1,129 @@
+=== logrotate main config
+## 10.0.0.61
+weekly
+rotate 4
+create
+dateext
+include /etc/logrotate.d
+## 10.0.0.122
+weekly
+su root adm
+rotate 4
+create
+include /etc/logrotate.d
+
+=== actual directives (m01/worker)
+## 10.0.0.61
+--- /etc/logrotate.d/barman
+    create 0600 barman barman
+--- /etc/logrotate.d/btmp
+    create 0660 root utmp
+    rotate 1
+--- /etc/logrotate.d/chrony
+    nocreate
+    postrotate
+--- /etc/logrotate.d/dnf
+    rotate 4
+    weekly
+    create
+--- /etc/logrotate.d/firewalld
+    weekly
+    rotate 4
+    copytruncate
+    minsize 1M
+--- /etc/logrotate.d/kvm_stat
+	size 10M
+	rotate 5
+	postrotate
+--- /etc/logrotate.d/mariadb
+        create 600 mysql mysql
+        su mysql mysql
+        daily
+        rotate 3
+    postrotate
+           kill -1 $(</run/mariadb/mariadb.pid)
+--- /etc/logrotate.d/nginx
+    create 0640 nginx root
+    daily
+    rotate 10
+    postrotate
+        /bin/kill -USR1 `cat /run/nginx.pid 2>/dev/null` 2>/dev/null || true
+--- /etc/logrotate.d/php-fpm
+    postrotate
+	/bin/kill -SIGUSR1 `cat /run/php-fpm/php-fpm.pid 2>/dev/null` 2>/dev/null || true
+--- /etc/logrotate.d/rsyslog
+    postrotate
+        /usr/bin/systemctl -s HUP kill rsyslog.service >/dev/null 2>&1 || true
+--- /etc/logrotate.d/sssd
+    weekly
+    rotate 2
+    postrotate
+        /bin/kill -HUP `cat /var/run/sssd.pid 2>/dev/null` 2> /dev/null || true
+        /bin/pkill -HUP sssd_kcm 2> /dev/null || true
+--- /etc/logrotate.d/wtmp
+    create 0664 root utmp
+    minsize 1M
+    rotate 1
+--- /etc/logrotate.d/zabbix-agent
+	weekly
+	rotate 12
+	create 0664 zabbix zabbix
+--- /etc/logrotate.d/zabbix-agent2
+	weekly
+	rotate 12
+	create 0664 zabbix zabbix
+--- /etc/logrotate.d/zabbix-server
+	weekly
+	rotate 12
+	create 0664 zabbix zabbix
+## 10.0.0.122
+--- /etc/logrotate.d/alternatives
+	rotate 12
+	create 644 root root
+--- /etc/logrotate.d/apport
+       daily
+       rotate 7
+--- /etc/logrotate.d/apt
+  rotate 12
+  rotate 12
+--- /etc/logrotate.d/bootlog
+    daily
+    copytruncate
+    rotate 7
+--- /etc/logrotate.d/btmp
+    create 0660 root utmp
+    rotate 1
+--- /etc/logrotate.d/ceph-common
+    rotate 7
+    daily
+    postrotate
+        killall -q -1 ceph-mon ceph-mgr ceph-mds ceph-osd ceph-fuse radosgw rbd-mirror cephfs-mirror || pkill -1 -x "ceph-mon|ceph-mgr|ceph-mds|ceph-osd|ceph-fuse|radosgw|rbd-mirror|cephfs-mirror" || true
+    su root ceph
+--- /etc/logrotate.d/cloud-init
+    su root root
+    nocreate
+    rotate 6
+    size 1M
+--- /etc/logrotate.d/dpkg
+	rotate 12
+	create 644 root root
+--- /etc/logrotate.d/rsyslog
+	rotate 4
+	weekly
+	postrotate
+		/usr/lib/rsyslog/rsyslog-rotate
+--- /etc/logrotate.d/ubuntu-pro-client
+    su root root
+    create 0644 root root
+    rotate 6
+--- /etc/logrotate.d/ufw
+	rotate 4
+	weekly
+	postrotate
+		[ -x /usr/lib/rsyslog/rsyslog-rotate ] && /usr/lib/rsyslog/rsyslog-rotate || true
+--- /etc/logrotate.d/unattended-upgrades
+  rotate 6
+--- /etc/logrotate.d/wtmp
+    create 0664 root utmp
+    minsize 1M
+    rotate 1

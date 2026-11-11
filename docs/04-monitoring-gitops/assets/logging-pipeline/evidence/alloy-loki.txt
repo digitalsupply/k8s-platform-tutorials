@@ -1,0 +1,32 @@
+=== Alloy pipeline stages
+stage.cri=1
+stage.json=0
+sampling=0
+stage.replace=0
+stage.regex=0
+stage.drop=1
+older_than=1
+
+=== Alloy DaemonSet
+NAME    DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+alloy   6         6         6       6            6           <none>          44d
+
+=== Loki labels
+{"status":"success","data":["app","component","container","filename","instance","job","namespace","node_name","pod","service_name","stream"]}
+
+=== streams / label values
+streams= 75
+namespace=20
+pod=97
+container=60
+filename=102
+
+=== sample logs
+compassio-frontend: nginx text
+compassio-backend: JSON with trace_id/span_id
+deeptutor-redis: plain text
+
+=== Loki retention
+      bucketnames: loki-chunks
+  max_query_lookback: 120h
+  retention_period: 120h
