@@ -241,6 +241,7 @@ CI 改 `overlays/prod` 不生效。**`images:` 只能出现在 overlay**，base 
 
 | 文档 | 内容 |
 |---|---|
+| [10-pipeline-release-artifacts.md](10-pipeline-release-artifacts.md) | 流水线阶段、构建缓存/并行、多阶段与分层、tag 策略、滚动/蓝绿/金丝雀/Flag、1 分钟回滚、expand-contract、Harbor/依赖锁定/buildx |
 | [ci-cd-architecture-and-gitops.md](notes/ci-cd-architecture-and-gitops.md) | GitOps/CI-CD 架构、配置分析、改进建议 |
 | [ci-cd-pipeline-end-to-end.md](notes/ci-cd-pipeline-end-to-end.md) | 从 push 到上线的全链路逐步详解 |
 | [buildkit-troubleshooting.md](notes/buildkit-troubleshooting.md) | BuildKit 起不来、Kaniko 漂移、客户端 CA 根因 |
@@ -257,6 +258,7 @@ CI 改 `overlays/prod` 不生效。**`images:` 只能出现在 overlay**，base 
 
 | 资产 | 说明 |
 |---|---|
+| [assets/pipeline-release/](assets/pipeline-release/README.md) | 缓存/分层/发布/回滚证据、Dockerfile/buildx/bake/蓝绿/金丝雀/expand-contract 示例 |
 | [assets/tekton/01-tasks.yaml](assets/tekton/01-tasks.yaml) | clone/build/promote Task |
 | [assets/tekton/02-pipeline.yaml](assets/tekton/02-pipeline.yaml) | Pipeline DAG |
 | [assets/tekton/03-trigger.yaml](assets/tekton/03-trigger.yaml) | TriggerBinding/Template |

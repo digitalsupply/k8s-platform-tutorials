@@ -1,0 +1,54 @@
+=== before
+deployment.apps/web 
+REVISION  CHANGE-CAUSE
+1         <none>
+
+NAME            DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                                       SELECTOR
+web-f5667bc5b   3         3         3       2s    busybox      192.168.67.202:8443/deeptutor/busybox:1.36   app=web,pod-template-hash=f5667bc5b
+
+=== trigger v2 (set env VERSION=v2)
+deployment.apps/web env updated
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+deployment "web" successfully rolled out
+rollout_seconds=4
+
+=== after v2
+NAME            DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                                       SELECTOR
+web-f5667bc5b   0         0         0       7s    busybox      192.168.67.202:8443/deeptutor/busybox:1.36   app=web,pod-template-hash=f5667bc5b
+web-fb94cfcd    3         3         3       5s    busybox      192.168.67.202:8443/deeptutor/busybox:1.36   app=web,pod-template-hash=fb94cfcd
+NAME                  READY   STATUS        RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+web-f5667bc5b-2pxdj   1/1     Terminating   0          7s    10.244.4.242   worker02   <none>           <none>
+web-f5667bc5b-4nnkr   1/1     Terminating   0          7s    10.244.5.185   worker03   <none>           <none>
+web-f5667bc5b-nljdt   1/1     Terminating   0          7s    10.244.3.134   worker01   <none>           <none>
+web-fb94cfcd-49tnr    1/1     Running       0          2s    10.244.5.138   worker03   <none>           <none>
+web-fb94cfcd-6fpsh    1/1     Running       0          4s    10.244.3.218   worker01   <none>           <none>
+web-fb94cfcd-tqn8m    1/1     Running       0          5s    10.244.4.78    worker02   <none>           <none>
+
+=== rollback undo
+deployment.apps/web rolled back
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+deployment "web" successfully rolled out
+undo_seconds=4
+
+=== history after undo
+deployment.apps/web 
+REVISION  CHANGE-CAUSE
+2         <none>
+3         <none>
+
+=== current env
+

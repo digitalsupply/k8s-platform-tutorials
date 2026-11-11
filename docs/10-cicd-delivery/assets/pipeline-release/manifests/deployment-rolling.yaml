@@ -1,0 +1,38 @@
+# 滚动发布：先起新 Pod、Ready 后再杀旧 Pod（maxUnavailable: 0）
+# 适合无状态服务；有状态/单实例且不能并存的用 Recreate。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: demo
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10          # 保留旧 ReplicaSet，rollout undo 才有版本可回
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                   # 最多多 1 个 Pod
+      maxUnavailable: 0             # 发布期间容量不下降
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web}
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: web
+          image: 192.168.67.202:8443/compassio/frontend:REPLACE_WITH_GIT_SHA
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8080}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: 8080}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 256Mi}

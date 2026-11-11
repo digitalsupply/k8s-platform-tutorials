@@ -1,0 +1,7 @@
+('RollingUpdate', '25%', '25%') 54
+('Recreate', None, None) 12
+('RollingUpdate', 0, 1) 5
+('RollingUpdate', '25%', 1) 3
+('RollingUpdate', '25%', '50%') 1
+('RollingUpdate', '25%', 0) 1
+('RollingUpdate', 1, 1) 1

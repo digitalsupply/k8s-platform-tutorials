@@ -1,0 +1,33 @@
+# 金丝雀：Traefik IngressRoute 按权重分流，stable 90% / canary 10%。
+# 只适用于已经接入 Traefik 的入口；权重调整后观察错误率/延迟，再逐步放大。
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: web-canary
+  namespace: demo
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`web.example.com`)
+      kind: Rule
+      services:
+        - name: web-stable
+          port: 80
+          weight: 90
+        - name: web-canary
+          port: 80
+          weight: 10
+---
+apiVersion: v1
+kind: Service
+metadata: {name: web-stable, namespace: demo}
+spec:
+  selector: {app: web, track: stable}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: web-canary, namespace: demo}
+spec:
+  selector: {app: web, track: canary}
+  ports: [{port: 80, targetPort: 8080}]

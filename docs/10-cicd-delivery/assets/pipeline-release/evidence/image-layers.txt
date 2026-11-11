@@ -1,0 +1,47 @@
+## compassio/frontend:05f030acf642a6155077a0a5aeff56cf87d628bb
+mediaType: application/vnd.docker.distribution.manifest.v2+json
+layers: 11 compressed_total_MB: 25.36
+  gzip        3.46 MB
+  gzip         1.7 MB
+  gzip         0.0 MB
+  gzip         0.0 MB
+  gzip         0.0 MB
+  gzip         0.0 MB
+  gzip         0.0 MB
+  gzip        14.4 MB
+  gzip         5.0 MB
+  gzip         0.8 MB
+  gzip         0.0 MB
+
+## compassio/backend:05f030acf642a6155077a0a5aeff56cf87d628bb
+mediaType: application/vnd.docker.distribution.manifest.v2+json
+layers: 9 compressed_total_MB: 185.62
+  gzip       27.79 MB
+  gzip        3.35 MB
+  gzip       15.45 MB
+  gzip         0.0 MB
+  gzip         0.0 MB
+  gzip       81.86 MB
+  gzip         0.0 MB
+  gzip       57.09 MB
+  gzip        0.07 MB
+
+## openwebui/open-webui:a077c804
+mediaType: application/vnd.oci.image.manifest.v1+json
+layers: 5 compressed_total_MB: 225.36
+  tar+gzip   26.94 MB
+  tar+gzip    3.19 MB
+  tar+gzip   17.47 MB
+  tar+gzip     0.0 MB
+  tar+gzip  177.77 MB
+
+## frontend history (final stage only)
+created: 2026-10-31T02:00:44.268710886Z arch: amd64
+- ENV NJS_VERSION=0.8.7
+- ENV NJS_RELEASE=1
+- RUN /bin/sh -c set -x     && apkArch="$(cat /etc/apk/arch)"     && nginxPackages="         nginx=${NGINX_VERSION}-r${PKG_RELEASE}         nginx-module
+- RUN /bin/sh -c sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories &&     apk upgrade --no-cache # buildkit
+- COPY /app/dist /usr/share/nginx/html # buildkit
+- COPY nginx.conf.template /etc/nginx/templates/default.conf.template # buildkit
+- EXPOSE map[80/tcp:{}]
+- CMD ["nginx" "-g" "daemon off;"]

@@ -1,0 +1,27 @@
+# Feature Flag 最小示例：部署与“是否启用”解耦。
+# 注意：ConfigMap + env 只是最简单的开关，改开关仍要改 Git/重启 Pod，
+# 不是真正的动态 flag 系统；生产可用 Unleash/flagd/OpenFeature + 配置中心。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-flags
+  namespace: demo
+data:
+  NEW_CHECKOUT: "false"      # 代码已部署，但默认关闭
+  NEW_SEARCH: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web, namespace: demo}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: web}}
+  template:
+    metadata: {labels: {app: web}}
+    spec:
+      containers:
+        - name: web
+          image: 192.168.67.202:8443/compassio/frontend:REPLACE_WITH_GIT_SHA
+          envFrom:
+            - configMapRef: {name: web-flags}
+          ports: [{containerPort: 8080}]

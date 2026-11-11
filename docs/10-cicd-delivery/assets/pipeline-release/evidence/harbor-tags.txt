@@ -1,0 +1,40 @@
+Harbor 192.168.67.202:8443 tag inventory
+分类: sha40=40位commit, sha7=7位commit, latest=可变latest, other=版本/手工tag
+
+## china-study-free public=false auto_scan=None retention_id=None
+  assets                   total= 1 sha40= 0 sha7= 0 latest=0 other=['v1.4.0']
+  web                      total= 6 sha40= 3 sha7= 3 latest=0 other=[]
+
+## compassio public=false auto_scan=true retention_id=2
+  backend                  total= 2 sha40= 2 sha7= 0 latest=0 other=[]
+  python                   total= 2 sha40= 0 sha7= 0 latest=1 other=['3.11-slim']
+  nginx                    total= 2 sha40= 0 sha7= 0 latest=1 other=['alpine']
+  node                     total= 3 sha40= 0 sha7= 0 latest=1 other=['22-alpine', '18-alpine']
+  frontend                 total=11 sha40=11 sha7= 0 latest=0 other=[]
+  buildkit                 total= 1 sha40= 0 sha7= 0 latest=0 other=['v0.20.2-rootless']
+  cache                    total= 1 sha40= 0 sha7= 0 latest=0 other=['65bf30e3bf73c8f882ba2cdcb0b871b82ce1832ae3e2c86ce0b4179b0718353c']
+
+## deeptutor public=true auto_scan=true retention_id=3
+  python                   total= 1 sha40= 0 sha7= 0 latest=0 other=['3.11-slim']
+  node                     total= 1 sha40= 0 sha7= 0 latest=0 other=['22-slim']
+  deeptutor                total= 3 sha40= 3 sha7= 0 latest=0 other=[]
+  busybox                  total= 1 sha40= 0 sha7= 0 latest=0 other=['1.36']
+  git                      total= 1 sha40= 0 sha7= 0 latest=0 other=['v2.45.2']
+  redis                    total= 1 sha40= 0 sha7= 0 latest=0 other=['7.4-alpine']
+
+## library public=true auto_scan=None retention_id=None
+  trivy-java-db            total= 1 sha40= 0 sha7= 0 latest=0 other=['1']
+  trivy-db                 total= 1 sha40= 0 sha7= 0 latest=0 other=['2']
+
+## openwebui public=false auto_scan=false retention_id=1
+  frpc                     total= 1 sha40= 0 sha7= 0 latest=0 other=['v0.61.2']
+  nginx-unprivileged       total= 1 sha40= 0 sha7= 0 latest=0 other=['1.29-alpine']
+  open-webui               total= 2 sha40= 0 sha7= 0 latest=0 other=['a077c804', 'manual-test1']
+  cache                    total= 0 sha40= 0 sha7= 0 latest=0 other=[]
+  kaniko                   total= 1 sha40= 0 sha7= 0 latest=0 other=['v1.23.2']
+  gitlab-runner-helper     total= 1 sha40= 0 sha7= 0 latest=0 other=['x86_64-v17.8.3']
+  gitlab-runner            total= 1 sha40= 0 sha7= 0 latest=0 other=['alpine-v17.8.3']
+  uv                       total= 1 sha40= 0 sha7= 0 latest=0 other=['0.12.10']
+  alpine                   total= 1 sha40= 0 sha7= 0 latest=0 other=['3.20']
+  python                   total= 1 sha40= 0 sha7= 0 latest=0 other=['3.11-slim-bookworm']
+  node                     total= 1 sha40= 0 sha7= 0 latest=0 other=['22-alpine3.20']

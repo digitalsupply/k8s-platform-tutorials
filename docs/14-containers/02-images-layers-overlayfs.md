@@ -4,6 +4,9 @@
 > [`gitlab-201`](assets/evidence/docker/gitlab-201.txt)、[`harbor-202`](assets/evidence/docker/harbor-202.txt)、
 > [`k8s/worker01-runtime.txt`](assets/evidence/k8s/worker01-runtime.txt)、
 > [`k8s/inspect-*.json`](assets/evidence/k8s/)。
+>
+> 多阶段构建、依赖层缓存、镜像瘦身与 tag 策略见
+> [10 流水线/镜像/发布](../10-cicd-delivery/10-pipeline-release-artifacts.md)。
 
 ## 1. 镜像不是“一个文件”
 

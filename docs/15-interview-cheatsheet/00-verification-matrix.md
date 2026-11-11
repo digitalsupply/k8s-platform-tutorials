@@ -154,7 +154,31 @@
 | PR 即审批/可审计 | ✅ | git log + ArgoCD tracking |
 | 演进逻辑 | ✅ | 雪花→配置管理→不可变→GitOps，均有本环境证据 |
 
-## 七、结论
+## 七、CI/CD / 镜像 / 发布 / 回滚
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| 流水线阶段化 | ✅ | clone→check-changes→双 build 并行→promote |
+| build once | ✅ | 应用 tag 40 位 SHA，GitOps 只改 newTag |
+| 构建缓存 | ✅ | 源码不变全 CACHED；只改 src 仅 src 层重建 |
+| COPY 依赖清单单独层 | ✅ | buildctl `#5 CACHED` / `#6 DONE` |
+| 多阶段减小镜像 | ✅ | frontend 25.4MB/11 层，history 无 node_modules |
+| 应用 tag 用 SHA | ✅ | compassio/deeptutor 全 SHA40 |
+| 禁止 latest | ⚠️ | 基础镜像仍有 `latest`；openwebui 有 `manual-test1` |
+| tag 不可变 | ❌ | Harbor immutable rules = 0 |
+| 滚动发布 | ✅ | 集群 54 个 25%/25%；lab 4 秒完成 |
+| 蓝绿 | ✅ | lab selector blue→green，响应变化 |
+| 金丝雀 | ⚠️ | Argo Rollouts 未装；Traefik 权重可分流 |
+| Feature Flag | ❌ | 无 flag 系统；ConfigMap 仅静态开关 |
+| 1 分钟回滚 | ✅/⚠️ | rollout undo 4 秒；不含定位/审批/DB |
+| expand-contract | ✅ | PG16.15 实测每步 2–3ms；独立库已清理 |
+| Harbor 扫描/保留 | ⚠️ | compassio/deeptutor 开扫描；openwebui 关；保留 5 个 |
+| 依赖锁定 | ⚠️ | 有 lock/registry 参数；部分基础镜像浮动 tag |
+| docker buildx | ✅ | 0.30.1 + remote driver 连 BuildKit 0.20.2 |
+| buildx 拉 Harbor 基础镜像 | ❌ | daemon 侧 CA 仍 x509（client 与 daemon 信任链不同） |
+| SBOM/provenance | 📚 | buildx 支持；本环境未启用 |
+
+## 八、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

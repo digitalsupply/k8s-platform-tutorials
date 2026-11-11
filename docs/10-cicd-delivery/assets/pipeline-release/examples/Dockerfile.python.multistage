@@ -1,0 +1,31 @@
+# 多阶段构建示例（Python）：wheel 构建与运行分离，依赖锁定可复现
+# 依赖用 lock 文件（uv.lock / requirements.txt + hashes），不用裸 pip install 最新版。
+ARG PYTHON_IMAGE=python:3.11-slim
+
+# ---------- build stage ----------
+FROM ${PYTHON_IMAGE} AS build
+WORKDIR /app
+ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# 先装构建依赖和 Python 依赖，利用缓存
+COPY requirements.txt requirements.lock ./
+RUN pip install --prefix=/install -r requirements.lock
+
+# 再复制源码（如果项目需要编译，在此执行）
+COPY . .
+RUN python -m compileall -q app || true
+
+# ---------- runtime stage ----------
+FROM ${PYTHON_IMAGE} AS runtime
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+# 只复制装好的依赖和源码，不携带编译器/头文件
+COPY --from=build /install /usr/local
+COPY --from=build /app/app ./app
+
+# 非 root 运行
+RUN useradd -r -u 10001 appuser
+USER 10001
+EXPOSE 8000
+CMD ["python", "-m", "app.main"]

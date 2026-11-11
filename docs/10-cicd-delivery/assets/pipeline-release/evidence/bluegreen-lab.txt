@@ -1,0 +1,17 @@
+=== blue-green: service selector
+{"app":"web-bg","color":"blue"}
+=== response via service (blue)
+blue
+
+=== switch selector blue -> green
+first_green_after_seconds=1
+after: green
+
+=== rollback selector green -> blue
+first_blue_after_seconds=0
+after rollback: blue
+
+=== endpoints
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME     ENDPOINTS                            AGE
+web-bg   10.244.3.104:8080,10.244.4.78:8080   6s

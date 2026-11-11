@@ -1,0 +1,54 @@
+# Tekton + BuildKit：显式 registry cache（比 inline 强）
+# 说明：--export-cache type=inline 只把缓存元数据写进镜像，跨节点/跨 tag 命中差；
+#       type=registry,mode=max 才能复用中间层。
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-push-cached
+  namespace: cicd
+spec:
+  params:
+    - name: image
+      type: string
+    - name: cache-ref
+      type: string
+      default: 192.168.67.202:8443/compassio/cache
+    - name: cache-tag
+      type: string
+      default: shared
+    - name: context
+      type: string
+      default: source
+  workspaces:
+    - name: source
+  steps:
+    - name: build
+      image: 192.168.67.202:8443/compassio/buildkit:v0.20.2-rootless
+      workingDir: $(workspaces.source.path)/$(params.context)
+      env:
+        - name: BUILDKIT_HOST
+          value: tcp://buildkitd.cicd.svc.cluster.local:1234
+        - name: DOCKER_CONFIG
+          value: /home/user/.docker
+      volumeMounts:
+        - {name: docker-config, mountPath: /home/user/.docker}
+        - {name: harbor-ca, mountPath: /etc/harbor-ca, readOnly: true}
+      script: |
+        #!/bin/sh
+        set -eu
+        cat /etc/ssl/certs/ca-certificates.crt /etc/harbor-ca/ca.crt > /tmp/ca-bundle.crt
+        export SSL_CERT_FILE=/tmp/ca-bundle.crt
+        buildctl build \
+          --frontend dockerfile.v0 \
+          --local context=. \
+          --local dockerfile=. \
+          --opt filename=Dockerfile \
+          --opt target=runtime \
+          --output type=image,name=$(params.image),push=true \
+          --export-cache type=registry,ref=$(params.cache-ref):$(params.cache-tag),mode=max \
+          --import-cache type=registry,ref=$(params.cache-ref):$(params.cache-tag)
+  volumes:
+    - name: docker-config
+      secret: {secretName: harbor-auth}
+    - name: harbor-ca
+      configMap: {name: harbor-ca}

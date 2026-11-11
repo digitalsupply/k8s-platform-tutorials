@@ -1,0 +1,45 @@
+Timing is on.
+NOTICE:  database "expand_contract_lab" does not exist, skipping
+DROP DATABASE
+Time: 0.500 ms
+CREATE DATABASE
+Time: 461.298 ms
+You are now connected to database "expand_contract_lab" as user "postgres".
+CREATE TABLE
+Time: 30.212 ms
+INSERT 0 1
+Time: 3.002 ms
+ALTER TABLE
+Time: 2.918 ms
+INSERT 0 1
+Time: 2.252 ms
+UPDATE 1
+Time: 2.772 ms
+ id |   email   | email_new | read_value 
+----+-----------+-----------+------------
+  1 | alice@old | alice@old | alice@old
+  2 | bob@old   | bob@new   | bob@new
+(2 rows)
+
+Time: 0.502 ms
+ALTER TABLE
+Time: 2.763 ms
+ALTER TABLE
+Time: 2.695 ms
+ALTER TABLE
+Time: 2.832 ms
+ id |   email   
+----+-----------
+  1 | alice@old
+  2 | bob@new
+(2 rows)
+
+Time: 0.234 ms
+               Table "public.users"
+ Column |  Type   | Collation | Nullable | Default 
+--------+---------+-----------+----------+---------
+ id     | integer |           | not null | 
+ email  | text    |           | not null | 
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+

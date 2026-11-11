@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -9,7 +9,7 @@
 >
 > 证据：[`assets/evidence/`](assets/evidence/README.md)。
 > 详细原理：[05 Linux](../05-linux/README.md)、[07 Networking](../07-networking/README.md)、
-> [14 Containers](../14-containers/README.md)。
+> [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)。
 
 ## 一页速查
 
@@ -93,6 +93,24 @@
 | Terraform state | 远端+锁+加密 | 当前本地 state，无 backend（反面） |
 | plan/drift | plan 带 refresh 才检测 drift | `-refresh=false` 无变化；真实 plan 3 台漂移 |
 | GitOps | Git 单一事实源 + selfHeal | ArgoCD 31 App；Flux 未部署 |
+
+## 一页速查（CI/CD / 镜像 / 发布 / 回滚）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| 流水线阶段 | checkout→检查→build 一次→scan→push→promote→部署→验证 | clone→check-changes→双 build 并行→promote |
+| 构建缓存 | 层输入不变才命中 | 源码不变全 CACHED；只改 src 仅 src 层重建 |
+| COPY package.json | 单独一层缩小失效范围 | `#5 CACHED` + `#6 DONE` |
+| 多阶段 | 构建工具不进运行镜像 | frontend 25.4MB/11 层，只有 nginx+dist |
+| tag | 40 位 git SHA，禁止 latest | compassio/deeptutor 全 SHA40；基础镜像仍有 latest |
+| 滚动 | maxSurge/maxUnavailable | 54 个 25%/25%；3 副本 4 秒完成 |
+| 蓝绿 | 双套 + 切 selector | blue→green 切换后响应变化 |
+| 金丝雀 | 权重放量 + 指标判定 | Argo Rollouts 未装；Traefik weight 90/10 |
+| Feature Flag | 部署与发布解耦 | 无 flag 系统；ConfigMap 只是静态开关 |
+| 1 分钟回滚 | 镜像/配置/DB 都可回 | rollout undo 4 秒（执行层） |
+| expand-contract | 先兼容后删除 | PG16.15 每步 2–3ms；Contract 不可逆 |
+| 私服/依赖 | 最小权限 + 扫描 + 锁文件 | Harbor 无 immutable 规则；保留最近 5 个 |
+| buildx | 多平台/缓存/SBOM/远程 builder | 0.30.1 + remote 连 BuildKit 0.20.2 |
 
 ## 二、本环境纠偏（面试别背绝对话）
 
@@ -213,7 +231,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [05-kubernetes.md](05-kubernetes.md) | 控制面/节点/资源/QoS/PDB/探针/升级/备份/扩展/多租户/进阶 |
 | [06-virtualization-boot.md](06-virtualization-boot.md) | KVM/QEMU/virtio/virsh、云 vs 物理、IMDSv2、cloud-init、Packer、云镜像 vs ISO、UEFI/PXE/initramfs |
 | [07-iac-gitops.md](07-iac-gitops.md) | Ansible 幂等/handlers/check/delegate/inventory/roles、Terraform state/plan/drift/import、GitOps、演进 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 60+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [08-cicd-release.md](08-cicd-release.md) | 流水线阶段、缓存/并行、多阶段/分层、tag、滚动/蓝绿/金丝雀/Flag、回滚、expand-contract、Harbor/buildx |
+| [00-verification-matrix.md](00-verification-matrix.md) | 70+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

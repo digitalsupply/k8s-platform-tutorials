@@ -1,0 +1,49 @@
+=== docker buildx version
+github.com/docker/buildx v0.30.1 9e66234aa13328a5e75b75aa5574e1ca6d6d9c01
+
+=== docker buildx ls (host has docker CLI 27.4.0, no docker daemon)
+NAME/NODE   DRIVER/ENDPOINT   STATUS    BUILDKIT   PLATFORMS
+default*                      error                
+
+Cannot load builder default: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+=== create remote builder against in-cluster BuildKit
+pve-remote
+Name:          pve-remote
+Driver:        remote
+Last Activity: 2026-11-11 03:11:17 +0000 UTC
+
+Nodes:
+Name:             pve-remote0
+Endpoint:         tcp://127.0.0.1:1234
+Status:           running
+BuildKit version: v0.20.2
+Platforms:        linux/amd64, linux/amd64/v2, linux/amd64/v3, linux/386
+Labels:
+ org.mobyproject.buildkit.worker.executor:         oci
+ org.mobyproject.buildkit.worker.hostname:         buildkitd-5865bc4987-48zzf
+ org.mobyproject.buildkit.worker.network:          host
+ org.mobyproject.buildkit.worker.oci.process-mode: no-sandbox
+ org.mobyproject.buildkit.worker.selinux.enabled:  false
+ org.mobyproject.buildkit.worker.snapshotter:      overlayfs
+GC Policy rule#0:
+ All:            false
+ Reserved Space: 8GiB
+
+=== build with Harbor base image: daemon-side CA live finding
+#1 [internal] load build definition from Dockerfile.harbor
+#1 transferring dockerfile: 337B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for 192.168.67.202:8443/deeptutor/node:22-slim
+#2 ERROR: failed to authorize: failed to fetch anonymous token: Get "https://192.168.67.202:8443/service/token?scope=repository%3Adeeptutor%2Fnode%3Apull&service=harbor-registry": tls: failed to verify certificate: x509: certificate signed by unknown authority
+------
+ > [internal] load metadata for 192.168.67.202:8443/deeptutor/node:22-slim:
+------
+Dockerfile.harbor:1
+--------------------
+   1 | >>> FROM 192.168.67.202:8443/deeptutor/node:22-slim
+   2 |     WORKDIR /app
+   3 |     # 依赖清单单独一层：依赖不变时 npm ci 层命中缓存
+--------------------
+ERROR: failed to build: failed to solve: 192.168.67.202:8443/deeptutor/node:22-slim: failed to resolve source metadata for 192.168.67.202:8443/deeptutor/node:22-slim: failed to authorize: failed to fetch anonymous token: Get "https://192.168.67.202:8443/service/token?scope=repository%3Adeeptutor%2Fnode%3Apull&service=harbor-registry": tls: failed to verify certificate: x509: certificate signed by unknown authority

@@ -1,0 +1,34 @@
+# 多阶段构建示例（Node/前端）：构建阶段装依赖，运行阶段只留产物
+# 关键点：package.json/package-lock.json 单独一层，依赖不变时复用缓存。
+# 用法：
+#   docker buildx build -f Dockerfile.node.multistage \
+#     --build-arg NODE_IMAGE=192.168.67.202:8443/deeptutor/node:22-slim \
+#     -t harbor.example.com/app/web:$(git rev-parse HEAD) .
+
+ARG NODE_IMAGE=node:22-slim
+
+# ---------- build stage ----------
+FROM ${NODE_IMAGE} AS build
+WORKDIR /app
+
+# 只复制依赖清单：依赖没变，这一层和 npm ci 都命中缓存
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# 业务代码放后面：改代码只让后面的层失效
+COPY . .
+RUN npm run build
+
+# ---------- runtime stage ----------
+FROM nginx:1.29-alpine AS runtime
+
+# 只复制构建产物和运行时配置，不带 node_modules/源码/构建工具
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 非 root、只读文件系统可按需加；至少显式声明用户
+USER nginx
+EXPOSE 8080
+
+# 健康检查由 K8s probe 负责，镜像里不重复写复杂脚本
+CMD ["nginx", "-g", "daemon off;"]

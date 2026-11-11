@@ -94,6 +94,8 @@ Pod security          35 hostNetwork / 10 privileged / 19 add capabilities
 - 内核/namespace/cgroup/capability 原理：[05 Linux](../05-linux/README.md)；
 - K8s 节点/Cilium/Service：[01 Kubernetes](../01-kubernetes-k3s/README.md)、[02 Cilium](../02-cilium-ebpf/README.md)；
 - Harbor/CI/BuildKit：[10 CI/CD](../10-cicd-delivery/README.md)；
+  其中 [流水线/镜像分层/发布与回滚](../10-cicd-delivery/10-pipeline-release-artifacts.md) 讲多阶段构建、
+  `COPY package.json` 单独一层、tag 与发布策略；
 - Ceph RBD/PVC：[06 Storage](../06-storage-ceph/README.md)；
 - PVE 宿主/VM：[12 Proxmox](../12-proxmox-pve/README.md)。
 

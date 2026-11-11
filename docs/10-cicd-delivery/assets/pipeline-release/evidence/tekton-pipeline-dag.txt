@@ -1,0 +1,32 @@
+## compassio-cicd
+tasks:
+  clone                    runAfter=-                                      when=-
+  check-changes            runAfter=clone                                  when=-
+  build-push-backend       runAfter=clone                                  when=$(tasks.check-changes.results.need-build) in ['true']
+  build-push-frontend      runAfter=clone                                  when=$(tasks.check-changes.results.need-build) in ['true']
+  promote-gitops           runAfter=build-push-backend,build-push-frontend when=$(tasks.check-changes.results.need-build) in ['true']
+workspaces: ['shared-workspace']
+
+## open-webui-cicd
+tasks:
+  clone                    runAfter=-                                      when=-
+  build-push               runAfter=clone                                  when=-
+  promote-gitops           runAfter=build-push                             when=-
+workspaces: ['shared-workspace']
+
+## china-study-free-cicd
+tasks:
+  clone                    runAfter=-                                      when=-
+  check-changes            runAfter=clone                                  when=-
+  build-push               runAfter=check-changes                          when=$(tasks.check-changes.results.need-build) in ['true']
+  update-gitops            runAfter=build-push                             when=$(tasks.check-changes.results.need-build) in ['true']
+workspaces: ['shared-workspace']
+
+## deeptutor-cicd
+tasks:
+  clone                    runAfter=-                                      when=-
+  check-changes            runAfter=clone                                  when=-
+  build-push               runAfter=clone                                  when=$(tasks.check-changes.results.need-build) in ['true']
+  update-gitops            runAfter=build-push                             when=$(tasks.check-changes.results.need-build) in ['true']
+workspaces: ['shared-workspace']
+

@@ -1,0 +1,4 @@
+=== CNPG PostgreSQL version / cluster
+PostgreSQL 16.15 (Debian 16.15-1.pgdg11+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit
+NAME        INSTANCES   READY   PRIMARY
+pg16-ceph   2           2       pg16-ceph-3
