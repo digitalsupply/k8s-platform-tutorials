@@ -1,0 +1,35 @@
+=== K8s compassio-frontend
+pod=compassio-frontend-579dccb7c6-g4zxj
+nginx version: nginx/1.27.3
+--- nginx -T
+worker_processes  auto;
+    worker_connections  1024;
+    sendfile        on;
+    keepalive_timeout  65;
+    listen 80;
+    server_name localhost;
+    client_max_body_size 20m;
+        proxy_read_timeout 600s;
+--- fd limits
+Max open files            1024                 524288               files     
+--- workers
+6
+--- cpu cgroup
+10000 100000
+--- nproc=6
+
+=== Harbor nginx (192.168.67.202, docker)
+nginx version: nginx/1.30.4
+--- config
+worker_processes auto;
+  worker_connections 3096;
+    listen 8443 ssl;
+    client_max_body_size 0;
+      proxy_read_timeout 900;
+      listen 8080;
+--- limits
+Max open files            1024                 524288               files     
+--- workers
+2
+--- nproc
+2

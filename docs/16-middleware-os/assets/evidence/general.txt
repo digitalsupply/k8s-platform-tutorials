@@ -1,0 +1,17 @@
+=== worker03 network/general
+Total: 599
+TCP:   526 (estab 31, closed 480, orphaned 0, timewait 188)
+
+Transport Total     IP        IPv6
+RAW	  2         0         2        
+UDP	  3         2         1        
+TCP	  46        31        15       
+INET	  51        33        18       
+FRAG	  0         0         0        
+
+time_wait=189
+port_range=32768	60999
+somaxconn=4096 tcp_max_syn_backlog=512 netdev_max_backlog=1000
+tcp_tw_reuse=2 tcp_fin_timeout=60
+ulimit_n=1024 fs_nr_open=1048576
+conntrack_count=947/262144

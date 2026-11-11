@@ -1,0 +1,28 @@
+=== PostgreSQL 16.15 (CNPG) OS-related settings
+checkpoint_timeout = 300 s
+effective_cache_size = 524288 8kB
+fsync = on
+huge_pages = try
+maintenance_work_mem = 65536 kB
+max_connections = 100
+max_wal_size = 1024 MB
+shared_buffers = 16384 8kB
+wal_sync_method = fdatasync
+work_mem = 4096 kB
+
+=== connections
+13 / 100
+
+=== MySQL/MariaDB
+not deployed in Kubernetes
+
+=== node memory / page cache (worker03)
+               total        used        free      shared  buff/cache   available
+Mem:            7937        3857         315          63        3764        3713
+Swap:              0           0           0
+MemTotal:        8127784 kB
+MemFree:          323188 kB
+Cached:          2386784 kB
+Dirty:               320 kB
+Writeback:             0 kB
+AnonHugePages:         0 kB

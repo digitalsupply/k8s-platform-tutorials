@@ -1,0 +1,46 @@
+=== Kafka CR
+version 4.1.2
+replicas None
+config {
+  "default.replication.factor": 1,
+  "min.insync.replicas": 1,
+  "offsets.topic.replication.factor": 1,
+  "transaction.state.log.min.isr": 1,
+  "transaction.state.log.replication.factor": 1
+}
+resources {}
+jvmOptions {}
+storage {}
+
+=== KafkaNodePool
+replicas 1 roles ['controller', 'broker']
+storage {"class": "ceph-rbd-sc", "size": "20Gi", "type": "persistent-claim"}
+resources {}
+jvmOptions {}
+
+=== pod my-cluster-single-pool-0
+java=openjdk version "21.0.10" 2026-01-20 LTS
+JAVA_HOME=/usr/lib/jvm/jre-21
+KAFKA_HEAP_OPTS=-Xms128M
+KAFKA_VERSION=4.1.2
+fd:
+Max open files            1024                 524288               files     
+cgroup:
+max 100000
+max
+0-3
+nproc=4
+jvm:
+      int ActiveProcessorCount                     = -1                                        {product} {default}
+     intx CICompilerCount                          = 3                                         {product} {ergonomic}
+     bool CICompilerCountPerCPU                    = true                                      {product} {default}
+     uint ConcGCThreads                            = 1                                         {product} {ergonomic}
+   size_t InitialHeapSize                          = 132120576                                 {product} {ergonomic}
+ uint64_t MaxDirectMemorySize                      = 0                                         {product} {default}
+   size_t MaxHeapSize                              = 2082471936                                {product} {ergonomic}
+   size_t MaxMetaspaceSize                         = 18446744073709551615                      {product} {default}
+     uint ParallelGCThreads                        = 4                                         {product} {default}
+   size_t SoftMaxHeapSize                          = 2082471936                             {manageable} {ergonomic}
+disk:
+/dev/rbd4        20G  248M   20G   2% /var/lib/kafka/data
+248M	/var/lib/kafka/data

@@ -227,7 +227,33 @@
 | 命名规范不可逆 | 📚 | DNS/label/ArgoCD 都依赖名字；改名等于迁移 |
 | 云区域不可逆 | 📚 | on-prem 不涉及；合规/延迟优先 |
 
-## 十、结论
+## 十、中间件 OS 层
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| THP 差异 | ✅ | m01 `always`；worker `madvise` |
+| overcommit/swappiness | ✅ | 所有节点 overcommit=1、swappiness=60 |
+| somaxconn/backlog | ✅ | somaxconn 4096；Redis tcp-backlog 511 |
+| Redis maxmemory/policy | ✅ | 384M/allkeys-lru、400M/noeviction、ArgoCD 0 无上限 |
+| Redis fork COW | ✅ | RDB 1.5MB、AOF 2.8MB |
+| MySQL 未部署 | ✅ | K8s/PVE 均无 mysqld；用 PG 16.15 对照 |
+| MySQL O_DIRECT/fsync 概念 | 📚 | 无 MySQL 实测；PG fsync=on、fdatasync |
+| PG 连接承载 | ✅ | max_connections=100，当前 13 |
+| Kafka 单 broker/RF=1 | ✅ | Strimzi 4.1.2，1 replica |
+| Kafka 堆/Xmx | ✅ | 只有 `-Xms128M`，MaxHeap 1.99G，无 memory limit |
+| Kafka fd | ✅ | soft 1024，低于 100k 建议 |
+| Kafka 磁盘/page cache | ✅ | 20G PVC，248M 数据；节点 buff/cache 3.7G |
+| Nginx worker×connections | ✅ | 6×1024；Harbor 2×3096 |
+| Nginx worker auto vs limit | ✅ | 0.1 CPU limit 起 6 worker |
+| Nginx client_max_body_size | ✅ | Harbor 为 0（无上限） |
+| Nginx fd | ✅ | soft 1024，worker_rlimit_nofile 未设 |
+| Java 容器感知 | ✅ | JDK 21 检测 cgroups v2 |
+| MaxRAMPercentage | ✅ | 512Mi：默认 128M，75%→384M |
+| CPU limit/GC/JIT | ✅ | 500m：GC=0、CICompilerCount=2、nproc=6 |
+| metaspace/direct | ✅ | Kafka MaxMetaspace unlimited、MaxDirect 0 |
+| 连接池公式 | ✅ | 10×20 > 100 会打满 |
+
+## 十一、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

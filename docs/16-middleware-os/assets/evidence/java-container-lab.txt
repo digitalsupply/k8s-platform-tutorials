@@ -1,0 +1,36 @@
+=== pod: cpu limit 500m, memory limit 512Mi, image strimzi/kafka (JDK 21)
+nproc=6
+--- JVM container detection
+[0.001s][debug][os,container] Detected optional cpuset controller entry in /sys/fs/cgroup/cgroup.controllers
+[0.001s][debug][os,container] Detected optional pids controller entry in /sys/fs/cgroup/cgroup.controllers
+[0.002s][debug][os,container] Detected cgroups v2 unified hierarchy
+[0.002s][debug][os,container] OSContainer::init: is_containerized() = true because all controllers are mounted read-only (container case)
+--- default heap (25%)
+      int ActiveProcessorCount                     = -1                                        {product} {default}
+     intx CICompilerCount                          = 2                                         {product} {ergonomic}
+     bool CICompilerCountPerCPU                    = true                                      {product} {default}
+   size_t InitialHeapSize                          = 8388608                                   {product} {ergonomic}
+ uint64_t MaxDirectMemorySize                      = 0                                         {product} {default}
+   size_t MaxHeapSize                              = 134217728                                 {product} {ergonomic}
+   size_t MaxMetaspaceSize                         = 18446744073709551615                      {product} {default}
+     uint ParallelGCThreads                        = 0                                         {product} {default}
+   size_t SoftMaxHeapSize                          = 134217728                              {manageable} {ergonomic}
+--- MaxRAMPercentage=75
+      int ActiveProcessorCount                     = -1                                        {product} {default}
+     intx CICompilerCount                          = 2                                         {product} {ergonomic}
+     bool CICompilerCountPerCPU                    = true                                      {product} {default}
+   size_t InitialHeapSize                          = 8388608                                   {product} {ergonomic}
+ uint64_t MaxDirectMemorySize                      = 0                                         {product} {default}
+   size_t MaxHeapSize                              = 402653184                                 {product} {ergonomic}
+   size_t MaxMetaspaceSize                         = 18446744073709551615                      {product} {default}
+     uint ParallelGCThreads                        = 0                                         {product} {default}
+   size_t SoftMaxHeapSize                          = 402653184                              {manageable} {ergonomic}
+--- explicit ActiveProcessorCount=2
+      int ActiveProcessorCount                     = 2                                         {product} {command line}
+     intx CICompilerCount                          = 2                                         {product} {ergonomic}
+     bool CICompilerCountPerCPU                    = true                                      {product} {default}
+     uint ParallelGCThreads                        = 0                                         {product} {default}
+
+=== pod resources
+{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}
+{"terminated":{"containerID":"containerd://0e6ea087fa1865a16bff7c96d55caded986f2c1f5651694e8a1876ca41846840","exitCode":0,"finishedAt":"2026-11-11T04:19:07Z","reason":"Completed","startedAt":"2026-11-11T04:19:06Z"}}

@@ -39,6 +39,7 @@
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
 | [14 Containers](docs/14-containers/README.md) | Docker/containerd/CRI/OCI、镜像层、overlay、生命周期、网络、存储、capability、排障 | 管容器运行时、镜像、Pod 安全与 CI 构建的人 |
 | [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性/三个不可逆 一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
+| [16 中间件 OS 层](docs/16-middleware-os/README.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、overcommit、page cache、fd、cgroup、JVM 容器化 | 管中间件、做 OS 调优的人 |
 
 ---
 
@@ -114,6 +115,7 @@
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
 | 14 Containers | [`collect_container_evidence.sh`](docs/14-containers/scripts/collect_container_evidence.sh)、[`assets/evidence/`](docs/14-containers/assets/evidence/README.md)、[`labs/`](docs/14-containers/labs/README.md) |
 | 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性/不可逆 一句话答案 |
+| 16 中间件 OS | [`assets/evidence/`](docs/16-middleware-os/assets/evidence/README.md)、[`collect_middleware_os.sh`](docs/16-middleware-os/scripts/collect_middleware_os.sh)、Redis/Kafka/Nginx/Java 真机配置 |
 
 说明：
 
@@ -149,7 +151,8 @@ k8s-platform-tutorials/
     ├── 12-proxmox-pve/
     ├── 13-sso-oidc/
     ├── 14-containers/
-    └── 15-interview-cheatsheet/
+    ├── 15-interview-cheatsheet/
+    └── 16-middleware-os/
 ```
 
 每个分类目录的统一约定：

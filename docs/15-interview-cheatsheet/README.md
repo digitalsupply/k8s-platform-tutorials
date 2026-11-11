@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性 / 三个不可逆 / 中间件 OS
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -10,7 +10,8 @@
 > 证据：[`assets/evidence/`](assets/evidence/README.md)。
 > 详细原理：[04 Monitoring](../04-monitoring-gitops/README.md)、[05 Linux](../05-linux/README.md)、
 > [07 Networking](../07-networking/README.md)、[09 生命周期](../09-incidents-and-readiness/README.md)、
-> [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)。
+> [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)、
+> [16 中间件 OS](../16-middleware-os/README.md)。
 
 ## 一页速查
 
@@ -148,6 +149,27 @@
 | CIDR | 改 = 重建集群 | pod 10.244/16、svc 10.96/12 |
 | 分区/命名/区域 | 设计期定死 | PVE GPT + LVM、命名进 DNS/监控 |
 
+## 一页速查（中间件 OS）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| Redis THP | 推荐 never | m01 always；worker madvise |
+| Redis overcommit | 设 1 | 所有节点 1 |
+| Redis swappiness | 设 1 | 60，无 swap |
+| Redis COW | fork 最坏 2× | rdb COW 1.5M / AOF 2.8M |
+| Redis maxmemory | 小于容器 limit | 384M/400M/**0（ArgoCD）** |
+| MySQL O_DIRECT | 绕过 page cache | 未部署；PG fsync=on/fdatasync |
+| MySQL 脏页/NUMA | 抖动/单节点 OOM | PG checkpoint 5min/max_wal 1G |
+| Kafka page cache | 堆别太大 | 堆 1.99G，buff/cache 3.7G |
+| Kafka sendfile | 零拷贝 | 单 broker 20G PVC |
+| Kafka fd | 100k+ | soft 1024 |
+| Nginx 并发 | workers × connections | 6×1024 / 2×3096 |
+| Nginx worker auto | 不按 CPU limit | 0.1 核起 6 worker |
+| Java 容器感知 | JDK 10+ | JDK 21 检测 cgroups v2 |
+| MaxRAMPercentage | 控堆比例 | 512Mi：默认 128M，75%→384M |
+| CPU limit/GC | 决定 GC/JIT | 500m：GC=0，CICompilerCount=2 |
+| 连接池 | 总和 < DB 上限 | PG 13/100 |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -270,7 +292,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [08-cicd-release.md](08-cicd-release.md) | 流水线阶段、缓存/并行、多阶段/分层、tag、滚动/蓝绿/金丝雀/Flag、回滚、expand-contract、Harbor/buildx |
 | [09-observability.md](09-observability.md) | 指标类型/基数、PromQL、黑盒/白盒分层、日志/轮转、Trace 采样、长期存储、成本治理 |
 | [10-irreversibles.md](10-irreversibles.md) | 不可逆操作/状态/决策：dry-run、XFS/LVM、etcd、证书、CIDR、分区、命名、区域 |
-| [00-verification-matrix.md](00-verification-matrix.md) | 100+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [11-middleware-os.md](11-middleware-os.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、page cache、fd、cgroup、JVM 容器化 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 120+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

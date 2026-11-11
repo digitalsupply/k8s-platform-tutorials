@@ -1,0 +1,51 @@
+=== nodes: THP / sysctl / limits
+## 10.0.0.61
+THP=[always] madvise never
+defrag=always defer defer+madvise [madvise] never
+sysctl vm.overcommit_memory=1 vm.swappiness=60 net.core.somaxconn=4096 net.ipv4.tcp_max_syn_backlog=512 net.core.netdev_max_backlog=1000 ip_local_port_range=32768	60999 tcp_max_tw_buckets=32768 fs.nr_open=1073741816 fs.file-max=9223372036854775807
+shell_ulimit_n=1024
+kubelet_fd=Max open files            1000000              1000000              files     
+containerd_fd=Max open files            1024                 524288               files     
+cgroup=cgroup2fs
+sysctl_files:
+
+## 10.0.0.121
+THP=always [madvise] never
+defrag=always defer defer+madvise [madvise] never
+sysctl vm.overcommit_memory=1 vm.swappiness=60 net.core.somaxconn=4096 net.ipv4.tcp_max_syn_backlog=512 net.core.netdev_max_backlog=1000 ip_local_port_range=32768	60999 tcp_max_tw_buckets=32768 fs.nr_open=1048576 fs.file-max=9223372036854775807
+shell_ulimit_n=1024
+kubelet_fd=Max open files            1000000              1000000              files     
+containerd_fd=Max open files            1024                 1048576              files     
+cgroup=cgroup2fs
+sysctl_files:
+
+## 10.0.0.122
+THP=always [madvise] never
+defrag=always defer defer+madvise [madvise] never
+sysctl vm.overcommit_memory=1 vm.swappiness=60 net.core.somaxconn=4096 net.ipv4.tcp_max_syn_backlog=1024 net.core.netdev_max_backlog=1000 ip_local_port_range=32768	60999 tcp_max_tw_buckets=65536 fs.nr_open=1048576 fs.file-max=9223372036854775807
+shell_ulimit_n=1024
+kubelet_fd=Max open files            1000000              1000000              files     
+containerd_fd=Max open files            1024                 1048576              files     
+cgroup=cgroup2fs
+sysctl_files:
+
+## 10.0.0.123
+THP=always [madvise] never
+defrag=always defer defer+madvise [madvise] never
+sysctl vm.overcommit_memory=1 vm.swappiness=60 net.core.somaxconn=4096 net.ipv4.tcp_max_syn_backlog=1024 net.core.netdev_max_backlog=1000 ip_local_port_range=32768	60999 tcp_max_tw_buckets=65536 fs.nr_open=1048576 fs.file-max=9223372036854775807
+shell_ulimit_n=1024
+kubelet_fd=Max open files            1000000              1000000              files     
+containerd_fd=Max open files            1024                 1048576              files     
+cgroup=cgroup2fs
+sysctl_files:
+
+## 10.0.0.124
+THP=always [madvise] never
+defrag=always defer defer+madvise [madvise] never
+sysctl vm.overcommit_memory=1 vm.swappiness=60 net.core.somaxconn=4096 net.ipv4.tcp_max_syn_backlog=512 net.core.netdev_max_backlog=1000 ip_local_port_range=32768	60999 tcp_max_tw_buckets=32768 fs.nr_open=1048576 fs.file-max=9223372036854775807
+shell_ulimit_n=1024
+kubelet_fd=Max open files            1000000              1000000              files     
+containerd_fd=Max open files            1024                 1048576              files     
+cgroup=cgroup2fs
+sysctl_files:
+
