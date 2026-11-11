@@ -206,6 +206,7 @@
 | Trace 覆盖 | ⚠️ | Tempo 6.8 万 span/天；spanmetrics 0 series |
 | 长期存储 | ❌ | Thanos/VM/Mimir 均未部署，Prometheus 本地 15d |
 | 成本治理 | ✅ | 指标 17.9GB/15d，日志 0.6GB/天；每 series 成本已量化 |
+| kube-proxy 残留 | ✅ | `kubeProxy.enabled=false`；Service/SM/Rule/CM 已删；ArgoCD Synced |
 
 ## 九、三个「不可逆」
 

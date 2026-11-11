@@ -16,6 +16,7 @@
 | `evidence/logs-rotation.txt` | kubelet 10Mi×5、14 个轮转文件、logrotate weekly×4 |
 | `evidence/traces-sampling.txt` | OTel 0.145.0 仅 batch、无采样、Tempo 6.8 万 span/天、spanmetrics 0 |
 | `evidence/cost-baseline.txt` | 每 series 内存/磁盘、日志/追踪量、成本结论 |
+| `evidence/kube-proxy-leftover-fix.txt` | Cilium KPR 后 kubeProxy.enabled 残留与清理前后 |
 
 ## 复现实验
 

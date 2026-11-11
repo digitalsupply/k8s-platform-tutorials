@@ -251,6 +251,11 @@ Traefik Service：10.0.0.252，externalTrafficPolicy=Cluster
 L2：CiliumL2AnnouncementPolicy/traefik-l2
 ```
 
+> Cilium KPR 取代 kube-proxy 后，kube-prometheus-stack 曾因 `kubeProxy.enabled: true`
+> 保留无 endpoints 的 `prometheus-kube-proxy` Service/ServiceMonitor/Rule；
+> 已于 2026-11-11 关闭并清理。详见
+> [04 可观测性 4.4](../04-monitoring-gitops/10-observability-engineering.md)。
+
 ### G. 链路质量与故障注入
 
 ```bash

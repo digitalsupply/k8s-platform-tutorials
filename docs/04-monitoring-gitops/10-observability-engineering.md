@@ -360,6 +360,53 @@ SLO：99.9% 成功、P99 < 300ms、TTFT < 2s
 
 原则：**症状告警优先**，原因告警用于定位；不要给每个 CPU 指标都配 Pager。
 
+### 4.4 案例：Cilium KPR 后 `kubeProxy.enabled` 的残留
+
+本环境 Cilium `kube-proxy-replacement=true`，`kube-proxy` DaemonSet/ConfigMap/Pod 都不存在，
+但 kube-prometheus-stack 的 values 仍是：
+
+```yaml
+kubeProxy:
+  enabled: true
+```
+
+结果留下：
+
+| 对象 | 实测 |
+|---|---|
+| `kube-system/prometheus-kube-proxy` Service | headless，selector `k8s-app=kube-proxy`，创建 292d |
+| EndpointSlice | `endpoints: null`，无后端 |
+| `monitoring/prometheus-kube-proxy` ServiceMonitor | 存在，Prometheus target=0 |
+| `monitoring/prometheus-kubernetes-system-kube-proxy` Rule | `KubeProxyDown = absent(up{job="kube-proxy"})` |
+| `monitoring/prometheus-proxy` ConfigMap | kube-proxy Grafana dashboard |
+
+`absent()` 没有序列可匹配，于是 `KubeProxyDown` 长期 firing（约 50.9h）。
+这不是网络故障，是**监控配置残留**。
+
+修复：
+
+1. `platform-gitops` 的 `platform/monitoring/values.yaml` 设 `kubeProxy.enabled: false`（commit `cda3531`）；
+2. ArgoCD `platform-monitoring-stack` 同步到 `Synced/Healthy`；
+3. 因为 `prune: false`，手工删除上述 4 个不再渲染的对象；
+4. 用 Cilium 告警替代：
+
+```promql
+absent(up{job="cilium-agent"})
+or
+sum(up{job="cilium-agent"} == 0) > 0
+```
+
+结果：
+
+```text
+Service/EndpointSlice/ServiceMonitor/PrometheusRule/ConfigMap: NotFound
+Prometheus KubeProxy rules: []
+kube-proxy targets: 0
+ArgoCD: Synced Healthy
+```
+
+证据：[`evidence/kube-proxy-leftover-fix.txt`](assets/observability-engineering/evidence/kube-proxy-leftover-fix.txt)。
+
 ## 5. 日志：结构化、采样与生命周期
 
 ### 5.1 结构化日志

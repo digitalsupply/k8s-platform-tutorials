@@ -113,7 +113,9 @@ kubeControllerManager:
 kubeEtcd:
   enabled: true
 kubeProxy:
-  enabled: true
+  # Cilium kube-proxy-replacement=true; no kube-proxy DaemonSet/ConfigMap.
+  # Keep the chart from rendering prometheus-kube-proxy Service/ServiceMonitor/Rule.
+  enabled: false
 kubeScheduler:
   enabled: true
 kubeStateMetrics:
