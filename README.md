@@ -42,6 +42,7 @@
 | [16 中间件 OS 层](docs/16-middleware-os/README.md) | Redis/MySQL/Kafka/Nginx/Java 的 THP、overcommit、page cache、fd、cgroup、JVM 容器化 | 管中间件、做 OS 调优的人 |
 | [17 SRE](docs/17-sre/README.md) | SLI/SLO/Error Budget、burn rate 多窗口、症状告警、SEV/IC、Postmortem、变更相关性 | 做 SRE、值班、事故管理的人 |
 | [18 安全](docs/18-security/README.md) | sudo/capability/NNP、SSH CA、auditd/AIDE/Falco、PAM、补丁、CIS/等保/国密、供应链、PSA/NetworkPolicy/mTLS | 做 Linux/K8s/云原生安全的人 |
+| [19 仓库自审](docs/19-audit/README.md) | 对前 18 章的实测复核：P0 12 条（照抄会失败）、事实/版本/数量漂移清单、内部矛盾台账、现场真实故障 | 维护这套文档的人、想验证「教程是否可信」的人 |
 
 ---
 
@@ -120,6 +121,7 @@
 | 16 中间件 OS | [`assets/evidence/`](docs/16-middleware-os/assets/evidence/README.md)、[`collect_middleware_os.sh`](docs/16-middleware-os/scripts/collect_middleware_os.sh)、Redis/Kafka/Nginx/Java 真机配置 |
 | 17 SRE | [`10-slo-incident-alerting.md`](docs/17-sre/10-slo-incident-alerting.md)、[`slo/`](docs/17-sre/assets/slo/compassio-slo-rules.yaml)、[`templates/`](docs/17-sre/assets/templates/postmortem.md)、[`evidence/`](docs/17-sre/assets/evidence/README.md) |
 | 18 安全 | [`linux-baseline.md`](docs/18-security/assets/checklists/linux-baseline.md)、[`k8s-workload-security.md`](docs/18-security/assets/checklists/k8s-workload-security.md)、[`evidence/`](docs/18-security/assets/evidence/README.md) |
+| 19 仓库自审 | [`audit-report.md`](docs/19-audit/audit-report.md)、[`findings/`](docs/19-audit/findings/g1-overview-k8s.md)（169 条明细）、[`ground-truth.md`](docs/19-audit/assets/ground-truth.md) |
 
 说明：
 
@@ -158,7 +160,8 @@ k8s-platform-tutorials/
     ├── 15-interview-cheatsheet/
     ├── 16-middleware-os/
     ├── 17-sre/
-    └── 18-security/
+    ├── 18-security/
+    └── 19-audit/
 ```
 
 每个分类目录的统一约定：

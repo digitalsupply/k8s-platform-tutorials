@@ -1,0 +1,8 @@
+=== PY_SYNTAX_ERROR: 0
+=== YAML_PARSE_ERROR: 0
+=== YAML_SKIPPED_TEMPLATE: 0
+=== JSON_PARSE_ERROR: 0
+=== SH_SYNTAX_ERROR: 1
+    docs/04-monitoring-gitops/notes/wecom-alert-receiver-20261001/apply.sh | docs/04-monitoring-gitops/notes/wecom-alert-receiver-20261001/apply.sh:行30: 未预期的符号“newline”附近有语法错误
+=== MD_FENCE_UNBALANCED: 0
+=== MD_BROKEN_LINK: 0
