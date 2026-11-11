@@ -191,7 +191,7 @@ metadata:
   namespace: cnpg-system
 type: Opaque
 stringData:
-  ACCESS_KEY_ID: "SOET6W3OR0I9UKCP6WEG"
+  ACCESS_KEY_ID: "<redacted-s3-access-key>"
   ACCESS_SECRET_KEY: <redacted>"
 ```
 

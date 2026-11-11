@@ -1,0 +1,26 @@
+=== /var/log usage
+326M	/var/log
+183M	/var/log/pods
+276K	/var/log/containers
+=== pod log dirs
+38
+=== rotated container logs
+14
+10516790 /var/log/pods/logging_loki-read-b7c85bb-pw9c6_5292edb2-fe0e-45f0-b76f-c4e0c083d9d5/loki/0.log.20261111-111105
+10493619 /var/log/pods/tekton-pipelines_tekton-pipelines-webhook-7cb64b7dd9-699ls_3b555f7f-4a28-441f-9357-7c020a08cb4b/webhook/0.log.20261110-215117
+10488837 /var/log/pods/logging_loki-canary-mvcfr_2f2f4d39-c9e3-4df3-a420-678ee640c153/loki-canary/1.log.20261111-105444
+=== largest active logs
+9390016 /var/log/pods/kube-system_vpa-vertical-pod-autoscaler-recommender-655b48fb75-m4vj5_e9f59415-c4fb-4baa-a736-e79a66165556/recommender/0.log
+8839131 /var/log/pods/kube-system_vpa-vertical-pod-autoscaler-updater-7986c46b5b-k9ldd_809a5903-5e6a-4ae9-a0d4-53b2c9748695/updater/0.log
+8566871 /var/log/pods/argocd_argocd-notifications-controller-5c9554f65-w2b5m_6e4229d5-6eb0-4d0f-92a9-33e8b4ed1e24/notifications-controller/0.log
+=== journal
+Archived and active journals take up 20.4M in the file system.
+=== kubelet log settings
+not set -> kubelet defaults (10Mi x 5)
+=== containerd
+    max_container_log_line_size = 16384
+=== logrotate
+weekly
+rotate 4
+=== syslog
+-rw-r----- 1 syslog adm 11M Nov 11 11:31 /var/log/syslog

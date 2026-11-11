@@ -178,7 +178,36 @@
 | buildx 拉 Harbor 基础镜像 | ❌ | daemon 侧 CA 仍 x509（client 与 daemon 信任链不同） |
 | SBOM/provenance | 📚 | buildx 支持；本环境未启用 |
 
-## 八、结论
+## 八、可观测性
+
+| 断言 | 状态 | 证据 |
+|---|---|---|
+| 指标四类型 | ✅ | Counter/Gauge/Histogram/Summary；`compassio_users_total` 是 Gauge |
+| 基数决定内存 | ✅ | 260,359 series，RSS 1.57GiB/4GiB，约 6KB/series |
+| `user_id` 不能进 label | ✅ | 业务只用 role（3 series）；数学上 100k 用户会到千万级 |
+| 基数 OOM 可复现 | ✅ | 15 万 series + 128Mi → OOMKilled exit 137，重启 3 次 |
+| 高基数 label 识别 | ✅ | `id` 1306、`uid` 695、`path` 804 series |
+| series churn | ✅ | 24h +31,003（+13.5%）；创建 7.2k/h、删除 0.66k/h |
+| `rate()` 需 2 样本 | ✅ | `[10s]/[30s]` 0 series；`[1m]` 6 series |
+| `irate` vs `rate` | ✅ | idle CPU 0.856 vs 0.877 |
+| 先 `sum by` 再聚合 | ✅ | `sum by (verb)` 9 条；全局 28.6/s |
+| `histogram_quantile` | ✅ | 不聚合 188 条/122 NaN；`sum by (le)` 后 p99=0.0229s |
+| bucket 选择 | ✅ | 10 个桶（0.005–60s），0.1–1s 跨度过大 |
+| 黑盒监控 | ❌ | 0 Probe、无 blackbox exporter |
+| 白盒监控 | ✅ | 52 job，27 ServiceMonitor + 16 PodMonitor |
+| 四层监控 | ✅ | 基础设施/中间件/应用/业务均有实际指标 |
+| 业务指标 | ✅ | `compassio_users_total` 887 学生、LLM 27.6k/24h、DeepTutor 轮次 |
+| 日志结构化 | ⚠️ | Alloy `stage.json=0`、`sampling=0` |
+| 日志量/保留 | ✅ | 624MB/24h、214 万行、5d |
+| 容器日志轮转 | ✅ | kubelet 默认 10Mi×5；14 个轮转文件、最大约 10.5MB |
+| 宿主机日志轮转 | ✅ | logrotate weekly×4；journald 20.4M |
+| Trace context 传播 | 📚 | W3C `traceparent`；OTel Collector 0.145.0 |
+| 头部/尾部采样 | ❌ | Collector 仅 batch，无采样 |
+| Trace 覆盖 | ⚠️ | Tempo 6.8 万 span/天；spanmetrics 0 series |
+| 长期存储 | ❌ | Thanos/VM/Mimir 均未部署，Prometheus 本地 15d |
+| 成本治理 | ✅ | 指标 17.9GB/15d，日志 0.6GB/天；每 series 成本已量化 |
+
+## 九、结论
 
 - **能一句话说清**：先看 [README](README.md) 的两张速查表；
 - **需要追问**：看 `01-linux.md` / `02-network.md` / `03-cloud-native.md` / `04-storage.md` / `05-kubernetes.md`；

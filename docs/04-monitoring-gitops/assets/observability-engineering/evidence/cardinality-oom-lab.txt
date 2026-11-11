@@ -1,0 +1,46 @@
+=== synthetic exporter: 150000 series (user_id + path + status + method)
+=== prometheus memory limit: 128Mi
+
+--- pod status
+NAME              READY   STATUS    RESTARTS      AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+cardinality-lab   2/2     Running   3 (23s ago)   95s   10.244.3.69   worker01   <none>           <none>
+
+--- container states
+
+--- events
+LAST SEEN   TYPE      REASON      OBJECT                MESSAGE
+95s         Normal    Scheduled   pod/cardinality-lab   Successfully assigned cardinality-lab/cardinality-lab to worker01
+94s         Normal    Pulling     pod/cardinality-lab   Pulling image "192.168.67.202:8443/deeptutor/python:3.11-slim"
+90s         Normal    Pulled      pod/cardinality-lab   Successfully pulled image "192.168.67.202:8443/deeptutor/python:3.11-slim" in 4.4s (4.4s including waiting). Image size: 45610965 bytes.
+90s         Normal    Created     pod/cardinality-lab   Container created
+90s         Normal    Started     pod/cardinality-lab   Container started
+90s         Normal    Pulling     pod/cardinality-lab   Pulling image "quay.io/prometheus/prometheus:v3.11.2"
+62s         Normal    Pulled      pod/cardinality-lab   Successfully pulled image "quay.io/prometheus/prometheus:v3.11.2" in 27.48s (27.48s including waiting). Image size: 152918965 bytes.
+22s         Warning   BackOff     pod/cardinality-lab   Back-off restarting failed container prometheus in pod cardinality-lab_cardinality-lab(1d7d6d8b-de78-49ab-b577-d7b708c11819)
+2s          Normal    Created     pod/cardinality-lab   Container created
+2s          Normal    Started     pod/cardinality-lab   Container started
+2s          Normal    Pulled      pod/cardinality-lab   Container image "quay.io/prometheus/prometheus:v3.11.2" already present on machine and can be accessed by the pod
+
+--- describe (OOM)
+    Restart Count:  0
+    Limits:
+      memory:  256Mi
+      memory:     64Mi
+    Last State:     Terminated
+      Reason:       OOMKilled
+      Exit Code:    137
+    Restart Count:  3
+    Limits:
+      memory:  128Mi
+      memory:     64Mi
+  Type     Reason     Age                From               Message
+
+--- prometheus log (GOMEMLIMIT / start)
+time=2026-11-11T03:27:23.039Z level=INFO source=head.go:902 msg="WAL replay completed" component=tsdb checkpoint_replay_duration=56.976µs wal_replay_duration=2.919881ms wbl_replay_duration=171ns chunk_snapshot_load_duration=0s mmap_chunk_replay_duration=2.449µs total_replay_duration=3.020707ms
+time=2026-11-11T03:27:23.044Z level=INFO source=main.go:1431 msg="filesystem information" fs_type=EXT4_SUPER_MAGIC
+time=2026-11-11T03:27:23.044Z level=INFO source=main.go:1434 msg="TSDB started"
+time=2026-11-11T03:27:23.044Z level=INFO source=main.go:1632 msg="Loading configuration file" filename=/etc/prom/config/prometheus.yml
+time=2026-11-11T03:27:23.044Z level=INFO source=main.go:1048 msg="TSDB retention updated" duration=1d size=0B percentage=0
+time=2026-11-11T03:27:23.046Z level=INFO source=main.go:1671 msg="Completed loading of configuration file" db_storage=55.109µs remote_storage=2.362µs web_handler=453ns query_engine=1.469µs scrape=1.230231ms scrape_sd=35.512µs notify=1.713µs notify_sd=2.414µs rules=1.945µs tracing=8.317µs filename=/etc/prom/config/prometheus.yml totalDuration=1.854684ms
+time=2026-11-11T03:27:23.046Z level=INFO source=main.go:1395 msg="Server is ready to receive web requests."
+time=2026-11-11T03:27:23.046Z level=INFO source=manager.go:209 msg="Starting rule manager..." component="rule manager"

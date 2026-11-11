@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: lab-config, namespace: cardinality-lab}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+    scrape_configs:
+      - job_name: synthetic
+        static_configs:
+          - targets: ["127.0.0.1:8000"]
+  exporter.py: |
+    import http.server, socketserver, threading
+    N = 150000
+    body = []
+    for i in range(N):
+        body.append(
+            'app_http_requests_total{user_id="u%d",path="/api/items/%d",status="200",method="GET"} %d\n'
+            % (i, i, i)
+        )
+    payload = "".join(body).encode()
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; version=0.0.4")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        def log_message(self, *a): pass
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("0.0.0.0", 8000), H) as s:
+        s.serve_forever()
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: cardinality-lab, namespace: cardinality-lab}
+spec:
+  containers:
+    - name: exporter
+      image: 192.168.67.202:8443/deeptutor/python:3.11-slim
+      command: ["python", "/etc/lab/exporter.py"]
+      resources:
+        requests: {cpu: 100m, memory: 64Mi}
+        limits: {memory: 256Mi}
+      volumeMounts: [{name: lab, mountPath: /etc/lab}]
+    - name: prometheus
+      image: quay.io/prometheus/prometheus:v3.11.2
+      args:
+        - --config.file=/etc/prom/config/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=1d
+      resources:
+        requests: {cpu: 100m, memory: 64Mi}
+        limits: {memory: 128Mi}
+      volumeMounts:
+        - {name: lab, mountPath: /etc/prom/config}
+        - {name: data, mountPath: /prometheus}
+  volumes:
+    - name: lab
+      configMap: {name: lab-config}
+    - name: data
+      emptyDir: {}

@@ -1,0 +1,38 @@
+total rules 345 alerting 251 recording 94
+
+1) rate/irate 窗口 < 120s（scrape=30s 时不足 2 个样本）: 0
+
+2) histogram_quantile 参数内没有 sum 聚合（按单序列算分位数）: 4
+  ('monitoring', 'prometheus-etcd', 'etcdMemberCommunicationSlow') histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
+> 0.15
+  ('monitoring', 'prometheus-etcd', 'etcdHighFsyncDurations') histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
+> 0.5
+  ('monitoring', 'prometheus-etcd', 'etcdHighFsyncDurations') histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
+> 1
+  ('monitoring', 'prometheus-etcd', 'etcdHighCommitDurations') histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
+> 0.25
+
+3) group by / on 含高基数 label（pod/uid/container_id/path/user_id/trace_id）: 52
+  ('monitoring', 'bsm-coverage-alerts', 'CoreComponentNotReady') sum by (namespace, pod) (kube_pod_status_ready{namespace=~"kube-system|argocd|logging|n8n|nfs-provisioner|kafk
+  ('monitoring', 'bsm-coverage-alerts', 'CNIComponentNotReady') sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"calico-node-.*",condition="true"}) < 1
+  ('monitoring', 'bsm-coverage-alerts', 'MetalLBSpeakerNotReady') sum by (pod) (kube_pod_status_ready{namespace="metallb-system",pod=~"speaker-.*",condition="true"}) < 1
+  ('monitoring', 'bsm-coverage-alerts', 'PodCrashLoopingFixed') max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}) > 0
+  ('monitoring', 'cluster-wide-alerts', 'PodOOMKilled') (time() - max by (namespace, pod, container) (kube_pod_container_status_last_terminated_timestamp) < 900)
+  an
+  ('monitoring', 'cluster-wide-alerts', 'KubeVIPRestarting') sum by (pod, node) (increase(kube_pod_container_status_restarts_total{namespace="kube-system",container="kube-
+  ('monitoring', 'cluster-wide-alerts', 'KubePodHighRestartCount') max by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[15m])) > 5
+  ('monitoring', 'cluster-wide-alerts', 'KubePodCriticalComponentHighRestart') max by (namespace, pod, container) (kube_pod_container_status_restarts_total{namespace=~"kube-system|argocd|lo
+  ('monitoring', 'coverage-gap-alerts', 'AlloyDown') count by (pod) (up{namespace="logging",job=~"alloy"} == 0) or (absent(up{namespace="logging",job=~"alloy"}) an
+  ('monitoring', 'coverage-gap-alerts', 'CalicoNodeNotReady') sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"calico-node-.*",condition="true"}) < 1
+  ('monitoring', 'coverage-gap-alerts', 'MetalLBSpeakerHighRestart') sum by (pod) (increase(kube_pod_container_status_restarts_total{namespace="metallb-system",pod=~"speaker-.*"}[
+  ('monitoring', 'coverage-gap-alerts', 'ArgoCDHighRestart') sum by (pod) (increase(kube_pod_container_status_restarts_total{namespace="argocd"}[15m])) > 3
+
+4) 使用 irate 的规则: 1
+  ('monitoring', 'prometheus-k8s.rules.container-cpu-usage-seconds-total', 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate')
+
+说明:
+- rate 窗口检查结果 0 条，说明现有规则没有 [30s]/[1m] 这类过短窗口；
+- histogram_quantile 的 4 条 etcd 规则是“按 instance 算分位数”，不是全局分位数；
+  如果要全局 p99，必须 sum by (le) 后再 histogram_quantile；
+- alert 规则里保留 pod 是必要的（否则不知道哪个 Pod），但 recording rule 长期保留
+  uid/container_id/path 会制造高基数；本审计用于面试时区分“告警定位”与“指标建模”。

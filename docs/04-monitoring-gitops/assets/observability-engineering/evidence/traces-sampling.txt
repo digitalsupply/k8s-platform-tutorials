@@ -1,0 +1,31 @@
+=== OTel collector config (safe)
+ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.145.0
+processors: ['batch']
+exporters: ['debug', 'otlp_grpc/tempo', 'prometheus']
+receivers: ['otlp']
+connectors: ['spanmetrics']
+
+=== Tempo retention (safe)
+        block_retention: 120h
+    block_retention: 120h
+      bucket: tempo-traces
+        compacted_block_retention: 1h
+    compacted_block_retention: 1h
+          endpoint: 0.0.0.0:4317
+          endpoint: 0.0.0.0:4318
+      endpoint: 10.0.0.31:7480
+
+=== Tempo volume (Prometheus, 24h)
+--- sum(increase(tempo_distributor_spans_received_total[24h]))
+68543.79993053143
+--- sum by (job) (rate(tempo_distributor_spans_received_total[5m]))
+0.737037037037037
+--- count(traces_spanmetrics_calls_total)
+no data
+--- count(traces_service_graph_request_total)
+no data
+--- sum(increase(otelcol_receiver_accepted_spans[24h]))
+no data
+
+=== long-term storage components
+thanos/victoriametrics/mimir pods: 0

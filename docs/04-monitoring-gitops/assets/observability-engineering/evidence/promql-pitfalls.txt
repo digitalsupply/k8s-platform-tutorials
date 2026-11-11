@@ -1,0 +1,61 @@
+=== 本环境 scrape_interval=30s；range 太短时 rate() 没有 2 个样本
+--- rate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[10s])
+series= 0
+--- rate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[30s])
+series= 0
+--- rate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[1m])
+series= 6
+ cpu 0 0.8563333333334109
+ cpu 1 0.8643333333331005
+ cpu 2 0.8639999999999418
+--- rate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[5m])
+series= 6
+ cpu 0 0.8772592592592614
+ cpu 1 0.8729629629629522
+ cpu 2 0.8648148148148148
+
+=== irate 只用最后两个样本；rate 用整个窗口
+--- irate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[5m])
+series= 6
+ cpu 0 0.856333333333411
+ cpu 1 0.8643333333331005
+ cpu 2 0.8639999999999418
+--- rate(node_cpu_seconds_total{mode="idle",instance="10.0.0.122:9100"}[5m])
+series= 6
+ cpu 0 0.8772592592592614
+ cpu 1 0.8729629629629522
+ cpu 2 0.8648148148148148
+
+=== histogram_quantile：不聚合 by(le) -> 每个 label 组合一条，很多 NaN
+series= 188 nan= 122 sample= NaN
+--- histogram_quantile(0.99, sum by (le)(rate(...)))
+series= 1 value= 0.02290442313066751
+
+=== le bucket 数量（+Inf 必须有）
+buckets= 10
+ le= 0.005 series= 188
+ le= 0.025 series= 188
+ le= 0.05 series= 188
+ le= 0.1 series= 188
+ le= 1.0 series= 188
+ le= 5.0 series= 188
+ le= 10.0 series= 188
+ le= 30.0 series= 188
+ le= 60.0 series= 188
+ le= +Inf series= 188
+
+=== 先 sum by 再算业务速率
+--- sum by (verb) (rate(apiserver_request_total[5m]))
+series= 9
+  {'verb': 'GET'} 11.74074074074074
+  {'verb': 'LIST'} 0.43703703703703706
+  {'verb': 'PUT'} 12.218518518518518
+  {'verb': 'PATCH'} 0.7888888888888889
+  {'verb': 'POST'} 1.1074074074074074
+  {'verb': 'WATCH'} 2.237037037037037
+  {'verb': 'DELETE'} 0.003703703703703704
+  {'verb': 'CONNECT'} 0.037037037037037035
+  {'verb': 'APPLY'} 0.05925925925925926
+--- sum(rate(apiserver_request_total[5m]))
+series= 1
+  {} 28.62962962962963

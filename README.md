@@ -27,7 +27,7 @@
 | [01 Kubernetes](docs/01-kubernetes-k3s/README.md) | Pod 进程模型、k3s 概念、1.29→1.35 升级、控制面/节点/资源/稳定性核心考点 | 想真正看懂 Pod 与升级的人 |
 | [02 Cilium / eBPF](docs/02-cilium-ebpf/README.md) | eBPF 核心概念、Calico→Cilium 全量迁移、KPR、L2 Announcements、Hubble | 排查 Service/NodePort/LB/网络策略的人 |
 | [03 GitLab / Harbor](docs/03-gitlab/README.md) | GitLab 安装/端口、账号/角色、Token/Webhook、Runner/Tekton、Harbor OIDC/Robot/镜像仓库 | 做 GitLab 运维、CI/CD、镜像仓库与权限治理的人 |
-| [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps | 做 K8s 可观测性与告警治理的人 |
+| [04 Monitoring GitOps](docs/04-monitoring-gitops/README.md) | Prometheus/Alertmanager/WeCom、Loki/Alloy、Tempo、Grafana、规则 GitOps、指标基数/PromQL/日志轮转/Trace 采样/成本治理 | 做 K8s 可观测性与告警治理的人 |
 | [05 Linux](docs/05-linux/README.md) | 内核、用户态、文件系统、权限 UGO→capability、进程、内存、systemd、参数限制 | Linux 基础与主机层运维 |
 | [06 Storage / Ceph](docs/06-storage-ceph/README.md) | RBD/CSI、PV 回收、CNPG 备份、RGW、PV 泄漏、分区/LVM/RAID/文件系统基础 | 管存储、PVC、数据库备份、磁盘/文件系统的人 |
 | [07 Networking](docs/07-networking/README.md) | Traefik/IngressRoute、Service/iptables、DNS、隧道、IPIP/VXLAN | 排查入口、DNS、Service 不通的人 |
@@ -38,7 +38,7 @@
 | [12 Proxmox VE](docs/12-proxmox-pve/README.md) | PV/VG/LV、LVM-thin、VM 磁盘、discard、Terraform/cloud-init/Ansible IaC、KVM/QEMU/virtio/IMDS/引导 | 管宿主机、VM、磁盘容量与批量建机的人 |
 | [13 SSO / OIDC](docs/13-sso-oidc/README.md) | GitLab 作为 IdP、Grafana/ArgoCD/Harbor 原生 OIDC、oauth2-proxy 反代、Ceph SAML 阻塞 | 做统一登录与平台安全的人 |
 | [14 Containers](docs/14-containers/README.md) | Docker/containerd/CRI/OCI、镜像层、overlay、生命周期、网络、存储、capability、排障 | 管容器运行时、镜像、Pod 安全与 CI 构建的人 |
-| [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/存储/K8s/虚拟化/IaC/CI-CD 一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
+| [15 面试速查](docs/15-interview-cheatsheet/README.md) | Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性 一句话答案 + 真机证据 + 纠偏 | 面试复习、快速定位知识盲区 |
 
 ---
 
@@ -102,7 +102,7 @@
 | 01 Kubernetes | [`pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py)、[`collect_k8s_interview_evidence.sh`](docs/01-kubernetes-k3s/scripts/collect_k8s_interview_evidence.sh)、[`upgrade-scripts/`](docs/01-kubernetes-k3s/assets/upgrade-scripts/)、[`interview-evidence/`](docs/01-kubernetes-k3s/assets/interview-evidence/m01-evidence.txt) |
 | 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
 | 03 GitLab/Harbor | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/)、账号/Token/Webhook、CI-CD、Harbor 文档 |
-| 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
+| 04 Monitoring | [`manifests/`](docs/04-monitoring-gitops/manifests/README.md)、[`assets/`](docs/04-monitoring-gitops/assets/)、[`observability-engineering/`](docs/04-monitoring-gitops/assets/observability-engineering/README.md)、[`gen-dashboards.py`](docs/04-monitoring-gitops/assets/gen-dashboards.py) |
 | 05 Linux | [`collect_linux_evidence.sh`](docs/05-linux/scripts/collect_linux_evidence.sh)、[`linux_lab_experiments.sh`](docs/05-linux/scripts/linux_lab_experiments.sh)、[`sudo_audit.py`](docs/05-linux/scripts/sudo_audit.py)、[`grow-lvm.sh`](docs/05-linux/scripts/grow-lvm.sh) |
 | 06 Storage/Ceph | [`find_orphan_pv.py`](docs/06-storage-ceph/scripts/find_orphan_pv.py)、[`ceph_csi_inventory.py`](docs/06-storage-ceph/scripts/ceph_csi_inventory.py)、[`inspect-released-pv.sh`](docs/06-storage-ceph/scripts/inspect-released-pv.sh)、[`rbd-du.sh`](docs/06-storage-ceph/scripts/rbd-du.sh)、[`ceph-csi-operator/`](docs/06-storage-ceph/assets/ceph-csi-operator/)、[`cnpg/`](docs/06-storage-ceph/assets/cnpg/) |
 | 07 Networking | [`current-ingressroutes.yaml`](docs/07-networking/assets/current-ingressroutes.yaml)、[`current-metallb-config.yaml`](docs/07-networking/assets/current-metallb-config.yaml) |
@@ -113,7 +113,7 @@
 | 12 Proxmox | [`pve_storage_report.py`](docs/12-proxmox-pve/scripts/pve_storage_report.py)、[`pve-state/`](docs/12-proxmox-pve/assets/pve-state/)、[`xceuler/`](docs/12-proxmox-pve/assets/xceuler/)、[`iac/`](docs/12-proxmox-pve/iac/README.md)、[`kvm-cloud-boot/`](docs/12-proxmox-pve/assets/kvm-cloud-boot/README.md)、[`vm-configs/`](docs/12-proxmox-pve/assets/vm-configs/) |
 | 13 SSO/OIDC | [`verify_sso.sh`](docs/13-sso-oidc/scripts/verify_sso.sh)、[`oauth2-proxy/`](docs/13-sso-oidc/assets/oauth2-proxy/)、[`argocd-values.yaml`](docs/13-sso-oidc/assets/argocd-values.yaml) |
 | 14 Containers | [`collect_container_evidence.sh`](docs/14-containers/scripts/collect_container_evidence.sh)、[`assets/evidence/`](docs/14-containers/assets/evidence/README.md)、[`labs/`](docs/14-containers/labs/README.md) |
-| 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/存储/K8s/虚拟化/IaC/CI-CD 一句话答案 |
+| 15 面试速查 | [`assets/evidence/`](docs/15-interview-cheatsheet/assets/evidence/README.md)、[`labs/`](docs/15-interview-cheatsheet/labs/README.md)、Linux/网络/存储/K8s/虚拟化/IaC/CI-CD/可观测性 一句话答案 |
 
 说明：
 

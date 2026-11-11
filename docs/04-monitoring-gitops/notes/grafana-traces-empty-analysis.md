@@ -199,7 +199,7 @@ kubectl exec -n logging tempo3-query-frontend-7b7fc8ddf8-852sz -c tempo-query-fr
   wget -qO- 'http://localhost:3200/api/search?start=1790589600&end=1790736000&limit=20'
 
 # ③ 看 block 到底有没有数据文件（关键！不要只看汇总）
-export AWS_ACCESS_KEY_ID=AS5W8GVA3QVGYJ65NM2M
+export AWS_ACCESS_KEY_ID=<redacted-s3-access-key>
 export AWS_SECRET_ACCESS_KEY=<redacted>
 export AWS_DEFAULT_REGION=us-east-1
 aws s3 ls --endpoint-url http://10.0.0.31:7480 s3://tempo-traces/ --recursive

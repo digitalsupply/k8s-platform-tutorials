@@ -348,7 +348,7 @@ kubectl delete cm mc-cm -n default   # 确认无引用后执行
 `logging/mc-cm` 与 `ConfigMap/logi` 中明文存放：
 
 ```
-access_key_id:     MSZ7Z25JM36ULGGDAIH7
+access_key_id:     <redacted-s3-access-key>
 secret_access_key: <redacted>
 ```
 

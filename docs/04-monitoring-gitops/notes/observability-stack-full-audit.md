@@ -1319,7 +1319,7 @@ tempo3-distributor  level=error  msg="error running Tempo"
 | 指标 | 数值 |
 |------|------|
 | 长度 | 两者均为 **40** 字符 |
-| 公共前缀 | **14** 字符（`pEvDsy91zGGp`） |
+| 公共前缀 | **14** 字符（`<redacted>`） |
 | 公共后缀 | **14** 字符（`…Ppad6NeTRHt`） |
 | 差异位数 | **12** 位 |
 | 差异位置 | 偏移 **14–25**（连续区间，正中间） |

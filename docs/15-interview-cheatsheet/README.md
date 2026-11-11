@@ -1,4 +1,4 @@
-# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD
+# 15 · 面试一句话答案：Linux / 网络 / 云原生 / CI-CD / 可观测性
 
 > 这不是又一份“八股表”。每题给：
 >
@@ -8,8 +8,9 @@
 > 4. **详细章节链接**。
 >
 > 证据：[`assets/evidence/`](assets/evidence/README.md)。
-> 详细原理：[05 Linux](../05-linux/README.md)、[07 Networking](../07-networking/README.md)、
-> [10 CI/CD](../10-cicd-delivery/README.md)、[14 Containers](../14-containers/README.md)。
+> 详细原理：[04 Monitoring](../04-monitoring-gitops/README.md)、[05 Linux](../05-linux/README.md)、
+> [07 Networking](../07-networking/README.md)、[10 CI/CD](../10-cicd-delivery/README.md)、
+> [14 Containers](../14-containers/README.md)。
 
 ## 一页速查
 
@@ -111,6 +112,25 @@
 | expand-contract | 先兼容后删除 | PG16.15 每步 2–3ms；Contract 不可逆 |
 | 私服/依赖 | 最小权限 + 扫描 + 锁文件 | Harbor 无 immutable 规则；保留最近 5 个 |
 | buildx | 多平台/缓存/SBOM/远程 builder | 0.30.1 + remote 连 BuildKit 0.20.2 |
+
+## 一页速查（可观测性）
+
+| 题 | 一句话 | 本环境实测 |
+|---|---|---|
+| 指标类型 | Counter/Gauge/Histogram/Summary | `compassio_users_total` 是 Gauge，只有 3 series |
+| 基数 | label 笛卡尔积，1 series ≈ 1–6KB | 26 万 series，RSS 1.57GiB/4GiB |
+| user_id 进 label | 1 亿 series 级别，必炸 | 业务只用 role，不按用户展开 |
+| 基数 OOM | 15 万 series + 128Mi → OOMKilled | exit 137，重启 3 次 |
+| rate | 至少 2 样本，窗口 ≥ 4×scrape | `[30s]` 0 series，`[1m]` 6 series |
+| irate vs rate | 最后 2 样本 vs 整个窗口 | idle CPU 0.856 vs 0.877 |
+| histogram_quantile | 必须先 sum by (le) | 不聚合 188 条/122 NaN；聚合 p99=0.0229s |
+| 黑盒/白盒 | 可用性 vs 内部原因 | 白盒 52 job；黑盒 0 Probe |
+| 分层监控 | 基础设施/中间件/应用/业务 | node/apiserver/etcd；CNPG/Kafka；compassio/deeptutor |
+| 日志 | JSON + 采样 + 低基数 label | 0.6GB/天；Alloy 无 JSON/采样 |
+| 日志轮转 | kubelet 10Mi×5；logrotate 管宿主机 | 14 个轮转文件；weekly×4 |
+| Trace 采样 | 头部简单；尾部按错误/延迟 | OTel 仅 batch，无采样；6.8 万 span/天 |
+| 长期存储 | Thanos/VM/Mimir 按规模选 | 均未部署；本地 15d/25GiB |
+| 成本治理 | series × 维度 × 采样 × 保留 | 指标 17.9GB，日志仅 0.6GB/天 |
 
 ## 二、本环境纠偏（面试别背绝对话）
 
@@ -232,7 +252,8 @@ Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUP
 | [06-virtualization-boot.md](06-virtualization-boot.md) | KVM/QEMU/virtio/virsh、云 vs 物理、IMDSv2、cloud-init、Packer、云镜像 vs ISO、UEFI/PXE/initramfs |
 | [07-iac-gitops.md](07-iac-gitops.md) | Ansible 幂等/handlers/check/delegate/inventory/roles、Terraform state/plan/drift/import、GitOps、演进 |
 | [08-cicd-release.md](08-cicd-release.md) | 流水线阶段、缓存/并行、多阶段/分层、tag、滚动/蓝绿/金丝雀/Flag、回滚、expand-contract、Harbor/buildx |
-| [00-verification-matrix.md](00-verification-matrix.md) | 70+ 条断言的验证状态（✅/⚠️/❌/📚） |
+| [09-observability.md](09-observability.md) | 指标类型/基数、PromQL、黑盒/白盒分层、日志/轮转、Trace 采样、长期存储、成本治理 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 90+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

@@ -154,10 +154,10 @@ cloudfront_host = 10.0.0.31:7480
 
 | 用途 | 凭据 | RGW 用户 | 密钥来源文件 | 落地位置（均 600） |
 |------|------|----------|--------------|--------------------|
-| PG 备份（`s3://pg-backups`） | `SOET6W3OR0I9UKCP6WEG` / `B04FU…TJ9` | `pg-backup` | `ceph-rbd-released-pg-backup-implementation-20261005.md` §2 步骤3 | `~/.aws/credentials`（default、pg-backup）、`~/.s3cfg` |
-| Loki（`loki-chunks`、`loki-ruler`、`loki-admin`） | `MSZ7Z25JM36ULGGDAIH7` / `pEvDsy…RHt` | `loki-admin` | `observability-upgrade-backup-20260928-172244/phase2/loki-values-all.yaml`、`…/secrets/logging-secrets.yaml`（base64 已核对一致） | `~/.aws/credentials`（loki-admin）、`~/.s3cfg-loki` |
-| Tempo（`tempo-traces`） | `AS5W8GVA3QVGYJ65NM2M` / `nj5hDu…hXx` | tempo 用户 | `…/phase2/tempo-values-all.yaml` | `~/.aws/credentials`（tempo） |
-| Ceph 集群管理 | admin keyring `AQDxcT1p…P3OA==` | `client.admin` | `observability-upgrade-backup-20260929-154623/ceph-upgrade/ceph.client.admin.keyring` | `/etc/ceph/ceph.client.admin.keyring` |
+| PG 备份（`s3://pg-backups`） | `<redacted-s3-access-key>` / `<redacted>` | `pg-backup` | `ceph-rbd-released-pg-backup-implementation-20261005.md` §2 步骤3 | `~/.aws/credentials`（default、pg-backup）、`~/.s3cfg` |
+| Loki（`loki-chunks`、`loki-ruler`、`loki-admin`） | `<redacted-s3-access-key>` / `<redacted>` | `loki-admin` | `observability-upgrade-backup-20260928-172244/phase2/loki-values-all.yaml`、`…/secrets/logging-secrets.yaml`（base64 已核对一致） | `~/.aws/credentials`（loki-admin）、`~/.s3cfg-loki` |
+| Tempo（`tempo-traces`） | `<redacted-s3-access-key>` / `<redacted>` | tempo 用户 | `…/phase2/tempo-values-all.yaml` | `~/.aws/credentials`（tempo） |
+| Ceph 集群管理 | admin keyring `<redacted-ceph-key>` | `client.admin` | `observability-upgrade-backup-20260929-154623/ceph-upgrade/ceph.client.admin.keyring` | `/etc/ceph/ceph.client.admin.keyring` |
 
 > 所有密钥均为集群既有凭据，**本次未新建任何账号**，只做了本地落地；`chmod 600` 后仅 root 可读。
 
@@ -478,7 +478,7 @@ kubectl get cluster -n cnpg-system pg16-ceph -o jsonpath='{.spec.backup.retentio
 
 ```bash
 K="kubectl -n cnpg-system exec pg16-ceph-3 -c postgres --"
-export AWS_ACCESS_KEY_ID=SOET6W3OR0I9UKCP6WEG AWS_SECRET_ACCESS_KEY=<redacted>
+export AWS_ACCESS_KEY_ID=<redacted-s3-access-key> AWS_SECRET_ACCESS_KEY=<redacted>
 
 # A) 模拟到期清理：当前无 >30d 备份 → 无输出（符合预期）
 $K barman-cloud-backup-delete -r "RECOVERY WINDOW OF 1 DAYS" --dry-run \

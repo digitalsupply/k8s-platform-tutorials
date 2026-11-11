@@ -1,0 +1,133 @@
+=== Prometheus build
+{"status":"success","data":{"version":"3.11.2","revision":"f0f0fdd679dcd6df320b0558b20919f7cd44c407","branch":"HEAD","buildUser":"root@d2684485c347","buildDate":"20260413-11:53:40","goVersion":"go1.26.2"}}
+=== TSDB head stats
+{
+  "numSeries": 260359,
+  "numLabelPairs": 14206,
+  "chunkCount": 567104,
+  "minTime": 1794362400043,
+  "maxTime": 1794367692656
+}
+
+top series by metric:
+  apiserver_request_duration_seconds_bucket 19440
+  apiserver_request_body_size_bytes_bucket 14496
+  etcd_request_duration_seconds_bucket 12800
+  apiserver_request_sli_duration_seconds_bucket 11024
+  apiserver_response_sizes_bucket 8256
+  apiserver_watch_cache_read_wait_seconds_bucket 7238
+  apiserver_watch_list_duration_seconds_bucket 6966
+  grpc_server_handled_total 5358
+  apiserver_watch_events_sizes_bucket 4185
+  kubernetes_feature_enabled 3270
+
+top label values:
+  __name__ 3736
+  name 1238
+  id 544
+  le 460
+  resource 448
+  path 311
+  replicaset 302
+  uid 291
+  address 271
+  container_id 244
+
+memory by label:
+  __name__ 12558222
+  instance 6536590
+  service 5777950
+  namespace 5053249
+  endpoint 4578103
+  job 4181818
+  pod 3906258
+  id 3518394
+  resource 2735787
+  container 2432285
+
+top label=value pairs:
+  endpoint=https 128433
+  namespace=default 127952
+  service=kubernetes 127932
+  job=apiserver 127929
+  instance=10.0.0.121:6443 57173
+  namespace=kube-system 50709
+  component=apiserver 50019
+  endpoint=http-metrics 46752
+  instance=10.0.0.120:6443 43772
+  version=v1 40112
+
+=== key queries
+--- prometheus_tsdb_head_series
+{'__name__': 'prometheus_tsdb_head_series', 'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 260327
+--- prometheus_tsdb_head_chunks
+{'__name__': 'prometheus_tsdb_head_chunks', 'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 567071
+--- prometheus_tsdb_storage_blocks_bytes
+{'__name__': 'prometheus_tsdb_storage_blocks_bytes', 'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 17861072569
+--- process_resident_memory_bytes{job="prometheus-prometheus",container="prometheus"}
+{'__name__': 'process_resident_memory_bytes', 'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 1602519040
+--- sum by (job) (scrape_samples_scraped)
+{'job': 'kubelet'} 52199
+{'job': 'ceph-mgr'} 0
+{'job': 'kube-etcd'} 4599
+{'job': 'kube-controller-manager'} 4940
+{'job': 'apiserver'} 192341
+{'job': 'kube-scheduler'} 5739
+{'job': 'node-exporter'} 9614
+{'job': 'cilium-agent'} 9406
+{'job': 'hubble-metrics'} 1664
+{'job': 'logging/loki-canary'} 396
+{'job': 'kafka/strimzi-cluster-operator'} 180
+{'job': 'cert-manager-cainjector'} 534
+{'job': 'tekton-pipelines-remote-resolvers'} 116
+{'job': 'kube-state-metrics'} 14164
+{'job': 'kube-system/vpa-recommender'} 472
+{'job': 'block-builder'} 1656
+{'job': 'kube-system/vpa-updater'} 148
+{'job': 'backend-scheduler'} 574
+{'job': 'querier'} 688
+{'job': 'cert-manager'} 82
+{'job': 'deeptutor-api'} 49
+{'job': 'live-store'} 2347
+{'job': 'kube-system/vpa-admission'} 406
+{'job': 'tekton-triggers-controller'} 243
+{'job': 'cert-manager-webhook'} 232
+{'job': 'cnpg-system/cnpg-controller-manager'} 806
+{'job': 'prometheus-operator'} 582
+{'job': 'argocd/argocd'} 3792
+{'job': 'otel-collector'} 1044
+{'job': 'prometheus-alertmanager'} 746
+{'job': 'tekton-events-controller'} 115
+{'job': 'logging/loki-results-cache'} 346
+{'job': 'otel-collector-monitoring'} 47
+{'job': 'logging/loki-write'} 1945
+{'job': 'compassio-backend'} 141
+{'job': 'metrics-generator'} 614
+{'job': 'logging/loki-chunks-cache'} 1288
+{'job': 'metallb-system/metallb-controller'} 52
+{'job': 'query-frontend'} 839
+{'job': 'logging/loki-read'} 2608
+{'job': 'logging/loki-backend'} 1603
+{'job': 'distributor'} 508
+{'job': 'tekton-pipelines-controller'} 121
+{'job': 'tekton-pipelines-webhook'} 557
+{'job': 'backend-worker'} 565
+{'job': 'cilium-operator'} 921
+{'job': 'coredns'} 635
+{'job': 'alloy'} 2062
+{'job': 'prometheus-prometheus'} 3543
+{'job': 'grafana-operator-metrics-service'} 912
+{'job': 'prometheus-grafana'} 3818
+{'job': 'traefik/traefik'} 615
+--- sum(increase(prometheus_tsdb_head_series_created_total[1h]))
+{} 7191.9327731092435
+--- sum(increase(prometheus_tsdb_head_series_removed_total[1h]))
+{} 662.5210084033613
+--- max_over_time(prometheus_tsdb_head_series[24h])
+{'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 260327
+--- min_over_time(prometheus_tsdb_head_series[24h])
+{'container': 'prometheus', 'endpoint': 'http-web', 'instance': '10.244.4.57:9090', 'job': 'prometheus-prometheus', 'namespace': 'monitoring', 'pod': 'prometheus-prometheus-prometheus-0', 'service': 'prometheus-prometheus'} 229356
+prometheus limits={"cpu":"2","memory":"4Gi"} requests={"cpu":"500m","memory":"2Gi"}
+config-reloader limits= requests=
+NAME                                                    CAP     CLASS
+prometheus-db-ceph-prometheus-prometheus-prometheus-0   100Gi   ceph-rbd-sc

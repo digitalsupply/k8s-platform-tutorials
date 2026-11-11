@@ -1,0 +1,71 @@
+=== black-box layer
+Probe CR: 0
+blackbox pods: 0
+
+=== white-box scrape objects
+ServiceMonitor: 27
+PodMonitor: 16
+up jobs: 52
+
+=== 分层 job 示例
+  alloy 6
+  apiserver 3
+  argocd/argocd 5
+  backend-scheduler 1
+  backend-worker 1
+  block-builder 3
+  ceph-mgr 1
+  cert-manager 1
+  cert-manager-cainjector 1
+  cert-manager-webhook 1
+  cilium-agent 6
+  cilium-operator 2
+  cnpg-system/cnpg-controller-manager 1
+  compassio-backend 1
+  coredns 2
+  deeptutor-api 1
+  distributor 1
+  grafana-operator-metrics-service 1
+  hubble-metrics 6
+  kafka/strimzi-cluster-operator 1
+  kube-controller-manager 3
+  kube-etcd 3
+  kube-scheduler 3
+  kube-state-metrics 1
+  kube-system/vpa-admission 2
+  kube-system/vpa-recommender 2
+  kube-system/vpa-updater 2
+  kubelet 18
+  live-store 3
+  logging/loki-backend 1
+  logging/loki-canary 3
+  logging/loki-chunks-cache 1
+  logging/loki-read 1
+  logging/loki-results-cache 1
+  logging/loki-write 1
+  metallb-system/metallb-controller 1
+  metrics-generator 1
+  node-exporter 6
+  otel-collector 1
+  otel-collector-monitoring 1
+
+=== business metrics
+--- compassio_users_total
+series 3
+  {'__name__': 'compassio_users_total', 'container': 'backend', 'endpoint': 'http', 'instance': '10.244.3.200:8000', 'job': 'compassio-backend', 'namespace': 'compassio', 'pod': 'compassio-backend-666f7ffdfc-j4vk4', 'role': 'teacher', 'service': 'compassio-backend'} 16
+  {'__name__': 'compassio_users_total', 'container': 'backend', 'endpoint': 'http', 'instance': '10.244.3.200:8000', 'job': 'compassio-backend', 'namespace': 'compassio', 'pod': 'compassio-backend-666f7ffdfc-j4vk4', 'role': 'school_admin', 'service': 'compassio-backend'} 1
+  {'__name__': 'compassio_users_total', 'container': 'backend', 'endpoint': 'http', 'instance': '10.244.3.200:8000', 'job': 'compassio-backend', 'namespace': 'compassio', 'pod': 'compassio-backend-666f7ffdfc-j4vk4', 'role': 'student', 'service': 'compassio-backend'} 887
+--- sum by (role) (compassio_users_total)
+series 3
+  {'role': 'teacher'} 16
+  {'role': 'school_admin'} 1
+  {'role': 'student'} 887
+--- sum by (status_code) (rate(compassio_http_requests_total[1h]))
+series 1
+  {} 145.7312149001806
+--- sum(increase(compassio_llm_requests_total[24h]))
+series 1
+  {} 27620.59048280653
+--- sum(increase(deeptutor_turns_finished_total[24h]))
+series 1
+  {} 3.0010420284821118

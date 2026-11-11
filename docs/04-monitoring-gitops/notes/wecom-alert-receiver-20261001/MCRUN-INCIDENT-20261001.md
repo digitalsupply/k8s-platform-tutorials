@@ -327,7 +327,7 @@ Job 相比裸 Pod 的优势：有 `backoffLimit` 重试、有 `ttlSecondsAfterFi
 `default/mc-cm` 与 `ConfigMap/logi` 中以**明文**存放 MinIO 凭据：
 
 ```
-access_key_id:     MSZ7Z25JM36ULGGDAIH7
+access_key_id:     <redacted-s3-access-key>
 secret_access_key: <redacted>
 ```
 

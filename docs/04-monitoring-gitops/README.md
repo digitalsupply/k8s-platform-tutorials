@@ -269,6 +269,7 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 
 | 文档 | 内容 |
 |---|---|
+| [10-observability-engineering.md](10-observability-engineering.md) | 可观测性工程：指标类型/基数爆炸、PromQL 坑、黑盒/白盒分层、日志生命周期、Trace 采样、长期存储、成本治理 |
 | [observability-lab.md](notes/observability-lab.md) | 可观测性实战实验手册（基于本集群实测） |
 | [observability-stack-full-audit.md](notes/observability-stack-full-audit.md) | LGTM 全栈审计：组件、链路、P0/P1 问题 |
 | [cluster-observability-report.md](notes/cluster-observability-report.md) | LGTM 运行状态与三支柱关联分析 |
@@ -323,6 +324,7 @@ curl -s 'http://tempo3-query-frontend.logging.svc:3200/api/search?limit=5'
 
 | 资产 | 说明 |
 |---|---|
+| [assets/observability-engineering/](assets/observability-engineering/README.md) | 基数/OOM/PromQL/日志/Trace 证据与 15 万 series 复现实验 |
 | [manifests/](manifests/) | 4 个 ArgoCD Application、6 个规则、10 个 CRD、stack values、wecom adapter |
 | [assets/alert-backup/](assets/alert-backup/) | 修复前的规则与 Prometheus CR 备份 |
 | [assets/wecom/](assets/wecom/) | Alertmanager 配置与 `apply.sh`（webhook 已脱敏） |

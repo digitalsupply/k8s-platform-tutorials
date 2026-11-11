@@ -1,0 +1,47 @@
+=== 高基数 label: path
+--- top 5 metric by series
+  cilium_k8s_client_api_latency_time_seconds_bucket 804
+  cilium_agent_api_process_time_seconds_bucket 748
+  kubelet_http_requests_duration_seconds_bucket 456
+  loki_source_file_file_bytes_total 246
+  cilium_operator_k8s_client_api_latency_time_seconds_bucket 156
+=== 高基数 label: id
+--- top 5 metric by series
+  container_blkio_device_usage_total 1306
+  container_memory_failures_total 870
+  container_fs_writes_bytes_total 653
+  container_fs_reads_bytes_total 653
+  container_fs_reads_total 653
+=== 高基数 label: uid
+--- top 5 metric by series
+  kube_pod_status_reason 695
+  kube_pod_status_phase 695
+  kube_pod_tolerations 428
+  kube_pod_status_ready 417
+  kube_pod_status_qos_class 417
+=== 高基数 label: container_id
+--- top 5 metric by series
+  kube_pod_container_info 165
+  kube_pod_init_container_info 48
+=== 高基数 label: address
+--- top 5 metric by series
+  kube_endpointslice_endpoints 169
+  node_network_info 140
+  kube_node_status_addresses 12
+
+=== 具体高基数指标的总 series
+container_blkio_device_usage_total                           1306
+kube_pod_status_reason                                       695
+cilium_k8s_client_api_latency_time_seconds_bucket            804
+apiserver_request_duration_seconds_bucket                    19440
+kube_pod_container_info                                      165
+
+=== series churn / 24h 增长
+--- sum(increase(prometheus_tsdb_head_series_created_total[1h]))
+7224.201680672269
+--- sum(increase(prometheus_tsdb_head_series_removed_total[1h]))
+662.5210084033613
+--- max_over_time(prometheus_tsdb_head_series[24h])
+260359
+--- min_over_time(prometheus_tsdb_head_series[24h])
+229356

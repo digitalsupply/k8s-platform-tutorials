@@ -1,0 +1,28 @@
+=== Prometheus
+head series              : 260359
+RSS                      : 1573176 KiB = 1.50 GiB
+TSDB blocks bytes        : 17861072569 B = 16.63 GiB
+retention                : 15d / 25GiB (local PVC 100Gi)
+disk per series (15d)    : 67.0 KiB
+disk per series per day  : 4.47 KiB
+RSS per series           : 6187 B
+24h series min/max       : 229356 / 260359
+24h series growth        : 31003 (13.5%)
+
+=== Loki
+ingest 24h               : 624505904 B = 595.6 MiB
+lines 24h                : 2138546
+avg rate                 : 7.1 KiB/s
+retention                : 120h (5d)
+steady-state raw (5d)    : 2.91 GiB (before index/compression)
+
+=== Tempo
+spans 24h                : 68544
+spans/s                  : 0.793
+retention                : 120h (5d)
+
+=== 结论
+- 指标: 26 万 series, 17.9GB/15d, RSS 1.57GiB/4GiB; 24h +13.5% 是主要风险
+- 日志: 0.6GB/day, 5d 约 3GB; 日志量不是当前存储大头
+- Trace: 68k spans/day, 量很小; 但 100% 采样且 spanmetrics 无数据
+- 长期存储: Thanos/VM/Mimir 均未部署, 只有 Prometheus 本地 15d

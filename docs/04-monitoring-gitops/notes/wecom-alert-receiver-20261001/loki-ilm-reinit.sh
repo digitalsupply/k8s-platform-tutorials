@@ -3,7 +3,7 @@
 # 已适配 minio/mc:latest 镜像：镜像内无 python3 / sed / grep / awk，只有 shell 内建 + cut/tr/head/tail
 # 注意：mc ilm rule add 不支持 --id，规则 ID 由服务端随机生成
 set -e
-mc alias set la http://10.0.0.31:7480 MSZ7Z25JM36ULGGDAIH7 pEvDsy91zGGp5BgyTOqO0koaMx6OaPpad6NeTRHt >/dev/null
+mc alias set la http://10.0.0.31:7480 "${S3_ACCESS_KEY:?set S3_ACCESS_KEY}" "${S3_SECRET_KEY:?set S3_SECRET_KEY}" >/dev/null
 
 echo "=== rules before ==="
 mc ilm rule ls la/loki-chunks

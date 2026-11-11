@@ -1,0 +1,24 @@
+=== Loki (safe fields only; credentials omitted)
+      bucketnames: loki-chunks
+      bucketnames: loki-ruler
+      endpoint: http://10.0.0.31:7480
+  max_query_lookback: 120h
+  reject_old_samples_max_age: 120h
+  reject_old_samples: true
+  retention_enabled: true
+  retention_period: 120h
+
+=== Alloy pipeline
+stage.cri: 1
+stage.json: 0
+sampling: 0
+drop: 1
+older_than: 1
+
+=== Loki volume (Prometheus, 24h)
+--- sum(increase(loki_distributor_bytes_received_total[24h]))
+624505904.6437685
+--- sum(increase(loki_distributor_lines_received_total[24h]))
+2138546.4766048463
+--- sum by (job) (rate(loki_distributor_bytes_received_total[5m]))
+7700.266293337481
