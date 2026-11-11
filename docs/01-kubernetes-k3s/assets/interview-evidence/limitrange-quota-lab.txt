@@ -1,0 +1,43 @@
+=== apply
+namespace/interview-lab created
+limitrange/lab-defaults created
+resourcequota/lab-quota created
+pod/lab-pause created
+
+=== pod resources/qos
+{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}
+Guaranteed
+
+=== quota
+status:
+  hard:
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    pods: "5"
+    requests.cpu: "1"
+    requests.memory: 1Gi
+  used:
+    limits.cpu: 100m
+    limits.memory: 128Mi
+    pods: "1"
+    requests.cpu: 100m
+    requests.memory: 128Mi
+=== limitrange
+spec:
+  limits:
+  - default:
+      cpu: 100m
+      memory: 128Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    max:
+      cpu: 500m
+      memory: 512Mi
+    min:
+      cpu: 10m
+      memory: 16Mi
+    type: Container
+
+$ kubectl get ns interview-lab
+Error from server (NotFound): namespaces "interview-lab" not found

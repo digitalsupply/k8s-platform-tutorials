@@ -1,0 +1,26 @@
+=== deployment/rs/pods
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS                  IMAGES                                                                                                           SELECTOR
+deployment.apps/frpc         0/0     0            0           27d   frpc                        192.168.67.202:8443/openwebui/frpc:v0.61.2                                                                       app.kubernetes.io/name=frpc
+deployment.apps/open-webui   0/0     0            0           28d   open-webui,opencode-proxy   192.168.67.202:8443/openwebui/open-webui:a077c804,192.168.67.202:8443/openwebui/nginx-unprivileged:1.29-alpine   app.kubernetes.io/name=open-webui
+
+NAME                                    DESIRED   CURRENT   READY   AGE   CONTAINERS                  IMAGES                                                                                                           SELECTOR
+replicaset.apps/frpc-57875d6f47         0         0         0       27d   frpc                        192.168.67.202:8443/openwebui/frpc:v0.61.2                                                                       app.kubernetes.io/name=frpc,pod-template-hash=57875d6f47
+replicaset.apps/frpc-76955db488         0         0         0       27d   frpc                        192.168.67.202:8443/openwebui/frpc:v0.61.2                                                                       app.kubernetes.io/name=frpc,pod-template-hash=76955db488
+replicaset.apps/open-webui-55578fd8bf   0         0         0       28d   open-webui,opencode-proxy   192.168.67.202:8443/openwebui/open-webui:a077c804,192.168.67.202:8443/openwebui/nginx-unprivileged:1.29-alpine   app.kubernetes.io/name=open-webui,pod-template-hash=55578fd8bf
+replicaset.apps/open-webui-597749589d   0         0         0       28d   open-webui                  192.168.67.202:8443/openwebui/open-webui:a077c804                                                                app.kubernetes.io/name=open-webui,pod-template-hash=597749589d
+replicaset.apps/open-webui-5cf75f444f   0         0         0       15d   open-webui,opencode-proxy   192.168.67.202:8443/openwebui/open-webui:a077c804,192.168.67.202:8443/openwebui/nginx-unprivileged:1.29-alpine   app.kubernetes.io/name=open-webui,pod-template-hash=5cf75f444f
+replicaset.apps/open-webui-77b4646b8    0         0         0       28d   open-webui,opencode-proxy   192.168.67.202:8443/openwebui/open-webui:a077c804,192.168.67.202:8443/openwebui/nginx-unprivileged:1.29-alpine   app.kubernetes.io/name=open-webui,pod-template-hash=77b4646b8
+replicaset.apps/open-webui-7d57b65497   0         0         0       28d   open-webui                  192.168.67.202:8443/openwebui/open-webui:latest                                                                  app.kubernetes.io/name=open-webui,pod-template-hash=7d57b65497
+replicaset.apps/open-webui-8447fcd8f8   0         0         0       28d   open-webui                  192.168.67.202:8443/openwebui/open-webui:manual-test1                                                            app.kubernetes.io/name=open-webui,pod-template-hash=8447fcd8f8
+
+=== owner refs
+frpc-57875d6f47 [('Deployment', 'frpc')]
+frpc-76955db488 [('Deployment', 'frpc')]
+open-webui-55578fd8bf [('Deployment', 'open-webui')]
+open-webui-597749589d [('Deployment', 'open-webui')]
+open-webui-5cf75f444f [('Deployment', 'open-webui')]
+
+=== controller manager pod args
+"--cluster-cidr=10.244.0.0/16"
+"--controllers=*
+"--leader-elect=true"

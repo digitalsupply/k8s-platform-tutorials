@@ -246,6 +246,7 @@ Calico `3.32.2`，Prometheus 125/125 targets up；6/6 节点均为 `x86-64-v3`�
 | [pod-load-balancing-plan-20261003.md](notes/pod-load-balancing-plan-20261003.md) | 工作节点 Pod 负载均衡方案 |
 | [compassio-autoscaling-analysis-20261109.md](notes/compassio-autoscaling-analysis-20261109.md) | HPA vs VPA：按 LLM 等待 P95 扩容，CPU 兜底 |
 | [cpu-v3-migration-2026-11-09.md](notes/cpu-v3-migration-2026-11-09.md) | 6 台 VM 升 x86-64-v3：CNPG failover、镜像缓存、DiskPressure |
+| [10-k8s-core-evidence.md](10-k8s-core-evidence.md) | 控制面/节点/资源/QoS/PDB/探针/升级/证书/备份/扩展/多租户实测 |
 | [upgrade-1.29-to-1.35/](notes/upgrade-1.29-to-1.35/) | 9 篇完整升级记录：盘点、方案、总纲、4 条线执行报告 |
 
 升级记录建议按顺序读：
@@ -271,6 +272,8 @@ Calico `3.32.2`，Prometheus 125/125 targets up；6/6 节点均为 `x86-64-v3`�
 | [scripts/migrate_vm_cpu_v3.sh](scripts/migrate_vm_cpu_v3.sh) | PVE 上逐台 drain/stop/set cpu/start/uncordon（默认 dry-run） |
 | [scripts/fix_images.py](scripts/fix_images.py) | 节点间导出/导入镜像，解决注册中心不可达与缓存不均 |
 | [assets/cpu-v3/current-node-cpu.txt](assets/cpu-v3/current-node-cpu.txt) | 2026-11-10 CPU 基线快照 |
+| [assets/interview-evidence/](assets/interview-evidence/m01-evidence.txt) | K8s 核心考点真机输出（控制面/etcd/QoS/PDB/证书/备份） |
+| [scripts/collect_k8s_interview_evidence.sh](scripts/collect_k8s_interview_evidence.sh) | 只读采集 K8s 核心考点证据 |
 
 ```bash
 # 查看 Pod 在宿主机上的进程链

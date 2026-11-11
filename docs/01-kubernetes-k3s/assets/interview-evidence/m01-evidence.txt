@@ -1,0 +1,691 @@
+
+
+===== 0. 版本/节点 =====
+
+$ date -Is; hostname
+2026-11-11T09:46:07+08:00
+m01
+
+$ kubectl version 2>/dev/null | head -5
+Client Version: v1.35.9
+Kustomize Version: v5.7.1
+Server Version: v1.35.9
+
+$ kubeadm version -o short 2>/dev/null
+v1.35.9
+
+$ kubectl get nodes -o wide
+NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
+m01        Ready    control-plane   298d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
+master01   Ready    control-plane   298d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+master02   Ready    control-plane   298d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker01   Ready    <none>          298d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker02   Ready    <none>          298d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+worker03   Ready    <none>          298d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
+
+
+===== 1. 控制面静态 Pod 参数 =====
+
+$ kubectl -n kube-system get pod kube-apiserver-m01 -o jsonpath='{.spec.containers[0].command}' 2>/dev/null | tr ',' '\n' | sed 's/^\["//; s/"\]$//'
+kube-apiserver"
+"--advertise-address=10.0.0.61"
+"--allow-privileged=true"
+"--client-ca-file=/etc/kubernetes/pki/ca.crt"
+"--enable-admission-plugins=NodeRestriction"
+"--enable-bootstrap-token-auth=true"
+"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt"
+"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt"
+"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key"
+"--etcd-servers=https://127.0.0.1:2379"
+"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt"
+"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key"
+"--kubelet-preferred-address-types=InternalIP
+ExternalIP
+Hostname"
+"--proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt"
+"--proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key"
+"--requestheader-allowed-names=front-proxy-client"
+"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt"
+"--requestheader-extra-headers-prefix=X-Remote-Extra-"
+"--requestheader-group-headers=X-Remote-Group"
+"--requestheader-username-headers=X-Remote-User"
+"--secure-port=6443"
+"--service-account-issuer=https://kubernetes.default.svc.cluster.local"
+"--service-account-key-file=/etc/kubernetes/pki/sa.pub"
+"--service-account-signing-key-file=/etc/kubernetes/pki/sa.key"
+"--service-cluster-ip-range=10.96.0.0/12"
+"--tls-cert-file=/etc/kubernetes/pki/apiserver.crt"
+"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key"
+"--authorization-mode=Node
+RBAC
+$ kubectl -n kube-system get pod etcd-m01 -o jsonpath='{.spec.containers[0].command}' 2>/dev/null | tr ',' '\n' | sed 's/^\["//; s/"\]$//'
+etcd"
+"--advertise-client-urls=https://10.0.0.61:2379"
+"--cert-file=/etc/kubernetes/pki/etcd/server.crt"
+"--client-cert-auth=true"
+"--data-dir=/var/lib/etcd"
+"--feature-gates=InitialCorruptCheck=true"
+"--initial-advertise-peer-urls=https://10.0.0.61:2380"
+"--initial-cluster=m01=https://10.0.0.61:2380"
+"--key-file=/etc/kubernetes/pki/etcd/server.key"
+"--listen-client-urls=https://127.0.0.1:2379
+https://10.0.0.61:2379"
+"--listen-metrics-urls=http://127.0.0.1:2381
+http://10.0.0.61:2381"
+"--listen-peer-urls=https://10.0.0.61:2380"
+"--name=m01"
+"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt"
+"--peer-client-cert-auth=true"
+"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key"
+"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt"
+"--snapshot-count=10000"
+"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt"
+"--watch-progress-notify-interval=5s
+$ kubectl -n kube-system get pod kube-scheduler-m01 -o jsonpath='{.spec.containers[0].command}' 2>/dev/null | tr ',' '\n' | sed 's/^\["//; s/"\]$//'
+kube-scheduler"
+"--authentication-kubeconfig=/etc/kubernetes/scheduler.conf"
+"--authorization-kubeconfig=/etc/kubernetes/scheduler.conf"
+"--bind-address=0.0.0.0"
+"--kubeconfig=/etc/kubernetes/scheduler.conf"
+"--leader-elect=true
+$ kubectl -n kube-system get pod kube-controller-manager-m01 -o jsonpath='{.spec.containers[0].command}' 2>/dev/null | tr ',' '\n' | sed 's/^\["//; s/"\]$//'
+kube-controller-manager"
+"--allocate-node-cidrs=true"
+"--authentication-kubeconfig=/etc/kubernetes/controller-manager.conf"
+"--authorization-kubeconfig=/etc/kubernetes/controller-manager.conf"
+"--bind-address=0.0.0.0"
+"--client-ca-file=/etc/kubernetes/pki/ca.crt"
+"--cluster-cidr=10.244.0.0/16"
+"--cluster-name=kubernetes"
+"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt"
+"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key"
+"--controllers=*
+bootstrapsigner
+tokencleaner"
+"--kubeconfig=/etc/kubernetes/controller-manager.conf"
+"--leader-elect=true"
+"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt"
+"--root-ca-file=/etc/kubernetes/pki/ca.crt"
+"--service-account-private-key-file=/etc/kubernetes/pki/sa.key"
+"--service-cluster-ip-range=10.96.0.0/12"
+"--use-service-account-credentials=true
+
+===== 2. apiserver：认证/授权/准入/健康 =====
+
+$ kubectl get --raw /readyz?verbose 2>/dev/null | tail -20
+[+]poststarthook/start-kube-apiserver-identity-lease-garbage-collector ok
+[+]poststarthook/start-legacy-token-tracking-controller ok
+[+]poststarthook/start-service-ip-repair-controllers ok
+[+]poststarthook/rbac/bootstrap-roles ok
+[+]poststarthook/scheduling/bootstrap-system-priority-classes ok
+[+]poststarthook/priority-and-fairness-config-producer ok
+[+]poststarthook/bootstrap-controller ok
+[+]poststarthook/start-kubernetes-service-cidr-controller ok
+[+]poststarthook/aggregator-reload-proxy-client-cert ok
+[+]poststarthook/start-kube-aggregator-informers ok
+[+]poststarthook/apiservice-status-local-available-controller ok
+[+]poststarthook/apiservice-status-remote-available-controller ok
+[+]poststarthook/apiservice-registration-controller ok
+[+]poststarthook/apiservice-discovery-controller ok
+[+]poststarthook/kube-apiserver-autoregistration ok
+[+]autoregister-completion ok
+[+]poststarthook/apiservice-openapi-controller ok
+[+]poststarthook/apiservice-openapiv3-controller ok
+[+]shutdown ok
+readyz check passed
+
+$ kubectl auth can-i get pods -n default
+yes
+
+$ kubectl auth can-i create pods -n kube-system
+yes
+
+$ kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations 2>/dev/null
+NAME                                                                                                          WEBHOOKS   AGE
+validatingwebhookconfiguration.admissionregistration.k8s.io/cert-manager-webhook                              1          252d
+validatingwebhookconfiguration.admissionregistration.k8s.io/cnpg-validating-webhook-configuration             5          222d
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.operator.tekton.dev                1          37h
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.pipeline.tekton.dev                1          3d11h
+validatingwebhookconfiguration.admissionregistration.k8s.io/config.webhook.triggers.tekton.dev                1          3d11h
+validatingwebhookconfiguration.admissionregistration.k8s.io/metallb-webhook-configuration                     7          297d
+validatingwebhookconfiguration.admissionregistration.k8s.io/otel-operator-opentelemetry-operator-validation   4          252d
+validatingwebhookconfiguration.admissionregistration.k8s.io/prometheus-admission                              2          292d
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.operator.tekton.dev            1          37h
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.pipeline.tekton.dev            1          3d11h
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.pruner.tekton.dev              2          3d11h
+validatingwebhookconfiguration.admissionregistration.k8s.io/validation.webhook.triggers.tekton.dev            1          3d11h
+
+NAME                                                                                                      WEBHOOKS   AGE
+mutatingwebhookconfiguration.admissionregistration.k8s.io/cert-manager-webhook                            1          252d
+mutatingwebhookconfiguration.admissionregistration.k8s.io/cnpg-mutating-webhook-configuration             4          222d
+mutatingwebhookconfiguration.admissionregistration.k8s.io/otel-operator-opentelemetry-operator-mutation   3          252d
+mutatingwebhookconfiguration.admissionregistration.k8s.io/prometheus-admission                            1          292d
+mutatingwebhookconfiguration.admissionregistration.k8s.io/proxy.operator.tekton.dev                       1          3d11h
+mutatingwebhookconfiguration.admissionregistration.k8s.io/vpa-vertical-pod-autoscaler-webhook-config      1          223d
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.operator.tekton.dev                     1          37h
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.pipeline.tekton.dev                     1          3d11h
+mutatingwebhookconfiguration.admissionregistration.k8s.io/webhook.triggers.tekton.dev                     1          3d11h
+
+$ kubectl get apiservice 2>/dev/null | head -20
+NAME                                SERVICE                         AVAILABLE   AGE
+v1.                                 Local                           True        298d
+v1.acme.cert-manager.io             Local                           True        252d
+v1.admissionregistration.k8s.io     Local                           True        298d
+v1.apiextensions.k8s.io             Local                           True        298d
+v1.apps                             Local                           True        298d
+v1.authentication.k8s.io            Local                           True        298d
+v1.authorization.k8s.io             Local                           True        298d
+v1.autoscaling                      Local                           True        298d
+v1.autoscaling.k8s.io               Local                           True        223d
+v1.barmancloud.cnpg.io              Local                           True        2d15h
+v1.batch                            Local                           True        298d
+v1.cert-manager.io                  Local                           True        252d
+v1.certificates.k8s.io              Local                           True        298d
+v1.coordination.k8s.io              Local                           True        298d
+v1.core.strimzi.io                  Local                           True        157d
+v1.csi.ceph.io                      Local                           True        39h
+v1.discovery.k8s.io                 Local                           True        298d
+v1.events.k8s.io                    Local                           True        298d
+v1.flowcontrol.apiserver.k8s.io     Local                           True        298d
+
+
+===== 3. etcd：健康/状态/成员/告警/指标 =====
+
+$ kubectl -n kube-system exec etcd-m01 -- etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key endpoint health 2>&1
+127.0.0.1:2379 is healthy: successfully committed proposal: took = 13.552413ms
+
+$ kubectl -n kube-system exec etcd-m01 -- etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key endpoint status --write-out=table 2>&1
++----------------+------------------+---------+-----------------+---------+--------+-----------------------+--------+-----------+------------+-----------+------------+--------------------+--------+--------------------------+-------------------+
+|    ENDPOINT    |        ID        | VERSION | STORAGE VERSION | DB SIZE | IN USE | PERCENTAGE NOT IN USE | QUOTA  | IS LEADER | IS LEARNER | RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS | DOWNGRADE TARGET VERSION | DOWNGRADE ENABLED |
++----------------+------------------+---------+-----------------+---------+--------+-----------------------+--------+-----------+------------+-----------+------------+--------------------+--------+--------------------------+-------------------+
+| 127.0.0.1:2379 | 33b9f76d476bb4e1 |   3.6.6 |           3.6.0 |  133 MB |  37 MB |                   73% | 2.1 GB |     false |      false |       116 |   64405638 |           64405638 |        |                          |             false |
++----------------+------------------+---------+-----------------+---------+--------+-----------------------+--------+-----------+------------+-----------+------------+--------------------+--------+--------------------------+-------------------+
+
+$ kubectl -n kube-system exec etcd-m01 -- etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key member list --write-out=table 2>&1
++------------------+---------+----------+-------------------------+-------------------------+------------+
+|        ID        | STATUS  |   NAME   |       PEER ADDRS        |      CLIENT ADDRS       | IS LEARNER |
++------------------+---------+----------+-------------------------+-------------------------+------------+
+| 33b9f76d476bb4e1 | started |      m01 |  https://10.0.0.61:2380 |  https://10.0.0.61:2379 |      false |
+| 5c24992f12ba0ec2 | started | master02 | https://10.0.0.120:2380 | https://10.0.0.120:2379 |      false |
+| 60d3248b467e33c9 | started | master01 | https://10.0.0.121:2380 | https://10.0.0.121:2379 |      false |
++------------------+---------+----------+-------------------------+-------------------------+------------+
+
+$ kubectl -n kube-system exec etcd-m01 -- etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key alarm list 2>&1
+
+$ kubectl get --raw "/api/v1/namespaces/kube-system/pods/etcd-m01:2381/proxy/metrics" 2>/dev/null | grep -E "^etcd_disk_wal_fsync_duration_seconds|^etcd_disk_backend_commit_duration_seconds|^etcd_server_has_leader|^etcd_mvcc_db_total_size" | grep -v "_bucket" | head -20
+etcd_disk_backend_commit_duration_seconds_sum 672.5385440750118
+etcd_disk_backend_commit_duration_seconds_count 720447
+etcd_disk_wal_fsync_duration_seconds_sum 765.7172911219977
+etcd_disk_wal_fsync_duration_seconds_count 1.63862e+06
+etcd_mvcc_db_total_size_in_bytes 1.32861952e+08
+etcd_mvcc_db_total_size_in_use_in_bytes 3.678208e+07
+etcd_server_has_leader 1
+
+
+===== 4. etcd 备份 =====
+
+$ kubectl -n etcd-backup get cronjob,pods 2>/dev/null
+NAME                          SCHEDULE    TIMEZONE        SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/etcd-snapshot   5 * * * *   Asia/Shanghai   False     0        41m             42h
+
+NAME                               READY   STATUS      RESTARTS   AGE
+pod/etcd-snapshot-29905865-qdddb   0/1     Completed   0          161m
+pod/etcd-snapshot-29905925-xcbvm   0/1     Completed   0          101m
+pod/etcd-snapshot-29905985-ptlcl   0/1     Completed   0          41m
+
+$ kubectl -n etcd-backup logs -l job-name --tail=20 2>/dev/null | tail -30
+{"level":"info","ts":"2026-11-10T23:05:00.938229Z","caller":"snapshot/v3_snapshot.go:73","msg":"fetching snapshot","endpoint":"https://127.0.0.1:2379"}
+{"level":"info","ts":"2026-11-10T23:05:03.91754Z","logger":"client","caller":"v3@v3.5.12/maintenance.go:220","msg":"completed snapshot read; closing"}
+{"level":"info","ts":"2026-11-10T23:05:04.002902Z","caller":"snapshot/v3_snapshot.go:88","msg":"fetched snapshot","endpoint":"https://127.0.0.1:2379","size":"133 MB","took":"3 seconds ago"}
+{"level":"info","ts":"2026-11-10T23:05:04.003101Z","caller":"snapshot/v3_snapshot.go:97","msg":"saved","path":"/backup/hourly/etcd-20261111-0705.db"}
+Snapshot saved at /backup/hourly/etcd-20261111-0705.db
+Deprecated: Use `etcdutl snapshot status` instead.
+
++----------+----------+------------+------------+
+|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
++----------+----------+------------+------------+
+| 3371d971 | 60054927 |       8228 |     133 MB |
++----------+----------+------------+------------+
+upload: var/backups/etcd/hourly/etcd-20261111-0705.db to s3://<bucket>/hourly/etcd-20261111-0705.db
+snapshot + upload ok: /backup/hourly/etcd-20261111-0705.db
+{"level":"info","ts":"2026-11-11T00:05:00.920186Z","caller":"snapshot/v3_snapshot.go:65","msg":"created temporary db file","path":"/backup/hourly/etcd-20261111-0805.db.part"}
+{"level":"info","ts":"2026-11-11T00:05:00.934629Z","logger":"client","caller":"v3@v3.5.12/maintenance.go:212","msg":"opened snapshot stream; downloading"}
+{"level":"info","ts":"2026-11-11T00:05:00.934809Z","caller":"snapshot/v3_snapshot.go:73","msg":"fetching snapshot","endpoint":"https://127.0.0.1:2379"}
+{"level":"info","ts":"2026-11-11T00:05:04.325349Z","logger":"client","caller":"v3@v3.5.12/maintenance.go:220","msg":"completed snapshot read; closing"}
+{"level":"info","ts":"2026-11-11T00:05:04.398435Z","caller":"snapshot/v3_snapshot.go:88","msg":"fetched snapshot","endpoint":"https://127.0.0.1:2379","size":"133 MB","took":"3 seconds ago"}
+{"level":"info","ts":"2026-11-11T00:05:04.398613Z","caller":"snapshot/v3_snapshot.go:97","msg":"saved","path":"/backup/hourly/etcd-20261111-0805.db"}
+Snapshot saved at /backup/hourly/etcd-20261111-0805.db
+Deprecated: Use `etcdutl snapshot status` instead.
+
++---------+----------+------------+------------+
+|  HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
++---------+----------+------------+------------+
+| 7cbd7c5 | 60102131 |       8234 |     133 MB |
++---------+----------+------------+------------+
+upload: var/backups/etcd/hourly/etcd-20261111-0805.db to s3://<bucket>/hourly/etcd-20261111-0805.db
+snapshot + upload ok: /backup/hourly/etcd-20261111-0805.db
+
+
+===== 5. kubelet / CRI / CNI / CSI =====
+
+$ systemctl show kubelet -p ExecStart -p LimitNOFILE 2>/dev/null
+ExecStart={ path=/usr/bin/kubelet ; argv[]=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS ; ignore_errors=no ; start_time=[Mon 2026-11-09 20:53:02 CST] ; stop_time=[n/a] ; pid=925 ; code=(null) ; status=0/0 }
+LimitNOFILE=524288
+
+$ grep -E "cgroupDriver|containerRuntimeEndpoint|clusterDNS|systemReserved|kubeReserved|evictionHard" /var/lib/kubelet/config.yaml 2>/dev/null | head -30
+cgroupDriver: systemd
+clusterDNS:
+containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
+systemReserved:
+kubeReserved:
+evictionHard:
+
+$ crictl version 2>/dev/null; crictl info 2>/dev/null | head -30
+Version:  0.1.0
+RuntimeName:  containerd
+RuntimeVersion:  v2.3.2
+RuntimeApiVersion:  v1
+{
+  "status": {
+    "conditions": [
+      {
+        "type": "RuntimeReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "NetworkReady",
+        "status": true,
+        "reason": "",
+        "message": ""
+      },
+      {
+        "type": "ContainerdHasNoDeprecationWarnings",
+        "status": false,
+        "reason": "ContainerdHasDeprecationWarnings",
+        "message": "{\"io.containerd.deprecation/enable-cdi\":\"The `enable_cdi` property of `[plugins.\\\"io.containerd.cri.v1.runtime\\\"]` is deprecated, will be removed in containerd v2.3, and CDI support will always be enabled.\"}"
+      }
+    ]
+  },
+  "runtimeHandlers": [
+    {
+      "features": {
+        "recursive_read_only_mounts": true,
+        "user_namespaces": true
+      }
+    },
+
+$ ls -l /etc/cni/net.d 2>/dev/null; cat /etc/cni/net.d/*.conflist 2>/dev/null | head -40
+总用量 4
+-rw------- 1 root root 191 11月  9 07:23 05-cilium.conflist
+
+{
+  "cniVersion": "1.0.0",
+  "name": "cilium",
+  "plugins": [
+    {
+       "type": "cilium-cni",
+       "enable-debug": false,
+       "log-file": "/var/run/cilium/cilium-cni.log"
+    }
+  ]
+}
+$ kubectl -n kube-system get ds cilium -o wide 2>/dev/null
+NAME     DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE    CONTAINERS     IMAGES                                                                                                  SELECTOR
+cilium   6         6         6       6            6           kubernetes.io/os=linux   2d2h   cilium-agent   quay.io/cilium/cilium:v1.20.4@sha256:20fe92e4c86641233a450098c158d2d29085f3419931ab6bf681d2485dedf16e   k8s-app=cilium
+
+$ kubectl get csidriver 2>/dev/null; kubectl get sc 2>/dev/null
+NAME               ATTACHREQUIRED   PODINFOONMOUNT   STORAGECAPACITY   TOKENREQUESTS   REQUIRESREPUBLISH   MODES        AGE
+rbd.csi.ceph.com   true             true             false             <unset>         false               Persistent   38h
+NAME          PROVISIONER        RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+ceph-rbd-sc   rbd.csi.ceph.com   Retain          Immediate           true                   221d
+nfs-sc        example.com/nfs    Delete          Immediate           false                  296d
+
+
+===== 6. NPD / kured / Velero / KEDA =====
+
+$ kubectl get ds -A 2>/dev/null | grep -Ei "node-problem|npd|kured" || echo "NPD/kured not found"
+NPD/kured not found
+
+$ kubectl get ns velero keda 2>/dev/null; kubectl get crd 2>/dev/null | grep -Ei "velero|keda" || echo "Velero/KEDA not found"
+Velero/KEDA not found
+
+
+===== 7. requests/limits/QoS =====
+
+$ kubectl get pods -A -o json 2>/dev/null | python3 -c "
+import json,sys,collections
+d=json.load(sys.stdin); c=collections.Counter(); no_req=0; no_lim=0
+for p in d[\"items\"]:
+  c[p.get(\"status\",{}).get(\"qosClass\",\"Unknown\")]+=1
+  for x in p[\"spec\"].get(\"containers\",[]):
+    r=x.get(\"resources\",{}); 
+    if not r.get(\"requests\"): no_req+=1
+    if not r.get(\"limits\"): no_lim+=1
+print(\"QoS:\",dict(c)); print(\"containers_without_requests:\",no_req); print(\"containers_without_limits:\",no_lim)
+"
+QoS: {'BestEffort': 73, 'Burstable': 65}
+containers_without_requests: 98
+containers_without_limits: 112
+
+$ kubectl describe node m01 2>/dev/null | sed -n "/Allocated resources/,/Events/p" | head -30
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                855m (24%)  1350m (38%)
+  memory             270Mi (6%)  1856Mi (47%)
+  ephemeral-storage  0 (0%)      0 (0%)
+  hugepages-2Mi      0 (0%)      0 (0%)
+Events:              <none>
+
+
+===== 8. LimitRange / ResourceQuota / PDB =====
+
+$ kubectl get limitrange,resourcequota,pdb -A 2>/dev/null
+NAMESPACE   NAME                            CREATED AT
+compassio   limitrange/compassio-defaults   2026-10-26T05:25:52Z
+
+NAMESPACE   NAME                            REQUEST                                                                                    LIMIT                                             AGE
+compassio   resourcequota/compassio-quota   persistentvolumeclaims: 0/4, pods: 4/20, requests.cpu: 90m/1, requests.memory: 448Mi/3Gi   limits.cpu: 900m/10, limits.memory: 1408Mi/10Gi   15d
+
+NAMESPACE       NAME                                                                          MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+cnpg-system     poddisruptionbudget.policy/pg16-ceph-primary                                  1               N/A               0                     221d
+compassio       poddisruptionbudget.policy/compassio-backend                                  N/A             1                 1                     15d
+compassio       poddisruptionbudget.policy/compassio-frontend                                 N/A             1                 1                     15d
+kafka           poddisruptionbudget.policy/my-cluster-entity-operator                         0               N/A               1                     157d
+kafka           poddisruptionbudget.policy/my-cluster-kafka                                   0               N/A               1                     157d
+kube-system     poddisruptionbudget.policy/vpa-vertical-pod-autoscaler-admission-controller   1               N/A               1                     223d
+kube-system     poddisruptionbudget.policy/vpa-vertical-pod-autoscaler-recommender            1               N/A               1                     223d
+kube-system     poddisruptionbudget.policy/vpa-vertical-pod-autoscaler-updater                1               N/A               1                     223d
+logging         poddisruptionbudget.policy/tempo3-block-builder                               N/A             1                 1                     43d
+logging         poddisruptionbudget.policy/tempo3-live-store                                  N/A             1                 1                     43d
+opentelemetry   poddisruptionbudget.policy/otel-collector                                     N/A             1                 1                     218d
+
+
+===== 9. 探针/优雅退出/拓扑打散 =====
+
+$ kubectl get deploy -A -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin); l=r=s=0; pre=0; grace={}
+for x in d[\"items\"]:
+  sp=x[\"spec\"]; tpl=sp.get(\"template\",{}).get(\"spec\",{})
+  grace[x[\"metadata\"][\"namespace\"]+\"/\"+x[\"metadata\"][\"name\"]]=tpl.get(\"terminationGracePeriodSeconds\",30)
+  for c in tpl.get(\"containers\",[]):
+    if c.get(\"livenessProbe\"): l+=1
+    if c.get(\"readinessProbe\"): r+=1
+    if c.get(\"startupProbe\"): s+=1
+    if c.get(\"lifecycle\",{}).get(\"preStop\"): pre+=1
+print(\"liveness\",l,\"readiness\",r,\"startup\",s,\"preStop\",pre)
+print(\"grace samples\",dict(list(grace.items())[:10]))
+"
+liveness 51 readiness 53 startup 10 preStop 1
+grace samples {'argocd/argocd-applicationset-controller': 30, 'argocd/argocd-dex-server': 30, 'argocd/argocd-notifications-controller': 30, 'argocd/argocd-redis': 30, 'argocd/argocd-repo-server': 30, 'argocd/argocd-server': 30, 'ceph-csi-operator-system/ceph-csi-operator-controller-manager': 10, 'ceph-csi-rbd/rbd.csi.ceph.com-ctrlplugin': 30, 'cert-manager/cert-manager': 30, 'cert-manager/cert-manager-cainjector': 30}
+
+$ kubectl get deploy -A -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin); n=0
+for x in d[\"items\"]:
+  tpl=x[\"spec\"].get(\"template\",{}).get(\"spec\",{})
+  if tpl.get(\"topologySpreadConstraints\") or tpl.get(\"affinity\"):
+    print(x[\"metadata\"][\"namespace\"]+\"/\"+x[\"metadata\"][\"name\"], \"topology\" if tpl.get(\"topologySpreadConstraints\") else \"affinity\"); n+=1
+print(\"with scheduling constraints:\",n)
+"
+argocd/argocd-applicationset-controller affinity
+argocd/argocd-dex-server affinity
+argocd/argocd-notifications-controller affinity
+argocd/argocd-redis affinity
+argocd/argocd-repo-server affinity
+argocd/argocd-server affinity
+ceph-csi-rbd/rbd.csi.ceph.com-ctrlplugin affinity
+compassio/compassio-backend topology
+compassio/compassio-frontend topology
+kube-system/cilium-operator affinity
+kube-system/coredns affinity
+kube-system/hubble-relay affinity
+kube-system/vpa-vertical-pod-autoscaler-admission-controller affinity
+kube-system/vpa-vertical-pod-autoscaler-recommender affinity
+kube-system/vpa-vertical-pod-autoscaler-updater affinity
+logging/loki-gateway affinity
+logging/loki-read affinity
+logging/tempo3-distributor topology
+logging/tempo3-metrics-generator topology
+logging/tempo3-querier topology
+logging/tempo3-query-frontend topology
+monitoring/wecom-adapter topology
+tekton-pipelines/tekton-dashboard affinity
+tekton-pipelines/tekton-events-controller affinity
+tekton-pipelines/tekton-pipelines-controller affinity
+tekton-pipelines/tekton-pipelines-remote-resolvers affinity
+tekton-pipelines/tekton-pipelines-webhook affinity
+tekton-pipelines/tekton-pruner-controller affinity
+tekton-pipelines/tekton-triggers-controller affinity
+with scheduling constraints: 29
+
+
+===== 10. 版本偏差/证书 =====
+
+$ kubectl get nodes -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for n in d[\"items\"]:
+  print(n[\"metadata\"][\"name\"], n[\"status\"][\"nodeInfo\"][\"kubeletVersion\"], n[\"status\"][\"nodeInfo\"][\"containerRuntimeVersion\"])
+"
+m01 v1.35.9 containerd://2.3.2
+master01 v1.35.9 containerd://2.3.2
+master02 v1.35.9 containerd://2.3.2
+worker01 v1.35.9 containerd://2.3.2
+worker02 v1.35.9 containerd://2.3.2
+worker03 v1.35.9 containerd://2.3.2
+
+$ kubeadm certs check-expiration 2>&1 | head -40
+[check-expiration] Reading configuration from the "kubeadm-config" ConfigMap in namespace "kube-system"...
+[check-expiration] Use 'kubeadm init phase upload-config kubeadm --config your-config-file' to re-upload it.
+W1111 09:46:14.951501  105416 configset.go:77] Warning: No kubeproxy.config.k8s.io/v1alpha1 config is loaded. Continuing without it: configmaps "kube-proxy" not found
+
+CERTIFICATE                EXPIRES                  RESIDUAL TIME   CERTIFICATE AUTHORITY   EXTERNALLY MANAGED
+admin.conf                 Oct 03, 2027 03:19 UTC   326d            ca                      no      
+apiserver                  Oct 03, 2027 03:19 UTC   326d            ca                      no      
+apiserver-etcd-client      Oct 03, 2027 03:19 UTC   326d            etcd-ca                 no      
+apiserver-kubelet-client   Oct 03, 2027 03:19 UTC   326d            ca                      no      
+controller-manager.conf    Oct 03, 2027 03:19 UTC   326d            ca                      no      
+etcd-healthcheck-client    Oct 03, 2027 03:19 UTC   326d            etcd-ca                 no      
+etcd-peer                  Oct 03, 2027 03:19 UTC   326d            etcd-ca                 no      
+etcd-server                Oct 03, 2027 03:19 UTC   326d            etcd-ca                 no      
+front-proxy-client         Oct 03, 2027 03:19 UTC   326d            front-proxy-ca          no      
+scheduler.conf             Oct 03, 2027 03:19 UTC   326d            ca                      no      
+super-admin.conf           Oct 03, 2027 03:19 UTC   326d            ca                      no      
+
+CERTIFICATE AUTHORITY   EXPIRES                  RESIDUAL TIME   EXTERNALLY MANAGED
+ca                      Jan 14, 2036 12:55 UTC   9y              no      
+etcd-ca                 Jan 14, 2036 12:55 UTC   9y              no      
+front-proxy-ca          Jan 14, 2036 12:55 UTC   9y              no      
+
+$ kubectl get csr 2>/dev/null | head -10
+
+
+===== 11. 节点条件/污点/自愈 =====
+
+$ kubectl get nodes -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for n in d[\"items\"]:
+  c=[(x[\"type\"],x[\"status\"]) for x in n[\"status\"][\"conditions\"] if x[\"type\"] in (\"Ready\",\"MemoryPressure\",\"DiskPressure\",\"PIDPressure\")]
+  t=n[\"spec\"].get(\"taints\",[])
+  print(n[\"metadata\"][\"name\"], c, t)
+"
+m01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/control-plane'}]
+master01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/control-plane'}]
+master02 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/control-plane'}]
+worker01 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] []
+worker02 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] []
+worker03 [('MemoryPressure', 'False'), ('DiskPressure', 'False'), ('PIDPressure', 'False'), ('Ready', 'True')] []
+
+
+===== 12. CRD / Operator / Webhook =====
+
+$ kubectl get crd 2>/dev/null | wc -l
+147
+
+$ kubectl get deploy -A 2>/dev/null | grep -Ei "cnpg|ceph|strimzi|argocd|grafana-operator|sealed" | head -20
+argocd                     argocd-applicationset-controller                   1/1     1            1           297d
+argocd                     argocd-dex-server                                  1/1     1            1           297d
+argocd                     argocd-notifications-controller                    1/1     1            1           297d
+argocd                     argocd-redis                                       1/1     1            1           297d
+argocd                     argocd-repo-server                                 1/1     1            1           297d
+argocd                     argocd-server                                      1/1     1            1           297d
+ceph-csi-operator-system   ceph-csi-operator-controller-manager               1/1     1            1           39h
+ceph-csi-rbd               rbd.csi.ceph.com-ctrlplugin                        1/1     1            1           38h
+cnpg-system                barman-cloud                                       1/1     1            1           2d15h
+cnpg-system                cnpg-controller-manager                            1/1     1            1           222d
+grafana-operator           grafana-operator                                   1/1     1            1           2d13h
+kafka                      strimzi-cluster-operator                           1/1     1            1           157d
+kube-system                sealed-secrets-controller                          1/1     1            1           2d12h
+
+$ kubectl get validatingwebhookconfigurations -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for x in d[\"items\"]: print(x[\"metadata\"][\"name\"], [(w.get(\"failurePolicy\"), w.get(\"name\")) for w in x.get(\"webhooks\",[])])
+"
+cert-manager-webhook [('Fail', 'webhook.cert-manager.io')]
+cnpg-validating-webhook-configuration [('Fail', 'vbackup.cnpg.io'), ('Fail', 'vcluster.cnpg.io'), ('Fail', 'vdatabase.cnpg.io'), ('Fail', 'vpooler.cnpg.io'), ('Fail', 'vscheduledbackup.cnpg.io')]
+config.webhook.operator.tekton.dev [('Fail', 'config.webhook.operator.tekton.dev')]
+config.webhook.pipeline.tekton.dev [('Fail', 'config.webhook.pipeline.tekton.dev')]
+config.webhook.triggers.tekton.dev [('Fail', 'config.webhook.triggers.tekton.dev')]
+metallb-webhook-configuration [('Fail', 'bgppeersvalidationwebhook.metallb.io'), ('Fail', 'addresspoolvalidationwebhook.metallb.io'), ('Fail', 'bfdprofilevalidationwebhook.metallb.io'), ('Fail', 'bgpadvertisementvalidationwebhook.metallb.io'), ('Fail', 'communityvalidationwebhook.metallb.io'), ('Fail', 'ipaddresspoolvalidationwebhook.metallb.io'), ('Fail', 'l2advertisementvalidationwebhook.metallb.io')]
+otel-operator-opentelemetry-operator-validation [('Fail', 'vinstrumentationcreateupdate.kb.io'), ('Ignore', 'vinstrumentationdelete.kb.io'), ('Fail', 'vopentelemetrycollectorcreateupdatebeta.kb.io'), ('Ignore', 'vopentelemetrycollectordeletebeta.kb.io')]
+prometheus-admission [('Ignore', 'prometheusrulevalidate.monitoring.coreos.com'), ('Ignore', 'alertmanagerconfigsvalidate.monitoring.coreos.com')]
+validation.webhook.operator.tekton.dev [('Fail', 'validation.webhook.operator.tekton.dev')]
+validation.webhook.pipeline.tekton.dev [('Fail', 'validation.webhook.pipeline.tekton.dev')]
+validation.webhook.pruner.tekton.dev [('Fail', 'validation.webhook.pruner.tekton.dev.global'), ('Fail', 'validation.webhook.pruner.tekton.dev.namespace')]
+validation.webhook.triggers.tekton.dev [('Fail', 'validation.webhook.triggers.tekton.dev')]
+
+
+===== 13. 多租户/PSA/NetworkPolicy/HPA/VPA =====
+
+$ kubectl get ns 2>/dev/null
+NAME                       STATUS   AGE
+argocd                     Active   297d
+ceph-csi-operator-system   Active   39h
+ceph-csi-rbd               Active   221d
+cert-manager               Active   252d
+china-study-free           Active   5d11h
+cicd                       Active   240d
+cilium-secrets             Active   2d2h
+cnpg-system                Active   222d
+compassio                  Active   28d
+deeptutor                  Active   14d
+default                    Active   298d
+etcd-backup                Active   42h
+gitlab-runner              Active   28d
+grafana-operator           Active   2d13h
+kafka                      Active   157d
+kube-node-lease            Active   298d
+kube-public                Active   298d
+kube-system                Active   298d
+logging                    Active   219d
+metallb-system             Active   297d
+monitoring                 Active   292d
+n8n                        Active   221d
+nfs-provisioner            Active   296d
+oauth2-proxy               Active   18h
+open-webui                 Active   28d
+opentelemetry              Active   253d
+tekton-operator            Active   3d12h
+tekton-pipelines           Active   286d
+traefik                    Active   297d
+
+$ kubectl get networkpolicy -A 2>/dev/null | head -20
+NAMESPACE                  NAME                                            POD-SELECTOR                                                                                     AGE
+ceph-csi-operator-system   ceph-csi-operator-ceph-csi-controller-manager   control-plane=ceph-csi-op-controller-manager                                                     39h
+ceph-csi-rbd               rbd.csi.ceph.com-ctrlplugin                     app=rbd.csi.ceph.com-ctrlplugin                                                                  38h
+china-study-free           allow-kubelet-health-probes                     app=china-study-free                                                                             2d1h
+china-study-free           china-study-free                                app=china-study-free                                                                             5d11h
+kafka                      my-cluster-entity-operator                      strimzi.io/cluster=my-cluster,strimzi.io/kind=Kafka,strimzi.io/name=my-cluster-entity-operator   157d
+kafka                      my-cluster-network-policy-kafka                 strimzi.io/cluster=my-cluster,strimzi.io/kind=Kafka,strimzi.io/name=my-cluster-kafka             157d
+monitoring                 allow-kubelet-health-probes                     app.kubernetes.io/name=wecom-adapter                                                             2d1h
+monitoring                 wecom-adapter                                   app.kubernetes.io/name=wecom-adapter                                                             40d
+tekton-pipelines           allow-kubelet-health-probes                     <none>                                                                                           2d1h
+tekton-pipelines           pipeline-controller                             app=tekton-pipelines-controller                                                                  3d11h
+tekton-pipelines           pipeline-default-deny                           app.kubernetes.io/part-of=tekton-pipelines                                                       3d11h
+tekton-pipelines           pipeline-events-controller                      app=tekton-events-controller                                                                     3d11h
+tekton-pipelines           pipeline-resolvers                              app=tekton-pipelines-resolvers                                                                   3d11h
+tekton-pipelines           pipeline-webhook                                app=tekton-pipelines-webhook                                                                     3d11h
+tekton-pipelines           proxy-webhook                                   name=tekton-operator                                                                             3d11h
+tekton-pipelines           pruner-controller                               app=tekton-pruner-controller                                                                     3d11h
+tekton-pipelines           pruner-webhook                                  app.kubernetes.io/component=webhook,app.kubernetes.io/part-of=tekton-pruner                      3d11h
+tekton-pipelines           tekton-default-deny                             app.kubernetes.io/part-of=tekton-triggers                                                        3d11h
+tekton-pipelines           tekton-proxy-webhook-default-deny               name=tekton-operator                                                                             3d11h
+
+$ kubectl get role,rolebinding -A 2>/dev/null | head -30
+NAMESPACE                  NAME                                                                                    CREATED AT
+argocd                     role.rbac.authorization.k8s.io/argocd-application-controller                            2026-01-17T09:40:03Z
+argocd                     role.rbac.authorization.k8s.io/argocd-applicationset-controller                         2026-01-17T09:40:03Z
+argocd                     role.rbac.authorization.k8s.io/argocd-dex-server                                        2026-01-17T09:40:03Z
+argocd                     role.rbac.authorization.k8s.io/argocd-notifications-controller                          2026-01-17T09:40:03Z
+argocd                     role.rbac.authorization.k8s.io/argocd-redis-secret-init                                 2026-11-10T05:39:23Z
+argocd                     role.rbac.authorization.k8s.io/argocd-repo-server                                       2026-01-17T09:40:03Z
+argocd                     role.rbac.authorization.k8s.io/argocd-server                                            2026-01-17T09:40:03Z
+ceph-csi-operator-system   role.rbac.authorization.k8s.io/ceph-csi-operator-leader-election-role                   2026-11-09T10:42:22Z
+ceph-csi-rbd               role.rbac.authorization.k8s.io/rbd-csi-ceph-com-ctrlplugin-r                            2026-11-09T10:45:42Z
+ceph-csi-rbd               role.rbac.authorization.k8s.io/rbd-csi-ceph-com-nodeplugin-r                            2026-11-09T10:45:42Z
+cert-manager               role.rbac.authorization.k8s.io/cert-manager-tokenrequest                                2026-03-03T02:24:24Z
+cert-manager               role.rbac.authorization.k8s.io/cert-manager-webhook:dynamic-serving                     2026-03-03T02:24:24Z
+cicd                       role.rbac.authorization.k8s.io/cicd-cleanup                                             2026-10-21T02:51:39Z
+cicd                       role.rbac.authorization.k8s.io/openwebui-runner-role                                    2026-10-13T08:31:20Z
+cilium-secrets             role.rbac.authorization.k8s.io/cilium-operator-tlsinterception-secrets                  2026-11-08T23:23:31Z
+cilium-secrets             role.rbac.authorization.k8s.io/cilium-tlsinterception-secrets                           2026-11-08T23:23:31Z
+cnpg-system                role.rbac.authorization.k8s.io/barman-plugin-leader-election-role                       2026-11-08T10:19:47Z
+cnpg-system                role.rbac.authorization.k8s.io/pg16-ceph                                                2026-04-03T08:42:32Z
+cnpg-system                role.rbac.authorization.k8s.io/pg16-ceph-barman-cloud                                   2026-11-08T10:22:14Z
+gitlab-runner              role.rbac.authorization.k8s.io/gitlab-runner-manager                                    2026-10-13T08:31:20Z
+grafana-operator           role.rbac.authorization.k8s.io/grafana-operator-leases                                  2026-11-08T11:47:41Z
+kafka                      role.rbac.authorization.k8s.io/my-cluster-entity-operator                               2026-06-06T09:08:02Z
+kafka                      role.rbac.authorization.k8s.io/my-cluster-kafka                                         2026-06-06T09:05:53Z
+kube-public                role.rbac.authorization.k8s.io/kubeadm:bootstrap-signer-clusterinfo                     2026-01-16T12:55:32Z
+kube-public                role.rbac.authorization.k8s.io/system:controller:bootstrap-signer                       2026-01-16T12:55:31Z
+kube-system                role.rbac.authorization.k8s.io/cert-manager-cainjector:leaderelection                   2026-03-03T02:24:24Z
+kube-system                role.rbac.authorization.k8s.io/cert-manager:leaderelection                              2026-03-03T02:24:24Z
+kube-system                role.rbac.authorization.k8s.io/cilium-config-agent                                      2026-11-08T23:23:31Z
+kube-system                role.rbac.authorization.k8s.io/cilium-operator-ztunnel                                  2026-11-08T23:23:31Z
+
+$ kubectl get ns -o json 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for n in d[\"items\"]:
+  l=n[\"metadata\"].get(\"labels\",{})
+  p={k:v for k,v in l.items() if \"pod-security\" in k}
+  if p: print(n[\"metadata\"][\"name\"],p)
+"
+china-study-free {'pod-security.kubernetes.io/enforce': 'baseline'}
+etcd-backup {'pod-security.kubernetes.io/audit': 'privileged', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'privileged'}
+metallb-system {'pod-security.kubernetes.io/audit': 'privileged', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'privileged'}
+tekton-pipelines {'pod-security.kubernetes.io/enforce': 'restricted'}
+
+$ kubectl get hpa,vpa -A 2>/dev/null
+NAMESPACE          NAME                                                                REFERENCE                                  TARGETS                 MINPODS   MAXPODS   REPLICAS   AGE
+compassio          horizontalpodautoscaler.autoscaling/compassio-backend               Deployment/compassio-backend               0/1500m, cpu: 14%/80%   1         2         1          34h
+tekton-pipelines   horizontalpodautoscaler.autoscaling/tekton-operator-proxy-webhook   Deployment/tekton-operator-proxy-webhook   cpu: 2%/85%             1         5         1          3d11h
+tekton-pipelines   horizontalpodautoscaler.autoscaling/tekton-pipelines-webhook        Deployment/tekton-pipelines-webhook        cpu: 2%/100%            1         5         1          3d11h
+
+
+===== 14. Gateway API / Cilium =====
+
+$ kubectl get crd 2>/dev/null | grep gateway.networking
+backendtlspolicies.gateway.networking.k8s.io              2026-11-09T13:50:57Z
+gatewayclasses.gateway.networking.k8s.io                  2026-11-09T13:50:57Z
+gateways.gateway.networking.k8s.io                        2026-11-09T13:50:57Z
+grpcroutes.gateway.networking.k8s.io                      2026-11-09T13:50:57Z
+httproutes.gateway.networking.k8s.io                      2026-11-09T13:50:57Z
+referencegrants.gateway.networking.k8s.io                 2026-11-09T13:50:57Z
+
+$ kubectl get gatewayclass,gateway,httproute -A 2>/dev/null | head -20
+
+$ cilium status 2>/dev/null | head -30
+
+
+===== 15. 结束 =====
+
+$ date -Is
+2026-11-11T09:46:16+08:00

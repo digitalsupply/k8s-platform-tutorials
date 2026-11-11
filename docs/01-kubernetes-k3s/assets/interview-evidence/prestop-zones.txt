@@ -1,0 +1,37 @@
+=== china-study-free preStop/grace
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 5
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 15
+--
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: reports
+        persistentVolumeClaim:
+          claimName: china-study-free-reports
+      - name: assets
+        persistentVolumeClaim:
+          claimName: china-study-free-assets
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-11-05T14:13:57Z"
+    lastUpdateTime: "2026-11-08T03:40:06Z"
+
+=== node zone labels
+m01 zone= None topology.kubernetes.io/zone= None hostname= m01
+master01 zone= None topology.kubernetes.io/zone= None hostname= master01
+master02 zone= None topology.kubernetes.io/zone= None hostname= master02
+worker01 zone= test-a topology.kubernetes.io/zone= None hostname= worker01
+worker02 zone= test-b topology.kubernetes.io/zone= None hostname= worker02
+worker03 zone= test-a topology.kubernetes.io/zone= None hostname= worker03

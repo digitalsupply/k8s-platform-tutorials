@@ -1,0 +1,11 @@
+=== kubelet config
+cgroupDriver: systemd
+rotateCertificates: true
+
+=== csr
+No resources found
+
+=== cert summary
+pod/kube-apiserver-m01
+pod/kube-apiserver-master01
+pod/kube-apiserver-master02

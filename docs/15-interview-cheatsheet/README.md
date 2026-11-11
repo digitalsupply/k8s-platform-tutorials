@@ -50,6 +50,23 @@
 | RWO 语义 | 单节点读写，不是单 Pod | 17 个 PVC 全 RWO；无 local-path |
 | 数据可靠性 | SMART 看寿命/坏道；dmesg medium error 先备份换盘 | NVMe 0% used、0 media errors、7 unsafe shutdowns |
 
+## 一页速查（Kubernetes）
+
+| 层面 | 一句话 | 本环境实测 |
+|---|---|---|
+| apiserver | 认证→授权→准入；唯一读写 etcd | Node,RBAC + NodeRestriction；3 副本 |
+| etcd | fsync 敏感；2GB quota；低峰 defrag | 3.6.6，133MB/37MB，quota 2.1GB，WAL p99 1ms |
+| scheduler | Filter→Score→Reserve/Permit/Bind | 事件 `Successfully assigned` |
+| controller-manager | controller 持续 reconcile | `--controllers=*`；RS ownerRef |
+| kubelet/CRI | cgroup driver 一致；containerd/CRI-O | systemd + containerd 2.3.2 |
+| CNI/CSI | Pod 网络/策略；PV/挂载/扩容 | Cilium 1.20.4；rbd.csi.ceph.com |
+| requests/limits/QoS | 调度预留 vs 运行时限制 | 73 BestEffort/65 Burstable/0 Guaranteed |
+| LimitRange/Quota | namespace 默认值/总量限制 | compassio 有；实验验证注入 |
+| 拓扑/PDB/探针 | 打散、保可用、控流量 | 29 约束；11 PDB；1 个 preStop |
+| 升级/证书/备份 | 版本偏差、cordon/drain、快照 | 全 1.35.9；leaf 326d；etcd 快照 133MB |
+| 扩展/多租户 | CRD/Operator/Webhook/PSA | 146 CRD；12+9 webhook；PSA 仅 4 ns |
+| 进阶 | KEDA/VPA/HPA/Cilium/Gateway API | KEDA 无；VPA 0 对象；Gateway 仅 CRD |
+
 ## 二、本环境纠偏（面试别背绝对话）
 
 ### 1. “Rocky 9 把 network-scripts 全删了”
@@ -121,6 +138,30 @@ ModuleNotFoundError: No module named 'distutils'
 
 本环境当前没有 OOM/Evicted 历史；6 节点压力条件全 `False`。机制仍要会。
 
+### 6. “配置了 topologySpread 就一定打散”
+
+本集群 Tempo 用 `topology.kubernetes.io/zone`，但节点只有 `zone=test-a/test-b`，
+没有标准 `topology.kubernetes.io/zone` label，所以 zone 打散实际是 no-op。
+
+### 7. “有 PDB 就安全”
+
+`pg16-ceph-primary` minAvailable=1，当前 allowed disruptions=0，drain 主库节点会被阻止；
+Kafka PDB `minAvailable=0` 基本没有保护。PDB 要同时看 `ALLOWED DISRUPTIONS`。
+
+### 8. “装了 Gateway API CRD 就是用了 Gateway API”
+
+本集群只有 6 个 Gateway API CRD，**0 个 GatewayClass/Gateway/HTTPRoute**；
+实际入口仍是 Traefik IngressRoute。
+
+### 9. “Velero/KEDA/Kured/NPD 是标配”
+
+本环境 **都没有部署**；节点自愈/重启编排/备份迁移不能假设有这些组件。
+
+### 10. “有 etcd 备份就等于有容灾”
+
+备份成功 ≠ 能恢复。本环境验证了每小时快照 133MB/8234 keys/上传 S3，
+但**没有做生产恢复演练**。
+
 ## 三、详细章节
 
 | 文件 | 内容 |
@@ -129,6 +170,8 @@ ModuleNotFoundError: No module named 'distutils'
 | [02-network.md](02-network.md) | TIME_WAIT/CLOSE_WAIT、三次握手、refused/timeout/reset |
 | [03-cloud-native.md](03-cloud-native.md) | OOMKilled vs Evicted、tini、cgroup 与容器 |
 | [04-storage.md](04-storage.md) | 分区、LVM、RAID、文件系统、fstab、NFS、Ceph、云盘、CSI、SMART |
+| [05-kubernetes.md](05-kubernetes.md) | 控制面/节点/资源/QoS/PDB/探针/升级/备份/扩展/多租户/进阶 |
+| [00-verification-matrix.md](00-verification-matrix.md) | 60+ 条断言的验证状态（✅/⚠️/❌/📚） |
 | [labs/README.md](labs/README.md) | 复现实验 |
 | [assets/evidence/](assets/evidence/README.md) | 机器输出 |
 

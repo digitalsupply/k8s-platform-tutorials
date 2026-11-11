@@ -1,0 +1,67 @@
+=== probe/preStop examples
+argocd/argocd-repo-server repo-server live ready - -
+argocd/argocd-server server live ready - -
+ceph-csi-operator-system/ceph-csi-operator-controller-manager manager live ready - -
+cert-manager/cert-manager cert-manager-controller live - - -
+cert-manager/cert-manager-webhook cert-manager-webhook live ready - -
+china-study-free/china-study-free app live ready startup preStop
+cicd/buildkitd buildkitd live ready - -
+cicd/el-china-study-free-listener event-listener live ready - -
+cicd/el-compassio-listener event-listener live ready - -
+cicd/el-deeptutor-listener event-listener live ready - -
+cnpg-system/barman-cloud barman-cloud - ready - -
+cnpg-system/cnpg-controller-manager manager live ready startup -
+compassio/compassio-backend backend live ready - -
+compassio/compassio-frontend frontend live ready - -
+compassio/compassio-redis redis live - - -
+compassio/frpc frpc - - startup -
+deeptutor/deeptutor deeptutor live ready startup -
+deeptutor/redis redis - ready - -
+grafana-operator/grafana-operator grafana-operator live ready - -
+kafka/my-cluster-entity-operator topic-operator live ready startup -
+kafka/my-cluster-entity-operator user-operator live ready - -
+kafka/strimzi-cluster-operator strimzi-cluster-operator live ready - -
+kube-system/cilium-operator cilium-operator live ready - -
+kube-system/coredns coredns live ready - -
+kube-system/hubble-relay hubble-relay live ready startup -
+kube-system/hubble-ui frontend live ready - -
+kube-system/metrics-server metrics-server live ready - -
+kube-system/sealed-secrets-controller sealed-secrets-controller live ready - -
+kube-system/vpa-vertical-pod-autoscaler-admission-controller admission-controller live ready - -
+kube-system/vpa-vertical-pod-autoscaler-recommender recommender live ready - -
+kube-system/vpa-vertical-pod-autoscaler-updater updater live ready - -
+logging/loki-gateway nginx live ready - -
+logging/loki-read loki - ready startup -
+logging/tempo3-distributor distributor live ready - -
+logging/tempo3-metrics-generator metrics-generator live ready - -
+logging/tempo3-querier querier live ready - -
+logging/tempo3-query-frontend query-frontend live ready - -
+metallb-system/controller controller live ready - -
+monitoring/prometheus-adapter prometheus-adapter live ready - -
+monitoring/prometheus-grafana grafana live ready - -
+monitoring/prometheus-kube-state-metrics kube-state-metrics live ready - -
+monitoring/prometheus-operator kube-prometheus-stack live ready - -
+monitoring/wecom-adapter adapter live ready startup -
+oauth2-proxy/oauth2-proxy-alloy oauth2-proxy live ready - -
+oauth2-proxy/oauth2-proxy-hubble oauth2-proxy live ready - -
+oauth2-proxy/oauth2-proxy-tekton oauth2-proxy live ready - -
+oauth2-proxy/oauth2-proxy-traefik oauth2-proxy live ready - -
+open-webui/frpc frpc - - startup -
+open-webui/open-webui open-webui live ready startup -
+open-webui/open-webui opencode-proxy live ready - -
+opentelemetry/otel-operator-opentelemetry-operator manager live ready - -
+tekton-pipelines/tekton-dashboard tekton-dashboard live ready - -
+tekton-pipelines/tekton-events-controller tekton-events-controller live ready - -
+tekton-pipelines/tekton-pipelines-controller tekton-pipelines-controller live ready - -
+tekton-pipelines/tekton-pipelines-webhook webhook live ready - -
+tekton-pipelines/tekton-triggers-core-interceptors tekton-triggers-core-interceptors - ready - -
+traefik/traefik traefik live ready - -
+
+=== topology examples
+compassio/compassio-backend {'labelSelector': {'matchLabels': {'app': 'compassio-backend'}}, 'maxSkew': 1, 'topologyKey': 'kubernetes.io/hostname', 'whenUnsatisfiable': 'ScheduleAnyway'}
+compassio/compassio-frontend {'labelSelector': {'matchLabels': {'app': 'compassio-frontend'}}, 'maxSkew': 1, 'topologyKey': 'kubernetes.io/hostname', 'whenUnsatisfiable': 'ScheduleAnyway'}
+logging/tempo3-distributor {'labelSelector': {'matchLabels': {'app.kubernetes.io/component': 'distributor', 'app.kubernetes.io/instance': 'tempo3', 'app.kubernetes.io/name': 'tempo'}}, 'maxSkew': 1, 'topologyKey': 'topology.kubernetes.io/zone', 'whenUnsatisfiable': 'ScheduleAnyway'}
+logging/tempo3-metrics-generator {'labelSelector': {'matchLabels': {'app.kubernetes.io/component': 'metrics-generator', 'app.kubernetes.io/instance': 'tempo3', 'app.kubernetes.io/name': 'tempo'}}, 'maxSkew': 1, 'topologyKey': 'topology.kubernetes.io/zone', 'whenUnsatisfiable': 'ScheduleAnyway'}
+logging/tempo3-querier {'labelSelector': {'matchLabels': {'app.kubernetes.io/component': 'querier', 'app.kubernetes.io/instance': 'tempo3', 'app.kubernetes.io/name': 'tempo'}}, 'maxSkew': 1, 'topologyKey': 'topology.kubernetes.io/zone', 'whenUnsatisfiable': 'ScheduleAnyway'}
+logging/tempo3-query-frontend {'labelSelector': {'matchLabels': {'app.kubernetes.io/component': 'query-frontend', 'app.kubernetes.io/instance': 'tempo3', 'app.kubernetes.io/name': 'tempo'}}, 'maxSkew': 1, 'topologyKey': 'topology.kubernetes.io/zone', 'whenUnsatisfiable': 'ScheduleAnyway'}
+monitoring/wecom-adapter {'labelSelector': {'matchLabels': {'app.kubernetes.io/name': 'wecom-adapter'}}, 'maxSkew': 1, 'topologyKey': 'kubernetes.io/hostname', 'whenUnsatisfiable': 'ScheduleAnyway'}

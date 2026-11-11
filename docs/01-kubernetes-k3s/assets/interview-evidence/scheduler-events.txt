@@ -1,0 +1,19 @@
+=== recent scheduling events
+etcd-backup   43m         Normal   Scheduled          pod/etcd-snapshot-29905985-ptlcl   Successfully assigned etcd-backup/etcd-snapshot-29905985-ptlcl to m01
+
+=== pod node assignment sample
+NAMESPACE                  NAME                                                              READY   STATUS      RESTARTS       AGE     IP             NODE       NOMINATED NODE   READINESS GATES
+argocd                     argocd-application-controller-0                                   1/1     Running     0              20h     10.244.4.114   worker02   <none>           <none>
+argocd                     argocd-applicationset-controller-6975b46c56-n5jmh                 1/1     Running     0              37h     10.244.3.74    worker01   <none>           <none>
+argocd                     argocd-dex-server-57bc974666-96m5x                                1/1     Running     0              37h     10.244.5.153   worker03   <none>           <none>
+argocd                     argocd-notifications-controller-5c9554f65-w2b5m                   1/1     Running     0              37h     10.244.3.114   worker01   <none>           <none>
+argocd                     argocd-redis-6fd6d9bbdd-t2vlj                                     1/1     Running     0              37h     10.244.3.22    worker01   <none>           <none>
+argocd                     argocd-repo-server-855cf6d745-nz74k                               1/1     Running     0              20h     10.244.3.206   worker01   <none>           <none>
+argocd                     argocd-server-755c97db55-sq5vx                                    1/1     Running     0              19h     10.244.3.28    worker01   <none>           <none>
+ceph-csi-operator-system   ceph-csi-operator-controller-manager-6cd94478f-dmgkq              1/1     Running     0              37h     10.244.3.21    worker01   <none>           <none>
+ceph-csi-rbd               rbd.csi.ceph.com-ctrlplugin-748d7c6b54-tr2f9                      5/5     Running     0              36h     10.244.4.146   worker02   <none>           <none>
+ceph-csi-rbd               rbd.csi.ceph.com-nodeplugin-jqfgt                                 3/3     Running     0              36h     10.0.0.124     worker03   <none>           <none>
+ceph-csi-rbd               rbd.csi.ceph.com-nodeplugin-nsnkt                                 3/3     Running     0              36h     10.0.0.122     worker01   <none>           <none>
+ceph-csi-rbd               rbd.csi.ceph.com-nodeplugin-t7wcf                                 3/3     Running     0              36h     10.0.0.123     worker02   <none>           <none>
+cert-manager               cert-manager-7698f76dd-8nxcz                                      1/1     Running     0              37h     10.244.5.7     worker03   <none>           <none>
+cert-manager               cert-manager-cainjector-75c44fd859-xck9m                          1/1     Running     0              37h     10.244.5.162   worker03   <none>           <none>

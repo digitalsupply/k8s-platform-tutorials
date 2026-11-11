@@ -1,0 +1,28 @@
+=== HPA/VPA
+NAMESPACE          NAME                            REFERENCE                                  TARGETS                 MINPODS   MAXPODS   REPLICAS   AGE
+compassio          compassio-backend               Deployment/compassio-backend               0/1500m, cpu: 14%/80%   1         2         1          34h
+tekton-pipelines   tekton-operator-proxy-webhook   Deployment/tekton-operator-proxy-webhook   cpu: 1%/85%             1         5         1          3d11h
+tekton-pipelines   tekton-pipelines-webhook        Deployment/tekton-pipelines-webhook        cpu: 1%/100%            1         5         1          3d11h
+
+No resources found
+
+=== PDB
+NAMESPACE       NAME                                               MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+cnpg-system     pg16-ceph-primary                                  1               N/A               0                     221d
+compassio       compassio-backend                                  N/A             1                 1                     15d
+compassio       compassio-frontend                                 N/A             1                 1                     15d
+kafka           my-cluster-entity-operator                         0               N/A               1                     157d
+kafka           my-cluster-kafka                                   0               N/A               1                     157d
+kube-system     vpa-vertical-pod-autoscaler-admission-controller   1               N/A               1                     223d
+kube-system     vpa-vertical-pod-autoscaler-recommender            1               N/A               1                     223d
+kube-system     vpa-vertical-pod-autoscaler-updater                1               N/A               1                     223d
+logging         tempo3-block-builder                               N/A             1                 1                     43d
+logging         tempo3-live-store                                  N/A             1                 1                     43d
+opentelemetry   otel-collector                                     N/A             1                 1                     218d
+
+=== LimitRange/Quota
+NAMESPACE   NAME                            CREATED AT
+compassio   limitrange/compassio-defaults   2026-10-26T05:25:52Z
+
+NAMESPACE   NAME                            REQUEST                                                                                    LIMIT                                             AGE
+compassio   resourcequota/compassio-quota   persistentvolumeclaims: 0/4, pods: 4/20, requests.cpu: 90m/1, requests.memory: 448Mi/3Gi   limits.cpu: 900m/10, limits.memory: 1408Mi/10Gi   15d

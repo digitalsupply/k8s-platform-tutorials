@@ -1,0 +1,12 @@
+=== kubelet rotate
+
+=== csr
+No resources found
+
+=== gateway resources
+No resources found
+
+=== keda/velero/kured
+Error from server (NotFound): namespaces "keda" not found
+Error from server (NotFound): namespaces "velero" not found
+none

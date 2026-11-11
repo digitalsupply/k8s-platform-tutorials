@@ -225,4 +225,42 @@ dmesg -T | grep -iE 'medium error|i/o error|blk_update_request|nvme.*error'
 
 > 详细解释见 [06 Storage 10-storage-basics](../../06-storage-ceph/10-storage-basics.md)。
 
+## 16. Kubernetes 核心考点
+
+```bash
+# 控制面
+kubectl -n kube-system get pod kube-apiserver-m01 -o jsonpath='{.spec.containers[0].command}'
+kubectl get --raw /readyz?verbose
+kubectl -n kube-system exec etcd-m01 -- etcdctl ... endpoint status --write-out=table
+kubectl get events -A | grep -E 'Scheduled|FailedScheduling'
+
+# 节点
+grep -E 'cgroupDriver|rotateCertificates' /var/lib/kubelet/config.yaml
+crictl version; crictl info
+kubectl get csidriver,sc
+
+# 资源
+kubectl get pods -A -o json | jq -r '.items[].status.qosClass' | sort | uniq -c
+kubectl get limitrange,resourcequota,pdb -A
+kubectl describe node m01 | sed -n '/Allocated resources/,/Events/p'
+
+# 稳定性
+kubectl get pdb -A
+kubectl drain worker03 --dry-run=client --ignore-daemonsets --delete-emptydir-data
+
+# 证书/备份
+kubeadm certs check-expiration
+kubectl get csr
+kubectl -n etcd-backup get cronjob,pods
+
+# 扩展/多租户
+kubectl get crd | wc -l
+kubectl get validatingwebhookconfigurations -o json | jq '.items[] | [.metadata.name, .webhooks[].failurePolicy]'
+kubectl get apiservice | grep metrics
+kubectl get ns,networkpolicy,resourcequota,limitrange -A
+kubectl get hpa,vpa -A
+```
+
+> 详细解释与纠偏见 [01 Kubernetes 10-k8s-core-evidence](../../01-kubernetes-k3s/10-k8s-core-evidence.md)。
+
 > 本手册的命令都可以在仓库 `assets/evidence/` 找到对应输出。

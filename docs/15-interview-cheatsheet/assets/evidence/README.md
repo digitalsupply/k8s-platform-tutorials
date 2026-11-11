@@ -25,6 +25,25 @@
 - `ulimit` soft/hard 与 systemd `LimitNOFILE`：`limits/`；
 - cgroup v2：`cgroup/worker01-pod-cgroup.txt`。
 
+## 存储证据
+
+见 [`06-storage-ceph/assets/storage-basics/`](../../../06-storage-ceph/assets/storage-basics/README.md)：
+
+- 分区/GPT/MBR、LVM/thin pool、fstab、NFS、Ceph、CSI/PV/PVC、SMART、dmesg。
+
+## Kubernetes 证据
+
+见 [`01-kubernetes-k3s/assets/interview-evidence/`](../../../01-kubernetes-k3s/assets/interview-evidence/README.md)：
+
+- apiserver/etcd/scheduler/controller-manager、kubelet/CRI/CNI/CSI；
+- QoS、LimitRange/Quota、PDB、探针、证书、etcd 备份；
+- CRD/Operator、Webhook、APIService、多租户、HPA/VPA、Cilium、Gateway API。
+
+## 全量验证矩阵
+
+[`00-verification-matrix.md`](../../00-verification-matrix.md) 汇总了 Linux/网络/存储/K8s 共 60+ 条断言的
+✅ 实测 / ⚠️ 部分 / ❌ 不具备 / 📚 仅原理。
+
 ## 采集边界
 
 - 没有制造真实 OOM/Evicted（会影响生产）；用 cgroup 样本和节点条件说明机制；

@@ -1,0 +1,21 @@
+=== APIService metrics
+v1beta1.external.metrics.k8s.io     monitoring/prometheus-adapter   True        35h
+v1beta1.metrics.k8s.io              kube-system/metrics-server      True        2d2h
+
+=== kubectl top nodes
+NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+m01        428m         12%      3514Mi          89%         
+master01   389m         10%      3914Mi          83%         
+master02   351m         9%       2724Mi          89%         
+worker01   503m         8%       5491Mi          66%         
+worker02   1497m        26%      4972Mi          60%         
+worker03   475m         12%      4895Mi          78%         
+
+=== APIService unavailable
+NAME                                SERVICE                         AVAILABLE   AGE
+
+=== Cilium config
+enable-l2-announcements = true
+ipam = kubernetes
+kube-proxy-replacement = true
+routing-mode = native
