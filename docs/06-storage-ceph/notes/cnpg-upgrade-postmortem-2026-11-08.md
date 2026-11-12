@@ -1,7 +1,7 @@
 # CNPG 1.22.0 → 1.30.1 升级复盘、踩坑修复与生产加固
 
-> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
-> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> **状态：历史快照（2026-11-08，K8s 1.35.9）**
+> 本文是 CNPG 1.22→1.30 升级当时的记录；文中出现的 `calico-node` 镜像只是**借来做宿主机网络调试**，不代表当时还用 Calico。
 > 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
 > 审计记录见 [19 章](../../19-audit/README.md)。
 

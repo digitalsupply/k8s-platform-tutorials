@@ -1,7 +1,7 @@
 # kube-vip / API Server 访问关系分析
 
-> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
-> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> **状态：历史快照（2026-10-11，K8s 1.35.9 + Calico + kube-proxy）**
+> 本文的"谁连谁"分析基于当时的 kube-proxy/iptables 数据面；现在 Service DNAT 由 Cilium eBPF 完成，**不要按本文去改 kube-proxy ConfigMap**（对象已不存在）。
 > 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
 > 审计记录见 [19 章](../../19-audit/README.md)。
 

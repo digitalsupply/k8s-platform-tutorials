@@ -1,7 +1,7 @@
 # kube-proxy nftables 模式诊断与修复报告
 
-> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
-> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> **状态：历史快照（Calico + kube-proxy 时代，Cilium 迁移前）**
+> 本文记录的是 kube-proxy nftables 实验与当时的 Calico 配置，**文中"Calico BPF 兜底"的结论已被审计更正**（见下方 §6 的更正块）。
 > 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
 > 审计记录见 [19 章](../../19-audit/README.md)。
 

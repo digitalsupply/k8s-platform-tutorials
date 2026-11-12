@@ -184,6 +184,7 @@ Keycloak 那 10 篇用另一套头：`状态：已作废（Keycloak 时代的 SS
 | "Sidekiq 不存在任何监听端口，8082/8092 是错的" | **错判**。`ss -lntp` 显示 8082/8092 都是 ruby（sidekiq-cluster 指标 / health-checks），文档原文是对的 | 撤回，改为补注"指标+健康检查，不承载业务流量"；真正错的是同一文档里 KAS/exporter 的端口 |
 | "cookie secret 长度单位写错" | **错判**。oauth2-proxy 按字符串字节计，`openssl rand -hex 16` = 32 字符 = 32 字节，合法 | 撤回，不改 |
 | "Ceph 被写成 20.2.0 Tentacle" | 该处是**待核清单项**，同文 §10.2 已实测否掉（18.2.8 reef） | 撤回；只在"待核项未回填结论"层面保留提醒 |
+| 批次 3 初版把 5 篇 notes 一律标成「2026-09/10 + K8s 1.29.8 + Calico」 | **一刀切**：`cnpg-upgrade-postmortem`（11-08，1.35.9，calico 只是调试镜像）、`ceph-disk-optimization`（11-05，1.35.9 + Calico）、`production-readiness-gaps`（11-09，1.35.9 + Cilium）都被标错 | 已按每篇自己的日期/版本重写状态头（`round2_e.py`），并在 9.3 注明"版本按各篇正文" |
 | 第一轮说"所有 YAML 可解析（0 错误）" | **测量缺陷**：检查器用的 venv 里没有 PyYAML，`if yaml:` 为假 → 整段被静默跳过 | 改用 `/usr/bin/python3` 重验 197 个 YAML：33 个是 Helm/占位符模板（按设计跳过），**真实报错 1 个**——`alertmanagerconfigs` CRD 里 `=` 键触发 PyYAML 的 `tag:yaml.org,2002:value` 限制（`kubectl` 能正常解析，不是 YAML 缺陷）；检查器已改成缺 PyYAML 时显式告警而不是静默跳过 |
 
 ### 9.5 剩余 backlog（约 60 条，尚未处理）

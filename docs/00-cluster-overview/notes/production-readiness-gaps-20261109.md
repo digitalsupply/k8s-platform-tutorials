@@ -1,7 +1,7 @@
 # K8s 集群“生产化”差距审计
 
-> **状态：历史快照（2026-09，K8s 1.29.8 / Calico 3.27.4）**
-> 升级前的集群盘点，保留用于对比"升级前后差异"。别把它当现状：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> **状态：历史快照（2026-11-09，K8s 1.35.9 + Cilium）**
+> 生产化差距清单（2026-11-09 采集）；已修的项正文用 ✅ 标注，未修项仍待办。现状：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
 
 > 日期：2026-11-09  
 > 集群：Kubernetes v1.35.9，6 节点（3 control-plane + 3 worker）  

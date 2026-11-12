@@ -1,7 +1,7 @@
 # ceph-csi-rbd-nodeplugin 累计重启问题：分析与修复报告
 
-> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
-> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> **状态：历史快照（2026-10-05，K8s 1.35.9 + Calico，Cilium 迁移前）**
+> 当时 CNI 还是 Calico；`calico` 相关命令现在跑不通（Cilium 1.20.4 已于 2026-11-09 接管）。
 > 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
 > 审计记录见 [19 章](../../19-audit/README.md)。
 
