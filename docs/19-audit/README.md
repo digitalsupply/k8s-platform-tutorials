@@ -90,3 +90,4 @@ kubectl -n monitoring exec prometheus-prometheus-prometheus-0 -c prometheus -- \
 ```
 
 - **凭据面收敛（2026-11-12）**：[security-hardening-20261112.md](security-hardening-20261112.md) —— 集群里 15 处 `glpat-` 明文（含 2 个 root/admin、`scope=api` 的 PAT，以及 `last-applied-configuration` 注解里的原文）全部收敛：ArgoCD 改每仓 deploy token（只读）、CI 改 group token（仅仓库读写）、cicd 7 个 Secret 全 SealedSecret 入库、旧 token 已 revoke（401 验证）。附 4 个迁移坑。
+- **凭据与流水线数据流全景（2026-11-12）**：[credentials-and-pipeline-flow-20261112.md](credentials-and-pipeline-flow-20261112.md) —— 讲清这套 CI/CD 里每一把"钥匙"：GitLab 五种 token（PAT / group / project / deploy / CI job）的边界差异、Harbor admin 与 robot account 的区别、K8s Secret 与 SealedSecret 的关系、ArgoCD repository secret 为什么只给 ArgoCD 自己用、webhook secret 为什么不是身份。逐跳拆解 `git push → webhook → 拦截器 → TriggerBinding/Template → PipelineRun → clone/check/build/push/promote → ArgoCD 轮询 → Pod`，四条流水线（openwebui / compassio / deeptutor / china-study-free）对照，附实测凭据清单、风险面排序与轮换 runbook。
