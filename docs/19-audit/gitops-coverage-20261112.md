@@ -22,6 +22,43 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 
 ---
 
+## 1.1 先分清两层：自举层（Tier 0）与 GitOps 层（Tier 1）
+
+这一节回答一个必须先回答的问题：**CNI 和 API VIP 能不能由 ArgoCD 装？** 不能，原因是硬约束：
+
+```text
+ArgoCD 自己跑在 Pod 里  ──需要──►  Pod 网络（CNI）
+Pod 网络（CNI）要装     ──需要──►  apiserver 可用（kubectl/helm 都得连它）
+apiserver 高可用        ──需要──►  VIP（本集群 10.0.0.168:6443，kube-vip）
+kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的 server 就是 VIP）
+```
+
+本集群实测印证这条链：`argocd-server` / `argocd-repo-server` 的 `hostNetwork` 都是空的（=false），
+所以 ArgoCD **必须**等 CNI 就绪才能起来；`kubeadm-config` 的 `controlPlaneEndpoint` 直接写的 VIP
+`10.0.0.168:6443`，kube-vip 以 DaemonSet（`vip_leaderelection=true`、`vip_arp=true`）提供该 VIP。
+
+于是"该不该纳管"要拆成两问：
+
+| 层 | 什么时候需要 | 谁装 | 能否由 ArgoCD 装 | 该进 git 吗 |
+|---|---|---|---|---|
+| **Tier 0 自举**：OS/runtime、kubeadm 控制面、**kube-vip**、**CNI(Cilium)**、CoreDNS、CSI | ArgoCD 之前 | 一次性脚本 / Ansible（本仓 12 章 + bootstrap 目录） | ❌ 不能（鸡生蛋） | ✅ **必须**——不入库就没有"可重建" |
+| **Tier 1 平台/应用**：监控栈、Loki/Tempo、Traefik、CNPG、Kafka、业务应用 | ArgoCD 之后 | ArgoCD | ✅ | ✅ |
+| **Tier 0.5 可切换**：Cilium、metrics-server、coredns、kube-vip(DS) | 自举时装，之后**可以**交给 ArgoCD 接管 | 自举装 → Argo 接管（同一份 values） | 可以，但**接管 ≠ 自举** | ✅ values 入 bootstrap 目录；manifest 可选入库 |
+
+结论：**"Cilium 应该纳入 GitOps"的准确含义是 —— values 必须进 git（保证能重建），
+再决定是否让 ArgoCD 在自举完成后接管。kube-vip 建议永远留在自举层，只把 manifest 存进 git 备查。**
+
+为什么不把 kube-vip 交给 ArgoCD：
+
+- 它是控制面的一部分，不是"应用"；误 prune 或 sync 出错 = 控制面失联，救回来要登 PVE 控制台；
+- 它没有"版本升级"需求（一年动不了一次），GitOps 带来的收益接近 0；
+- 自举时它必须存在（否则 kubelet 连不上 endpoint），本来就绕不开脚本。
+
+而 Loki / Tempo 与自举无关（只依赖 CSI 和 PVC），它们的 P0 是**另一个性质**：
+配置只活在 `helm upgrade` 的 release 记录里，集群重建后没人知道当时用了什么参数。这两条必须入库。
+
+---
+
 ## 2. 现状速览
 
 | 类别 | 数量 | 说明 |
@@ -44,11 +81,11 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 
 | 组件 | 安装方式 | values 在 git | 有 Argo app | 判定 |
 |---|---|---|---|---|
-| **Cilium**（CNI 数据面） | helm CLI rev4 | `platform/network/cilium/values.yaml` **无引用** | 只有 `platform-cilium-l2`（一条策略） | 🔴 **P0** |
-| **Loki**（日志） | helm CLI rev3，**手动 `-f` 升级** | `platform/logging/values.yaml` | 无 | 🔴 **P0**（半 GitOps） |
-| **Tempo**（追踪） | helm CLI rev6 | **无 values 文件** | 无 | 🔴 **P0** |
+| **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | `platform/network/cilium/values.yaml` **无引用** | 只有 `platform-cilium-l2`（一条策略） | 🔴 **P0（Tier 0.5）**：values 必须入库 + 可选 adopt |
+| **Loki**（日志） | helm CLI rev3，**手动 `-f` 升级** | `platform/logging/values.yaml` | 无 | 🔴 **P0（纯配置未入库，无自举约束）** |
+| **Tempo**（追踪） | helm CLI rev6 | **无 values 文件** | 无 | 🔴 **P0（同上）** |
 | **n8n + cloudflared** | kubectl apply | 无 | 无 | 🔴 **P0**（告警接收端） |
-| **kube-vip**（API VIP） | kubectl apply | 无 | 无 | 🔴 **P0**（丢了 apiserver 起不来） |
+| **kube-vip**（API VIP） | kubectl apply（自举时装） | **无 manifest** | 无 | 🔴 **P0（Tier 0，建议不 adopt）**：manifest 入库备查即可 |
 | **ArgoCD 自身** | helm CLI rev15 | `platform/argocd/values.yaml` **无引用** | 无（自举，可接受但要记录） | 🟠 P1 |
 | **Alloy**（日志采集） | helm CLI rev3 | `platform/logging/alloy-values.yaml` **无引用** | 只有 `platform-alloy-config`（配置 CR） | 🟠 P1 |
 | **cert-manager** | helm CLI rev1 | 无 | 无 | 🟠 P1 |
@@ -66,12 +103,17 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 
 ---
 
-## 4. 按优先级：应该补的清单
+## 4. 按优先级：该补的清单（注意 Tier 0 的特殊处理）
 
 ### P0 — 丢了要手工重建、或者直接影响可用性
 
-1. **Cilium 纳入 GitOps**
-   `platform/network/cilium/values.yaml` 已经在仓里，但没有 app 引用。补一个 multi-source Application：
+1. **Cilium：values 入库 + 自举后可选 adopt**
+   `platform/network/cilium/values.yaml` 已经在仓里，但没有 app 引用 —— 也就是说**新集群重建时没人知道当时用了什么参数**。
+   分两步：
+   - **必做（Tier 0）**：把这个文件纳入自举脚本（`bootstrap/` 目录 + Ansible），新建集群时
+     `helm install cilium cilium-1.20.4 -f bootstrap/cilium-values.yaml --set kubeProxyReplacement=true`，
+     这一步**发生在 ArgoCD 之前**，见 §6.5 的新建集群 runbook；
+   - **可选（Tier 0.5）**：自举完成后，用同一个文件建 multi-source Application 让 ArgoCD 接管：
    ```yaml
    spec:
      sources:
@@ -86,8 +128,9 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
      syncPolicy:
        syncOptions: [ServerSideApply=true, RespectIgnoreDifferences=true]
    ```
-   注意：接管现有 release 前先 `helm get values cilium -n kube-system > /tmp/cilium-live.yaml` 与仓里文件 diff，
-   否则 sync 会按仓里的值改网络配置（这条是网络数据面，改错要断整个集群）。
+   注意三件事：①接管前 `helm get values cilium -n kube-system > /tmp/cilium-live.yaml` 与仓里文件 diff，
+   否则 sync 按仓里的值改网络配置，改错要断整个集群；②App 必须 `prune: false`，否则哪天误删资源 =
+   CNI 消失；③本集群已移除 kube-proxy，`kubeProxyReplacement` 必须是 `true`，改错立刻全集群 Service 失效。
 
 2. **n8n + cloudflared 纳入 GitOps**
    这是 Alertmanager 唯一 webhook 目标（`n8n-svc.n8n.svc.cluster.local:5678`）。现在 Deployment/Service/PVC
@@ -95,11 +138,14 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
    最小做法：`platform/apps/n8n/{deployment,service,pvc,sealedsecret}.yaml` + 一个 Application；
    tunnel token 用 SealedSecret（现在 `open-webui/frp-token` 那种形态即可参考）。
 
-3. **kube-vip 纳入 GitOps**
-   VIP 只在一个 DaemonSet 的 env 里（`vip_address`、`vip_interface`、`port`）。丢了等于控制面连不上。
-   做法：`platform/network/kube-vip/{rbac,daemonset,configmap}.yaml`，静态 Pod 或 DS 均可。
-   ⚠️ 注意这是控制面组件，先 `kubectl get ds kube-vip-ds -n kube-system -o yaml > /tmp/kube-vip.yaml`
-   原样入库，不要在迁移同时改参数。
+3. **kube-vip：manifest 入库，但**不要**交给 ArgoCD**
+   VIP（`vip_address=10.0.0.168`、`vip_interface=eth0`、`port=6443`、`vip_leaderelection=true`）
+   只存在于 DaemonSet 的 env 里。丢了控制面连不上，但它属于**自举层**：
+   ```bash
+   kubectl -n kube-system get ds kube-vip-ds -o yaml > bootstrap/kube-vip/kube-vip-ds.yaml
+   ```
+   入库目的只有一个：新建集群时照着它重建 / 对照参数。**不建议建 Application** —— 控制面组件被
+   ArgoCD prune 或 sync 出错，代价是整台宿主机控制台见。
 
 4. **Loki / Tempo 从 helm CLI 转成 Application**
    - Loki：values 已在 `platform/logging/values.yaml`（文件头写着"手动 `helm upgrade --reuse-values`"），
@@ -174,6 +220,61 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 
 ---
 
+## 6.5 新建集群（或灾后重建）的正确顺序
+
+把上面的分层落成可执行顺序。参数取自本集群实测，可直接照抄：
+
+```bash
+# ── Tier 0：ArgoCD 之前必须完成 ─────────────────────────────
+# 0. VM + OS（12 章的 Terraform/cloud-init）
+#    containerd 2.x、kubelet/kubeadm/kubectl 1.35.x、swap off、
+#    br_netfilter/ip_forward、/etc/hosts、Harbor/内网源
+
+# 1. 第一个 control-plane：先让 VIP 可用，再 kubeadm init
+#    方式 a（推荐）：kube-vip 静态 Pod —— init 前把 manifest 放进 /etc/kubernetes/manifests/
+kube-vip manifest pod --interface eth0 --address 10.0.0.168 --controlplane --services \
+  --arp --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
+kubeadm init --control-plane-endpoint=10.0.0.168:6443 \
+             --pod-network-cidr=10.244.0.0/16 --kubernetes-version=v1.35.9
+#    方式 b：先用本机 IP init，装完 kube-vip 后再改 endpoint（换来换去，不推荐）
+
+# 2. join 其余 control-plane / worker（此时节点 NotReady 是正常的：还没 CNI）
+
+# 3. CNI —— 这一步必须在 ArgoCD 之前
+helm install cilium cilium-1.20.4 -n kube-system \
+  --set kubeProxyReplacement=true \
+  -f bootstrap/cilium-values.yaml            # ← 就是仓里那个"悬空"的 values 文件
+kubectl get nodes                            # 期望 6/6 Ready
+
+# 4. CoreDNS / metrics-server（kubeadm 自带，按需 patch）
+kubectl -n kube-system get pod -l k8s-app=kube-dns
+
+# 5. CSI —— 没有它，后面所有 PVC（prometheus/loki/tempo/cnpg）都会 Pending
+kubectl get sc                               # ceph-rbd-sc 存在且能 provision 一个测试 PVC
+
+# ── Tier 1：ArgoCD 起来之后 ────────────────────────────────
+# 6. 装 ArgoCD（helm，与本集群同版本 argo-cd-10.9.6 / v3.5.3）
+helm install argocd argo-cd-10.9.6 -n argocd --create-namespace -f bootstrap/argocd-values.yaml
+
+# 7. apply app-of-apps（bootstrap 仓里的 clusters/prod/app-of-apps.yaml）
+kubectl apply -f clusters/prod/app-of-apps.yaml
+argocd app list                              # 等全部 Synced
+
+# 8. 数据恢复：etcd 快照（etcdutl）、CNPG barman 备份、PV 备份
+etcdutl snapshot restore ...                 # 见 09 章 runbook
+
+# 9. 可选：把 Tier 0 装过的组件 adopt 给 ArgoCD（Cilium / metrics-server / coredns）
+#    前提：Application 用同一份 values，sync 前 argocd app diff 必须为空，且 prune: false
+```
+
+关键顺序不能乱的三处：
+
+1. **VIP 先于 kubeadm init**：`kubelet.conf` 里的 server 就是 VIP，VIP 不在 kubelet 注册不上；
+2. **CNI 先于 ArgoCD**：ArgoCD 是 Pod（实测 hostNetwork=false），没 CNI 起不来；
+3. **CSI 先于监控栈**：Prometheus/Alertmanager/Loki/Tempo 全是 StatefulSet + PVC。
+
+---
+
 ## 7. 建议的落地顺序
 
 ```text
@@ -189,8 +290,10 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 第 2 批（业务影响小）    ── 接 app
   n8n + cloudflared、gitlab-runner、buildkitd、otel-collector CR、nfs-provisioner
 
-第 3 批（需窗口）        ── 接网络/日志/追踪
-  Loki（先 SealedSecret 化 S3 凭据）→ Alloy → Cilium → kube-vip
+第 3 批（需窗口）        ── 接日志/追踪（无自举约束）
+  Loki（先 SealedSecret 化 S3 凭据）→ Alloy → Tempo
+第 3.5 批（可选，想清楚再做）── Cilium 由 ArgoCD adopt
+  前提：同一份 values、prune: false、sync 前 diff 为空；kube-vip 不 adopt
 
 第 4 批（清理）
   删 5 个调试 CM、轮换 RGW key、处理 stale helm release
