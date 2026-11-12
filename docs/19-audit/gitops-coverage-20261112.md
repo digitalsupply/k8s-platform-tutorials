@@ -2,7 +2,7 @@
 
 - **审计时间**：2026-11-12 15:0x CST
 - **集群**：6 节点 v1.35.9（m01 / master01-02 / worker01-03）
-- **ArgoCD**：v3.5.3，**40 个 Application**，声明管理 **728** 个对象（2026-11-12 三批纳管之后；审计时为 31/586）
+- **ArgoCD**：v3.5.3，**41 个 Application**，声明管理 **764** 个对象（2026-11-12 四批纳管之后；审计时为 31/586）
 - **判定口径**：以 **ArgoCD 自己的 `status.resources`** 为准（不是看 label —— ServerSideApply + 历史 helm 安装会让 label 不可靠）
 - **数据来源**：本机只读命令，脚本见 §8
 
@@ -64,7 +64,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 | 类别 | 数量 | 说明 |
 |---|---:|---|
 | ArgoCD Application | 31 | 全部 Synced/Healthy |
-| ArgoCD 声明的对象 | 728 | 平均 18 个/app；最大 `platform-monitoring-stack` 113、`platform-cert-manager` 48 |
+| ArgoCD 声明的对象 | 764 | 平均 19 个/app；最大 `platform-monitoring-stack` 113、`platform-cert-manager` 48 |
 | helm CLI 安装的 release | 10 | 见 §3，**全部不在 ArgoCD 里**（仅 argocd 自身的 release secret 带了个无关 label） |
 | 手工 `kubectl apply` 的工作负载 | 7 Deploy + 1 DS → **1 Deploy + 1 DS**（2026-11-12 后） | 剩余：metrics-server、coredns + kube-vip（DS） |
 | 未纳管 ConfigMap | 77 | 其中 5 个是调试残留（含**明文凭据**，见 §6） |
@@ -81,7 +81,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 
 | 组件 | 安装方式 | values 在 git | 有 Argo app | 判定 |
 |---|---|---|---|---|
-| **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | values + chart 已入库（batch 3） | 只有 `platform-cilium-l2`（一条策略） | 🔴 P0 → **部分完成**：values/chart 入库，**未 adopt**（chart 每次渲染会生成新的 CA，见 §7.3） |
+| **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | values + chart 已入库 | **✅ `platform-cilium`（2026-11-12，35 个对象）** | 🔴 P0 → ✅ 已纳管；3 个 TLS Secret 明确排除在 ArgoCD 之外（§7.4） |
 | **Loki**（日志） | helm CLI rev3，**手动 `-f` 升级** | `platform/logging/values.yaml` | 无 | 🔴 **P0（纯配置未入库，无自举约束）** |
 | **Tempo**（追踪） | helm CLI rev6 | **无 values 文件** | 无 | 🔴 **P0（同上）** |
 | **n8n + cloudflared** | kubectl apply | 无 | **✅ `platform-n8n`（2026-11-12）** | 🔴 P0 → ✅ 已纳管 |
@@ -298,7 +298,8 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
   5 个 app 全部 Synced/Healthy；只剩 metrics-server / coredns 还是手工 apply
 
 第 3 批（✅ 已完成 2026-11-12）── 接日志/追踪，凭据 SealedSecret 化
-  Alloy ✅、Loki ✅、Tempo ✅、cert-manager ✅；Cilium 留待单独窗口（§7.3）
+  Alloy ✅、Loki ✅、Tempo ✅、cert-manager ✅
+第 3.5 批（✅ 已完成 2026-11-12）── Cilium：35 个对象纳管，3 个 TLS Secret 排除（§7.4）
 第 3.5 批（可选，想清楚再做）── Cilium 由 ArgoCD adopt
   前提：同一份 values、prune: false、sync 前 diff 为空；kube-vip 不 adopt
 
@@ -462,7 +463,72 @@ chart 的 `tls.ca.method` 默认是 `helm`，靠 `lookup` 复用已有 Secret；
 2. 把 CA 管理交给 Cilium 自己（`tls.ca.method: cronjob`），chart 不再渲染这些 Secret —— 但这等于
    换掉证书轮转机制，需要验证 hubble-relay 与 operator 的证书挂载。
 
-现状：values + chart 已入库（重建有依据），但**网络数据面仍未由 ArgoCD 管理**，这一条不计入"已完成"。
+这条 P0 当时记为"部分完成"。同一天下午用**第三条路**收尾了：不碰证书，而是把 3 个 Secret
+从渲染产物里剔掉，其余 35 个对象交给 ArgoCD —— 见 §7.4。
+
+### 7.4 第 3.5 批执行记录：Cilium 纳管（2026-11-12，platform-gitops `66142da`）
+
+§7.3 列的两条路径都不是最优解：
+
+- 路径 1（`tls.ca.cert/key` 固定 + SealedSecret）要求 CA 私钥进 git；而且 SealedSecret 与 chart
+  会争同一个 Secret 的名字，得再引入一套"谁渲染、谁不渲染"的约定；
+- 路径 2（`hubble.tls.auto.method: cronJob`）会把证书轮转交给 operator 的 certgen Job，
+  等于换掉轮转机制，还要拉 `quay.io/cilium/certgen` 镜像（本集群 quay 出网不稳）。
+
+**第三条路：谁都不用改，只是别把证书交给 ArgoCD。**
+
+Cilium 的 35 个对象（DaemonSet `cilium`、operator、hubble-relay、hubble-ui、4 组 SA/Role/RoleBinding、
+3 个 ClusterRole(+Binding)、3 个 ConfigMap、6 个 Service、3 个 ServiceMonitor、
+Namespace `kube-system`）渲染出来对线上 `kubectl diff` 本来就是 **0 行**；
+唯一会漂移的就是那 3 个 TLS Secret。把它们从渲染产物里剔除，剩下的就完全幂等：
+
+```text
+$ kubectl diff -f platform/network/cilium/manifests.yaml
+（0 行，exit 0）
+```
+
+实现：`scripts/render-charts.sh` 的 ROWS 从 5 列扩到 6 列，最后一列是 `Kind/Name` 的正则。
+过滤时**按 `^---$` 切块并保留原文**（不重新序列化），避免 Helm 生成的引号/多行标量被 PyYAML 改写：
+
+```text
+platform/network/cilium/charts/cilium-1.20.4.tgz|...|kube-system|cilium|^Secret/(cilium-ca|hubble-relay-client-certs|hubble-server-certs)$
+       排除: Secret/cilium-ca, Secret/hubble-relay-client-certs, Secret/hubble-server-certs
+wrote platform/network/cilium/manifests.yaml (2177 行)
+```
+
+凭据归谁：chart 模板 `cilium-ca-secret.yaml` 自己带着
+`cilium.io/helm-template-non-idempotent: "true"` 这个标签（线上 Secret 上就有），
+说明作者也知道它不幂等。所以这 3 个 Secret 保持 **helm release 所有**，
+用 `lookup` 复用集群里已有的对象；ArgoCD 只负责"把除证书之外的一切拉回声明状态"。
+
+三条硬约束写进了 `platform/network/cilium/README.md`：
+
+1. `prune: false` 永远不开 —— 删掉 CNI DaemonSet 等于全集群丢网络，ArgoCD 自己都救不回来；
+   真要摘掉管理，`delete app` 不会删任何集群对象；
+2. 证书轮换顺序是"先删 Secret → 再 `helm upgrade` → 重启 hubble-relay"，反过来先 upgrade
+   会让 relay 拿着旧证书连不上；
+3. 除轮换外不要再对线上 `helm upgrade cilium`，否则 release 里的 values 会和仓里分叉
+   （`monitoring/prometheus` 的陈旧 release 就是这么来的）。
+
+验收（实测）：
+
+```text
+platform-cilium                    Synced / Healthy，35/35 个资源 Synced
+41 个 Application                  全部 Synced / Healthy，对象总数 728 → 764
+
+无滚动：cilium pod creationTimestamp 仍是 2026-11-09（adopt 前后未变）
+        cilium-ca / hubble-server-certs / hubble-relay-client-certs 仍是 2026-11-08 签发
+物理面：cilium-dbg status --brief  → OK
+        hubble-relay 日志 level=error → 0 条
+        hubble_flows_processed_total  → 1h 内 221 万条（mTLS 正常，数据面在跑）
+        抓取目标 up=8 / down=0
+跨节点：测试 pod 落在 worker01，DNS 解析 10.96.0.1 OK、apiserver /healthz 200、
+        loki-gateway 200、tempo 200、grafana /healthz 200
+```
+
+验证时踩的小坑（记下来省一次排查）：Loki 在 `logging` 命名空间，不是 `loki`。
+`curl http://loki-gateway.loki.svc/...` 会得到 `Could not resolve host` / `000`，
+看着像网络坏了，实际是名字写错。
 
 ---
 
