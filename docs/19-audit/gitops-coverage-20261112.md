@@ -2,7 +2,7 @@
 
 - **审计时间**：2026-11-12 15:0x CST
 - **集群**：6 节点 v1.35.9（m01 / master01-02 / worker01-03）
-- **ArgoCD**：v3.5.3，31 个 Application，声明管理 **586** 个对象
+- **ArgoCD**：v3.5.3，**40 个 Application**，声明管理 **728** 个对象（2026-11-12 三批纳管之后；审计时为 31/586）
 - **判定口径**：以 **ArgoCD 自己的 `status.resources`** 为准（不是看 label —— ServerSideApply + 历史 helm 安装会让 label 不可靠）
 - **数据来源**：本机只读命令，脚本见 §8
 
@@ -64,7 +64,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 | 类别 | 数量 | 说明 |
 |---|---:|---|
 | ArgoCD Application | 31 | 全部 Synced/Healthy |
-| ArgoCD 声明的对象 | 586 | 平均 19 个/app；最大 `platform-monitoring-stack` 113 |
+| ArgoCD 声明的对象 | 728 | 平均 18 个/app；最大 `platform-monitoring-stack` 113、`platform-cert-manager` 48 |
 | helm CLI 安装的 release | 10 | 见 §3，**全部不在 ArgoCD 里**（仅 argocd 自身的 release secret 带了个无关 label） |
 | 手工 `kubectl apply` 的工作负载 | 7 Deploy + 1 DS → **1 Deploy + 1 DS**（2026-11-12 后） | 剩余：metrics-server、coredns + kube-vip（DS） |
 | 未纳管 ConfigMap | 77 | 其中 5 个是调试残留（含**明文凭据**，见 §6） |
@@ -81,7 +81,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 
 | 组件 | 安装方式 | values 在 git | 有 Argo app | 判定 |
 |---|---|---|---|---|
-| **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | `platform/network/cilium/values.yaml` **无引用** | 只有 `platform-cilium-l2`（一条策略） | 🔴 **P0（Tier 0.5）**：values 必须入库 + 可选 adopt |
+| **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | values + chart 已入库（batch 3） | 只有 `platform-cilium-l2`（一条策略） | 🔴 P0 → **部分完成**：values/chart 入库，**未 adopt**（chart 每次渲染会生成新的 CA，见 §7.3） |
 | **Loki**（日志） | helm CLI rev3，**手动 `-f` 升级** | `platform/logging/values.yaml` | 无 | 🔴 **P0（纯配置未入库，无自举约束）** |
 | **Tempo**（追踪） | helm CLI rev6 | **无 values 文件** | 无 | 🔴 **P0（同上）** |
 | **n8n + cloudflared** | kubectl apply | 无 | **✅ `platform-n8n`（2026-11-12）** | 🔴 P0 → ✅ 已纳管 |
@@ -297,8 +297,8 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
   n8n + cloudflared、gitlab-runner、buildkitd、otel-collector CR、nfs-provisioner
   5 个 app 全部 Synced/Healthy；只剩 metrics-server / coredns 还是手工 apply
 
-第 3 批（需窗口）        ── 接日志/追踪（无自举约束）
-  Loki（先 SealedSecret 化 S3 凭据）→ Alloy → Tempo
+第 3 批（✅ 已完成 2026-11-12）── 接日志/追踪，凭据 SealedSecret 化
+  Alloy ✅、Loki ✅、Tempo ✅、cert-manager ✅；Cilium 留待单独窗口（§7.3）
 第 3.5 批（可选，想清楚再做）── Cilium 由 ArgoCD adopt
   前提：同一份 values、prune: false、sync 前 diff 为空；kube-vip 不 adopt
 
@@ -383,8 +383,86 @@ gitlab-runner               rollout 成功（换挂载必然重启一次），Se
    otel-collector 的新 Pod 被调度到 worker02，从 ghcr.io 拉镜像卡了 5 分钟（本网络对外很慢）。
    单副本 + 滚动策略，服务未中断；但接管 operator CR 时要预期一次无意义滚动并确认目标节点有镜像。
 
-**第 2 批没有做**：Alloy（P1）、ArgoCD 自身、Loki/Tempo/Cilium 的 Application（留给第 3 批，
-Loki 要先 SealedSecret 化 S3 凭据）；`cicd` 里的 Tekton 相关 Secret（`gitlab-auth` 等 6 个）仍未封。
+**第 2 批没有做**：Alloy（P1）、ArgoCD 自身、Loki/Tempo/Cilium 的 Application（第 3 批处理了前三类，见 §7.3）；
+`cicd` 里的 Tekton 相关 Secret（`gitlab-auth` 等 6 个）仍未封。
+
+### 7.3 第 3 批执行记录（2026-11-12，platform-gitops `d1aa358`）
+
+范围：Alloy（P1）、Loki（P0）、Tempo（P0）、cert-manager（P1）+ 把 S3 凭据从 values 里赶进 Secret。
+Cilium 主动**暂缓**，原因在文末。
+
+| 组件 | Application | 对象数 | 关键改动 |
+|---|---|---|---|
+| Alloy | `platform-alloy` | 5 | 0 diff 直接接管；顺带把 `platform-alloy-config` 的 `directory.include` 收窄到 `alloy-config.yaml`（否则两个 app 抢同一个 DaemonSet） |
+| Loki | `platform-loki` | 6 | S3 凭据 → `${LOKI_S3_...}` + SealedSecret `logging/loki-s3` |
+| Tempo | `platform-tempo` | 10 | 同上，SealedSecret `logging/tempo-s3` |
+| cert-manager | `platform-cert-manager` | 48 | 关掉 `startupapicheck`（历史 Job 的 spec 不可变，ArgoCD 会永久报错），关掉后 0 diff |
+
+**卡住的地方：ArgoCD 的 Helm-in-Git 在本集群不可用。**
+`source.repoURL=<git> + chart=charts/xxx.tgz` 会报
+`error decoding index: yaml: line 3: mapping values are not allowed in this context` ——
+ArgoCD v3.5.3 把 git 仓库当 Helm 仓库去拉 `index.yaml`（仓库注册类型确实是 git）。
+换 `path=charts`、换 chart 名都不行；`argocd` CLI 的 token 也已过期，没法用 `app diff` 旁证。
+
+**改用「渲染后提交」**（`scripts/render-charts.sh`）：
+
+```text
+values.yaml + charts/<chart>.tgz  --(helm template --no-hooks)-->  <component>/manifests.yaml
+```
+
+- values 仍是唯一输入；manifest 是产物，App 读普通目录（`directory.include` 限定文件）；
+- `scripts/render-charts.sh --check` 在 CI 里比对，values 改了没重渲染就报 DRIFT；
+- 顺带解决 chart 拉不动外网的问题（chart tgz 已进仓，共 ~0.65 MB）。
+
+**凭据改造（Loki/Tempo）**：values 里写 `${LOKI_S3_ACCESS_KEY_ID}` 这类占位，
+`global.extraArg: -config.expand-env=true` + `global.extraEnvFrom: secretRef` 注入。
+两个二进制是否支持该 flag 是先用一次性 Pod 验的：
+
+```bash
+kubectl -n logging run flagcheck --rm -i --restart=Never --image=<loki/tempo 镜像> -- -help | grep expand-env
+# loki:  -config.expand-env        tempo: -config.expand-env value
+```
+
+渲染产物逐个容器核对过（**缺任何一个角色就会 S3 认证失败**）：
+
+```text
+loki   read / backend / write   expand-env=True  envFrom=['loki-s3']
+       (gateway、canary、memcached 不需要)
+tempo  distributor / metrics-generator / querier / query-frontend /
+       backend-scheduler / backend-worker / block-builder / live-store
+                                 expand-env=True  envFrom=['tempo-s3']
+```
+
+验收（实测，切换后 10 分钟内）：
+
+```text
+40 个 Application                全部 Synced / Healthy（对象总数 586 → 728）
+loki/tempo 抓取目标              up=8  down=0
+loki chunk flush 速率            0.028 /s      ← 值非零 = 凭据切换后仍在成功写 S3
+loki 网关 push                   204（Alloy 与 canary 持续推送）
+S3 认证错误（write/backend/tempo 日志）  0 条 access denied / SignatureDoesNotMatch
+tempo spans 接收 / 落盘          0.68 /s  →  0.21 traces/s
+pod 重启                         仅本次变更导致的滚动（loki 5 + tempo 10 + memcached 3）
+```
+
+**Cilium 为什么没在这一批 adopt。**
+渲染 cilium 1.20.4 后 `kubectl diff` 只有 3 个对象不同，全是 chart 生成的 TLS 物料：
+
+```text
+Secret kube-system/cilium-ca
+Secret kube-system/hubble-relay-client-certs
+Secret kube-system/hubble-server-certs
+```
+
+chart 的 `tls.ca.method` 默认是 `helm`，靠 `lookup` 复用已有 Secret；ArgoCD 渲染时拿不到
+集群里的对象 → 每次 sync 都生成一套新 CA/证书 → **Hubble 的 mTLS 会被打断**，relay/UI 认证失败。
+两条可行路径（都要单独窗口）：
+
+1. 把现有 CA/cert 以 SealedSecret 形式入库，values 里固定 `tls.ca.cert/key`（推荐，改动可控）；
+2. 把 CA 管理交给 Cilium 自己（`tls.ca.method: cronjob`），chart 不再渲染这些 Secret —— 但这等于
+   换掉证书轮转机制，需要验证 hubble-relay 与 operator 的证书挂载。
+
+现状：values + chart 已入库（重建有依据），但**网络数据面仍未由 ArgoCD 管理**，这一条不计入"已完成"。
 
 ---
 
