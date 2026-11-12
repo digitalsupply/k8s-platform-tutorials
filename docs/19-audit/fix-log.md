@@ -292,3 +292,74 @@ Keycloak 那 10 篇用另一套头：`状态：已作废（Keycloak 时代的 SS
 - `16`：Kafka 堆大小随节点内存变化的算法（数值已确认合理，未写"如何按节点算"）。
 
 这些不再按"文档 bug"处理，属于**需要作者补业务口径**的部分；建议以 `00-cluster-overview/assets/current-state.md` 当唯一数字源，以后只维护那一处。
+
+---
+
+## 11. 第四轮：把"当前状态"收敛成唯一数字源（2026-11-11 深夜）
+
+审计里反复出现同一类问题：**同一组数字被抄在两个地方，两边一起漂移**。
+根 README 说 44 个 PrometheusRule / 27 个 ServiceMonitor，`04-current-state.md` 也说 44 / 248，
+而现场是 **43 / 26 / 248**。改哪边都只是把漂移推迟到下一次。
+
+这一轮换了做法：**建一个唯一数字源，其他章节不许再写死数字**。
+
+### 11.1 新增：可重复采集的 canon
+
+| 文件 | 作用 |
+|---|---|
+| `docs/00-cluster-overview/assets/collect_current_state.py` | 只读采集（kubectl + Prometheus API），输出 Markdown 表格 |
+| `docs/00-cluster-overview/assets/current-state.md` | **唯一数字源**。§0 写纪律，`BEGIN/END GENERATED` 之间由脚本产出，§8 起是手写拓扑/配置 |
+| `docs/00-cluster-overview/assets/current-state-raw-20261110.md` | 原 2026-11-10 的原始 dump，保留作"当时是什么样"的对照 |
+
+canon 结构：§1 版本｜§2 节点与容量｜§3 对象计数（15 类）｜§4 组件版本（15 个组件）｜
+§5 Prometheus 运行态（组/条/错误/target/保留期/firing）｜§6 存储｜§7 入口｜
+§8 Ceph（`ceph -s` 实测）｜§9 外部宿主机｜§10 入口路由与鉴权｜§11 保留期与告警链路｜§12 变更历史。
+
+刷新方式：
+
+```bash
+python3 docs/00-cluster-overview/assets/collect_current_state.py > /tmp/cs.md
+# 用 /tmp/cs.md 替换 current-state.md 里 BEGIN GENERATED 与 END GENERATED 之间的内容
+```
+
+### 11.2 删掉的重复状态表
+
+| 位置 | 处理 | 原来错在哪 |
+|---|---|---|
+| 根 `README.md` "当前集群状态" | **整表删除**，改为 8 条不变式 + 指向 canon | PrometheusRule 44（实际 43）、ServiceMonitor 27（实际 26） |
+| `docs/04-monitoring-gitops/04-current-state.md` | **降级为"监控栈契约"**：只留 selector / CRD 归属 / 接收器 / Grafana 约束 | 版本表、应用数、规则数全是副本；PrometheusRule 44 早已是 43 |
+| `docs/04-monitoring-gitops/monitoring-gitops-phase1.md` | 规则/规则数改成指向 canon | `44（35 chart + 6 GitOps + 3 团队）`、`251 alerting` 都是旧值 |
+| `docs/04-monitoring-gitops/10-observability-engineering.md` | "52 job，27 SM + 16 PM" → 组成公式 + canon 链接 | SM 27 → 26 |
+| `docs/15-interview-cheatsheet/09-observability.md` | 同上 | 同上 |
+| `docs/15-interview-cheatsheet/00-verification-matrix.md` | 加"数字口径"声明；把 `TIME_WAIT 121`/`conntrack 773`/`51 个 25%/25%`/`52 job` 等改写成**命令 + 一次取值** | 矩阵的价值是"怎么验"，写死数字会被面试官当成背题 |
+| `docs/10-cicd-delivery/10-pipeline-release-artifacts.md` | rollout 分布从写死改成**一条 jq 命令** + 一次取值 | 分布随部署变化，写死必漂 |
+| `docs/11-gitops-platform/{README,10-iac-evolution}.md` | "31 个 Application" → 指向 canon | 数量会变 |
+| `docs/00-cluster-overview/README.md` | 顶部加"数字口径"；修正鉴权描述 | 原文写"oauth2-proxy 保护 ArgoCD/Tekton/Hubble/Alloy/Traefik" —— **ArgoCD 与 Grafana 走各自原生 OIDC，不在 oauth2-proxy 后面**（IngressRoute 后端实测） |
+| `docs/02-cilium-ebpf/README.md` | "当前状态（2026-11-10）" → 只留数据面形态，版本/数量指向 canon | 写死 1.20.4 / 6/6 |
+| `docs/06-storage-ceph/README.md` | PV 数量改指向 canon，只留"删了 10 个失效 PV（95Gi）"这类历史事实 | 写死 17 |
+
+### 11.3 判断口径（哪些数字可以留）
+
+留：**结构不变量** —— "3 control-plane + 3 worker"、"2 个 StorageClass"、"kube-proxy 已移除"、
+"oauth2-proxy 是反向代理模式"、"ceph-rbd-sc 是 Retain"。这些变了就是架构变了，值得改文档。
+
+不留：**运行态计数** —— Pod 数、Deployment 数、PV 数、规则条数、target 数、ServiceMonitor 数、
+应用数、版本号（升级就变）、TIME_WAIT/conntrack 这类秒级波动量。这些一律 canon 或现算。
+
+### 11.4 验证
+
+```bash
+# 1) 采集脚本能跑通（exit 0，输出 7 个小节）
+python3 docs/00-cluster-overview/assets/collect_current_state.py | grep -c '^### '     # → 7
+
+# 2) 全仓库断链为 0（本轮改了 21 处链接）
+python3 <检查器> .   # MD_BROKEN_LINK: 0 / MD_FENCE_UNBALANCED: 0 / SH_SYNTAX_ERROR: 0
+
+# 3) canon 里的数字与现场一致（抽查三处）
+kubectl get pv --no-headers | wc -l                                  # 17
+kubectl get servicemonitors.monitoring.coreos.com -A --no-headers | wc -l   # 26
+kubectl get prometheusrules.monitoring.coreos.com -A --no-headers | wc -l   # 43
+```
+
+> 遗留：`notes/` 下的历史文档里仍有旧数字，那是**历史快照**，按第二轮的规则不动正文
+> （文首已有"状态：历史快照"头）。仓库里现在只有一处"当前值"，就是 `current-state.md`。

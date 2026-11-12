@@ -3,6 +3,9 @@
 > 这一章不是操作教程，而是“地图”。后面所有案例都发生在这套集群里，
 > 先把拓扑、版本、边界和已知短板讲清楚，读其他章节时才不会被 IP、节点名和组件关系绕晕。
 
+> **数字口径**：本章给的是"地图"（拓扑、边界、组件关系）。**所有会变的数字**（多少个 Pod、多少条规则、
+> 什么版本、PV 几个）一律以 [current-state](assets/current-state.md)（唯一数字源）为准，章内出现的版本号只是写文时的取值。
+
 ## 当时的情况
 
 这是一套**跨两台物理宿主机**的实验/生产混合集群：
@@ -18,14 +21,16 @@ K8s/Ceph 侧：
 - 容器运行时：containerd `2.3.2` + runc `1.4.3`；
 - CNI：Cilium `1.20.4`，**全量 CNI + kube-proxy replacement + eBPF host routing + BPF masquerade + native routing**；
 - 入口：Traefik `v3.7.17`（LoadBalancer VIP `10.0.0.252`），MetalLB Controller 仍负责 LB IPAM，L2 宣告已交给 Cilium；
-- GitOps：ArgoCD `v3.5.3`，31 个 Application；
+- GitOps：ArgoCD（版本与应用数见 current-state §3/§4）；
 - 监控：kube-prometheus-stack `83.7.0` / prometheus-operator `0.90.1`，Prometheus `v3.x`；
 - 日志：Loki `3.6.7` + Grafana Alloy `v1.20.0`；
 - 追踪：Tempo 3.0.3（tempo-distributed），OTel Operator/Collector；
 - 存储：外部 Ceph Reef `18.2.8`（3 台 VM、6 个 OSD），K8s 通过 ceph-csi 使用 RBD；另有 NFS StorageClass；
 - 数据库/消息：CloudNativePG（PostgreSQL 16）、Strimzi Kafka、Redis；
 - 交付：GitLab（Hyper-V VM `ubuntu01` `192.168.67.201`）+ GitLab Runner + Tekton + Harbor（VM `ubuntu02` `192.168.67.202`）+ ArgoCD；
-- 身份：oauth2-proxy + Dex，保护 ArgoCD/Tekton/Hubble/Alloy/Traefik 等 UI。
+- 身份：**oauth2-proxy（反向代理模式）保护 Tekton/Hubble/Alloy/Traefik** 的 UI；
+  **ArgoCD 与 Grafana 走各自的原生 OIDC**（GitLab 作 IdP），不在 oauth2-proxy 后面。
+  路由表见 [current-state §10](assets/current-state.md#10-入口路由与鉴权)。
 
 > 注意 1：K8s 与 Ceph 都是 PVE `teacher` 上的 VM，**共享同一台物理机的 CPU、内存和磁盘**。
 > 所以“节点内存 84%”“Ceph 慢”“Pod 抖动”经常是同一层的资源竞争，而不是某个组件单独的 bug。
@@ -33,6 +38,8 @@ K8s/Ceph 侧：
 > 注意 2：GitLab/Harbor **不是 201/202 物理机**，而是 Windows Hyper-V 宿主 `SYZX-HY2-TX`（192.168.67.110）
 > 上的 `ubuntu01`/`ubuntu02` VM。宿主层问题（VM 暂停、VHDX 满、虚拟交换机故障）会同时影响 GitLab 和 Harbor。
 > 详见 [Hyper-V 宿主证据](assets/hyperv-host-20261111/README.md)。
+
+**所有会变的数字**（版本/计数/容量）见 [current-state](assets/current-state.md)，由 [`assets/collect_current_state.py`](assets/collect_current_state.py) 采集；本文只在架构变化时更新。
 
 ```text
 PVE teacher 192.168.67.156

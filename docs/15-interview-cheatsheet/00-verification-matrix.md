@@ -1,5 +1,7 @@
 # 全部面试断言的验证矩阵
 
+> **数字口径**：矩阵里的数字是"这条命令确实跑通过"的一次取值（标注了日期），**不是当前值**。当前值见 [current-state](../00-cluster-overview/assets/current-state.md)；面试时要说的是"怎么验"，不是背某个数字。
+
 > 状态说明：
 >
 > - ✅ **实测**：本环境有直接命令输出；
@@ -22,7 +24,7 @@
 | 僵尸进程 `kill -9` 无效，需父进程 wait | ✅ | 05 实验：`State: Z`，`PPid` |
 | 负载高 CPU 低是 D 状态/IO 阻塞 | ⚠️ | PVE load 8.21/40 核；GitLab IO PSI 35.95；未持续制造 D |
 | free 的 cache 可回收，看 available | ✅ | worker01 free 332Mi/available 5.9Gi |
-| TIME_WAIT 主动关闭方，会自愈 | ✅ | worker01 TIME_WAIT 121（2026-11-11） |
+| TIME_WAIT 主动关闭方，会自愈 | ✅ | `ss -tan state time-wait \| wc -l`（2026-11-11 worker01 为 121，随流量变） |
 | CLOSE_WAIT 是应用没 close | ✅ | 实验制造 CLOSE_WAIT=1 |
 | 三次握手 SYN/SYN-ACK/ACK | ✅ | tcpdump loopback |
 | refused/timeout/reset 区别 | ✅ | 本机实测三种异常 |
@@ -42,7 +44,7 @@
 
 | 断言 | 状态 | 证据 |
 |---|---|---|
-| TIME_WAIT 2MSL | ✅ | `ss` 121 个 TIME_WAIT（2026-11-11）；状态机 |
+| TIME_WAIT 2MSL | ✅ | `ss` 能看到 2MSL 时长的 TIME_WAIT；状态机 |
 | CLOSE_WAIT 是代码问题 | ✅ | 实验 CLOSE_WAIT，未 close |
 | 三次握手防历史 SYN/确认双工 | ✅ | tcpdump |
 | refused=有 RST | ✅ | `ConnectionRefusedError` |
@@ -166,7 +168,7 @@
 | 应用 tag 用 SHA | ✅ | compassio/deeptutor 全 SHA40 |
 | 禁止 latest | ⚠️ | 基础镜像仍有 `latest`；openwebui 有 `manual-test1` |
 | tag 不可变 | ❌ | Harbor immutable rules = 0 |
-| 滚动发布 | ✅ | 集群 51 个 25%/25%（共 74 个 Deployment）；lab 4 秒完成 |
+| 滚动发布 | ✅ | `kubectl get deploy -A -o jsonpath` 统计 maxSurge/maxUnavailable 分布（数量见 current-state §3）；lab 4 秒完成 |
 | 蓝绿 | ✅ | lab selector blue→green，响应变化 |
 | 金丝雀 | ⚠️ | Argo Rollouts 未装；Traefik 权重可分流 |
 | Feature Flag | ❌ | 无 flag 系统；ConfigMap 仅静态开关 |
@@ -194,7 +196,7 @@
 | `histogram_quantile` | ✅ | 不聚合 188 条/122 NaN；`sum by (le)` 后 p99=0.0229s |
 | bucket 选择 | ✅ | 10 个桶（0.005–60s），0.1–1s 跨度过大 |
 | 黑盒监控 | ❌ | 0 Probe、无 blackbox exporter |
-| 白盒监控 | ✅ | 52 job = 27 SM + 16 PM + 9 个 chart 内置 scrapeConfig（115 target） |
+| 白盒监控 | ✅ | job 数 = ServiceMonitor + PodMonitor + chart 内置 scrapeConfig 之和（三者计数见 current-state §3） |
 | 四层监控 | ✅ | 基础设施/中间件/应用/业务均有实际指标 |
 | 业务指标 | ✅ | `compassio_users_total` 887 学生、LLM 27.6k/24h、DeepTutor 轮次 |
 | 日志结构化 | ⚠️ | Alloy `stage.json=0`、`sampling=0` |
@@ -346,11 +348,11 @@
 | somaxconn | ✅ | 4096 |
 | syn backlog | ⚠️ | 512，低于 8192 建议 |
 | syncookies | ✅ | 1 |
-| TIME_WAIT | ✅ | 121，正常（2026-11-11 复核） |
+| TIME_WAIT | ✅ | 数量看 `ss -tan state time-wait \| wc -l`（2026-11-11 为 121，正常） |
 | CLOSE_WAIT | ⚠️ | 1，需观察 |
 | ListenOverflows | ✅ | 0 |
 | softnet drop | ✅ | 0 |
-| conntrack | ✅ | 773/262144（2026-11-11） |
+| conntrack | ✅ | `cat /proc/sys/net/netfilter/nf_conntrack_count`（2026-11-11 为 773/262144） |
 | keepalive | ❌ | 7200，大于典型 LB idle |
 | 端口范围 | ⚠️ | 28,232 个，可能耗尽 |
 | tcp_rmem/rmem_max | ⚠️ | max 6MB vs 208KB，不匹配 |

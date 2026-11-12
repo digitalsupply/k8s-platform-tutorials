@@ -66,7 +66,7 @@
 
 **一句话**：黑盒看“用户能不能用”，白盒看“内部为什么慢/错”。
 
-**本环境**：白盒 52 job（27 SM + 16 PM + 9 个 chart 内置 scrapeConfig）；黑盒 0 Probe、无 blackbox exporter，是明显缺口。
+**本环境**：白盒 job 由三部分组成（ServiceMonitor / PodMonitor / chart 内置 scrapeConfig，计数见 [current-state](../00-cluster-overview/assets/current-state.md) §3；2026-11-11 为 52）；黑盒 0 Probe、无 blackbox exporter，是明显缺口。
 
 ## 12. 分层监控
 

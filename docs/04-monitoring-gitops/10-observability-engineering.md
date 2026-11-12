@@ -311,7 +311,7 @@ irate 规则: 1
 | 视角 | 看什么 | 手段 | 本环境 |
 |---|---|---|---|
 | 黑盒 | 用户能否访问、响应是否正确/快 | 拨测、HTTP/TCP/ICMP Probe、合成事务 | **缺失**（0 Probe，无 blackbox exporter） |
-| 白盒 | 内部队列、GC、连接池、错误码、延迟分布 | exporter / `/metrics` / OTel | 52 job，27 SM + 16 PM |
+| 白盒 | 内部队列、GC、连接池、错误码、延迟分布 | exporter / `/metrics` / OTel | job 数 = ServiceMonitor + PodMonitor + chart 内置 scrapeConfig（计数见 [current-state](../00-cluster-overview/assets/current-state.md) §3） |
 
 黑盒回答“服务活着吗”，白盒回答“为什么慢/为什么错”。
 只有白盒会出现“所有指标正常但用户打不开”的盲区；只有黑盒会“知道挂了但不知道原因”。

@@ -176,8 +176,8 @@ spec:
 | ArgoCD App `platform-monitoring-rules` | Synced / Healthy |
 | revision | `9a341c2339ea993690935bd686ee93378939a313` |
 | ArgoCD 跟踪的规则 | 6 个 |
-| PrometheusRule 总数 | 44（35 chart + 6 GitOps + 3 团队） |
-| Prometheus 加载 | 251 alerting + 94 recording，health 全部 ok |
+| PrometheusRule 归属 | chart 自带 + GitOps 自建 + 业务团队自建三类（**数量随部署变化，见 [current-state](../00-cluster-overview/assets/current-state.md) §3**；写文时为 44） |
+| Prometheus 加载 | alerting/recording 的组数与条数见 [current-state](../00-cluster-overview/assets/current-state.md) §5（写文时为 251 alerting + 94 recording） |
 | `MetalLBSpeakerNotReady` 重复 | 0（仅保留 1 份） |
 
 验证命令：

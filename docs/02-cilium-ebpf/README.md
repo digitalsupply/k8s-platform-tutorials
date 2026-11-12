@@ -197,12 +197,13 @@ kubectl -n kube-system exec ds/cilium -- cilium-dbg bpf ipcache list
 > 迁移相关脚本/清单是**当时状态的备份**，不要直接 apply 到别的集群。
 > 尤其是 `values-full-*`、`ippool-before.yaml`、`kube-proxy-*-before.yaml` 只用于对照和回滚。
 
-## 当前状态（2026-11-10）
+## 当前状态
 
-- Cilium `1.20.4`，6/6 agent Running；
-- `KubeProxyReplacement=True`，`Host Routing: BPF`，`Masquerading: BPF`；
-- `Routing: Network: Native`，`devices=eth0`；
-- Hubble 正常，flow 上限 4095；
-- kube-proxy DaemonSet 已不存在；
-- MetalLB Speaker 已缩容到 0，Controller 保留；
-- Traefik VIP `10.0.0.252` 由 Cilium L2 宣告。
+- 数据面**形态**（这是架构，不是数字）：`KubeProxyReplacement=True`、`Host Routing: BPF`、
+  `Masquerading: BPF`、`Routing: Network: Native`、`devices=eth0`；
+- kube-proxy DaemonSet 已不存在；MetalLB Speaker 已缩容到 0（Controller 保留做 LB IPAM）；
+- Traefik VIP 由 Cilium L2 宣告。
+
+> 版本号、agent 数量、Hubble flow 上限等**实时值**见
+> [current-state](../00-cluster-overview/assets/current-state.md)（§3 对象计数 / §4 组件版本 / §7 入口）。
+> 本章正文里的 `1.20.4`、`6/6` 是写文时的取值。

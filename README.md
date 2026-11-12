@@ -73,28 +73,26 @@
 
 ---
 
-## 当前集群状态（2026-11-10 快照，2026-11-11 补充 Hyper-V 宿主）
+## 当前集群状态
 
-> 完整快照见 [00-cluster-overview/assets/current-state.md](docs/00-cluster-overview/assets/current-state.md)。
+> **唯一数字源**：[docs/00-cluster-overview/assets/current-state.md](docs/00-cluster-overview/assets/current-state.md)。
+> 由 `assets/collect_current_state.py` 只读采集（最近一次：2026-11-11 23:5x），**数字只在那里改**。
 
-| 项 | 状态 |
-|---|---|
-| 节点 | 6/6 Ready，`v1.35.9`，containerd `2.3.2` |
-| CNI | Cilium `1.20.4`，6/6 agent Running |
-| Service 数据面 | `KubeProxyReplacement=True`，Host BPF，BPF masquerade，native routing |
-| kube-proxy | 已移除（DaemonSet/CM/ServiceMonitor 均不存在） |
-| 入口 | Traefik `10.0.0.252`，Cilium L2 宣告；MetalLB Speaker 已缩容到 0，Controller 保留 |
-| ArgoCD | 31 个 Application，全部 Synced/Healthy |
-| 监控 | Prometheus/Alertmanager/Grafana 正常；PrometheusRule 44 个（monitoring 41 + deeptutor 2 + compassio 1）；ServiceMonitor 27 个（monitoring 14 + 其余 13） |
-| 日志 | Loki `3.6.7` + Alloy `v1.20.0` |
-| 追踪 | Tempo `3.0.3`（tempo-distributed） |
-| 存储 | Ceph Reef `18.2.8`，`HEALTH_OK`；17 个 PV 全部 Bound |
-| 备份 | etcd 每小时快照（`etcd-backup/etcd-snapshot`）；CNPG Barman 备份 |
-| 交付 | GitLab Runner + Tekton + BuildKit + Harbor + ArgoCD |
-| GitLab/Harbor 宿主 | Windows Hyper-V `SYZX-HY2-TX` `192.168.67.110`；`ubuntu01`/`ubuntu02` VM（非物理机） |
-| 统一登录 | GitLab OIDC：Grafana/ArgoCD/Harbor 原生；Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy |
+这一节原来有一张"6 节点 / 31 Application / 44 PrometheusRule / 27 ServiceMonitor"的表，
+和 `current-state.md`、`04-current-state.md` 是三份副本，各自漂移（审计时实测已是 43 / 26）。
+2026-11-11 起删掉副本，只保留**不随部署变化的形态**：
 
-> 数字会变。把 `current-state.md` 当“某个时刻的证据”，而不是永久配置。
+- 6 节点 kubeadm 集群（3 control-plane + 3 worker），部署在 PVE 上；版本见 canon；
+- Service 数据面由 **Cilium eBPF** 完成，kube-proxy 已移除（`KubeProxyReplacement=True`）；
+- 入口 **Traefik** + Cilium L2 宣告 VIP；MetalLB Speaker 已缩容，Controller 保留做 IPAM；
+- GitOps 用 **ArgoCD**，配置源是 `platform-gitops` 仓（selfHeal）；
+- 统一登录用 **GitLab 作 IdP**：Grafana / ArgoCD / Harbor 走各自原生 OIDC，
+  Traefik / Hubble / Alloy / Tekton 走 **oauth2-proxy 反向代理**；
+- 存储 Ceph Reef + ceph-csi RBD（`reclaimPolicy: Retain`），另有一个 NFS StorageClass；
+- 交付：GitLab → GitLab Runner → Tekton → BuildKit/kaniko → Harbor → ArgoCD。
+
+> 需要某个具体数字时别抄这里，去 canon 取，或者直接跑一遍采集脚本。
+
 
 ---
 
@@ -102,7 +100,7 @@
 
 | 分类 | 配套资产 |
 |---|---|
-| 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md)、[`hyperv-host-20261111/`](docs/00-cluster-overview/assets/hyperv-host-20261111/README.md) |
+| 00 集群全景 | [`cluster_inventory.py`](docs/00-cluster-overview/scripts/cluster_inventory.py)、[`current-state.md`](docs/00-cluster-overview/assets/current-state.md)（**唯一数字源**）、[`collect_current_state.py`](docs/00-cluster-overview/assets/collect_current_state.py)、[`hyperv-host-20261111/`](docs/00-cluster-overview/assets/hyperv-host-20261111/README.md) |
 | 01 Kubernetes | [`pod_inspect.py`](docs/01-kubernetes-k3s/scripts/pod_inspect.py)、[`collect_k8s_interview_evidence.sh`](docs/01-kubernetes-k3s/scripts/collect_k8s_interview_evidence.sh)、[`upgrade-scripts/`](docs/01-kubernetes-k3s/assets/upgrade-scripts/)、[`interview-evidence/`](docs/01-kubernetes-k3s/assets/interview-evidence/m01-evidence.txt) |
 | 02 Cilium/eBPF | [`labs/`](docs/02-cilium-ebpf/labs/README.md)、[`experiment/`](docs/02-cilium-ebpf/experiment/README.md)、[`collect_cilium_bpf.py`](docs/02-cilium-ebpf/scripts/collect_cilium_bpf.py)、[`assets/`](docs/02-cilium-ebpf/assets/) |
 | 03 GitLab/Harbor | [`check_ports.py`](docs/03-gitlab/scripts/check_ports.py)、[`assets/`](docs/03-gitlab/assets/)、账号/Token/Webhook、CI-CD、Harbor 文档 |

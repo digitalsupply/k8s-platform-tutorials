@@ -1,41 +1,34 @@
-# 当前集群状态快照（2026-11-10）
+# 监控栈契约（配置事实，不是状态快照）
 
-> 这是整理文档时的实际状态，后续会变化。
+> **本文件已降级**：原来这里是一份"当前状态快照"，与 `00-cluster-overview/assets/current-state.md` 重复，
+> 两份一起漂移（例如 PrometheusRule 数量 44 与实际 43 不一致）。
+> 2026-11-11 起：**所有会变的数字一律去** [current-state](../00-cluster-overview/assets/current-state.md) **取**（§3 对象计数、§4 组件版本、§5 Prometheus 运行态）。
+>
+> 本文件只保留**不随环境变化的契约**：selector 怎么配、CRD 归谁管、Alertmanager 有哪些接收器、Grafana 的部署约束。
 > 命令默认使用 `export KUBECONFIG=~/.kube/deeptutor-config`。
 
-## 1. 集群与版本
+## 1. 版本
 
-| 项 | 值（采集 2026-11-11） |
-|---|---|
-| Kubernetes | v1.35.9（kubeadm） |
-| 节点 | 3 control-plane + 3 worker |
-| CNI | Cilium 1.20.4 |
-| ArgoCD | v3.5.3 |
-| kube-prometheus-stack | 83.7.0 |
-| prometheus-operator | v0.90.1 |
-| Prometheus | v3.11.2 |
-| Alertmanager | v0.32.0 |
-| prometheus-adapter | 5.3.0 |
+版本会变，本文不再维护 —— 直接看 [current-state](../00-cluster-overview/assets/current-state.md) §4 组件版本。
+本文只记**与监控栈强绑定**的一条：chart 是 `kube-prometheus-stack`，operator 由该 chart 一起装，
+所以升级 either 一起升；`prometheus-adapter` 是独立 release。
 
-## 2. ArgoCD 应用
+## 2. ArgoCD 应用（只列名单，数量见 current-state §3）
 
-| 项 | 状态 |
-|---|---|
-| 应用总数 | 31 |
-| 监控相关 | `platform-monitoring-stack`、`platform-monitoring-crds`、`platform-monitoring-rules`、`platform-monitoring-wecom`、`platform-grafana` 全部 Synced/Healthy |
-| 其他 | `platform-sso-oauth2-proxy` 当时为 Synced/Progressing，属于监控之外的独立应用 |
+监控相关 5 个：`platform-monitoring-stack`、`platform-monitoring-crds`、`platform-monitoring-rules`、
+`platform-monitoring-wecom`、`platform-grafana`。
+`platform-alloy-config` 管 Alloy 配置，`platform-grafana-operator` 管 Grafana 的 CRD/operator。
+验收只看这 5 个是不是 Synced/Healthy；应用总数与健康度实时值见 [current-state](../00-cluster-overview/assets/current-state.md) §3 / `kubectl -n argocd get applications`。
 
 > 监控改造的验收只看监控相关 App；SSO 的 Progressing 不影响本文结论。
 
-## 3. 规则
+## 3. 规则（数量见 current-state §3 / §5，这里只讲归属）
 
-| 项 | 值 |
-|---|---|
-| PrometheusRule 总数 | 44 |
-| 带 `platform.gitops/managed=true` | 44 |
-| 来源 | 35 chart + 6 platform + 2 deeptutor + 1 compassio |
-| Prometheus 加载 | 51 alerting groups / 248 alerting rules；16 recording groups / 94 recording rules |
-| health 异常 | 0（规则求值本身无错；注意 `KubeProxyDown`/Ceph 两条曾因组件下线而常驻 firing，2026-11-11 已清理） |
+- 所有 PrometheusRule 都带 `platform.gitops/managed: "true"`（**这是硬约束**：不带就被 ruleSelector 丢掉，规则静默失效）；
+- 来源分四类：chart 自带（kube-prometheus-stack 35 个左右）+ platform 自建 + 业务命名空间自建（deeptutor/compassio）；
+- 每条自建规则必须两个标签齐全：`release: prometheus` + `platform.gitops/managed: "true"`。
+
+规则条数、组数、求值错误数、firing 列表 —— 见 [current-state](../00-cluster-overview/assets/current-state.md) §5。
 
 ## 4. Selector
 
@@ -80,7 +73,7 @@ alertmanagerConfigNamespaceSelector: {}
 |---|---|
 | admin Secret | `prometheus-grafana-admin`（SealedSecret） |
 | Deployment 策略 | `Recreate`（规避 RWO 死锁） |
-| Dashboard | 37 个，`NoMatchingInstance` 为 0 |
+| Dashboard | 数量会变（本文不记）；验收看 Grafana 里 `NoMatchingInstance` 为 0 |
 | 登录 | API 200 |
 
 ## 8. 验证命令

@@ -1,245 +1,169 @@
-# 当前集群实况快照
+# 当前状态：唯一数字源
 
-> 采集时间：2026-11-10 16:03:54 CST  
-> 采集方式：在 m01 上执行只读 kubectl/helm/ceph 命令。集群会继续变化，本文是当时快照。
+> **采集方式**：`python3 docs/00-cluster-overview/assets/collect_current_state.py`（只读 kubectl）
+> **采集时间**：2026-11-11 23:5x CST，集群 v1.35.9
+> **性质**：快照。集群会继续变化，本文随时可能落后于现实；落后时**以重跑脚本的输出为准**。
 
-## 版本与节点
-```text
-Client Version: v1.35.9
-Server Version: v1.35.9
+## 0. 这一页的规矩（读之前先看）
 
-NAME       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                      KERNEL-VERSION                 CONTAINER-RUNTIME
-m01        Ready    control-plane   297d   v1.35.9   10.0.0.61     <none>        Rocky Linux 9.6 (Blue Onyx)   5.14.0-570.58.1.el9_6.x86_64   containerd://2.3.2
-master01   Ready    control-plane   297d   v1.35.9   10.0.0.121    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
-master02   Ready    control-plane   297d   v1.35.9   10.0.0.120    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
-worker01   Ready    <none>          297d   v1.35.9   10.0.0.122    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
-worker02   Ready    <none>          297d   v1.35.9   10.0.0.123    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
-worker03   Ready    <none>          297d   v1.35.9   10.0.0.124    <none>        Ubuntu 22.04.5 LTS            5.15.0-202-generic             containerd://2.3.2
-```
+1. **全仓库唯一数字源**。凡"现在是多少 / 现在是什么版本 / 现在有几个"——只在这里改数字，
+   其他章节一律写「见 [current-state](../../00-cluster-overview/assets/current-state.md)」或直接链接到本文的锚点。
+2. 其他章节里的表格可以保留（它们讲**结构**：谁连谁、哪个组件干什么），但**不要在里面填会变的数字**。
+   已经在章节里写死的数字如果与本文冲突，以本文为准。
+3. 更新方式：重跑采集脚本，替换下面 `BEGIN GENERATED` 与 `END GENERATED` 之间的内容；
+   手写部分（§8 之后）只在拓扑/配置变化时才改，并追加一行到 §12 变更历史。
+4. 历史快照不删：`notes/` 里带"历史快照"状态头的文档保持原值不动；旧版本文（2026-11-10 的原始 dump）
+   留在 [current-state-raw-20261110.md](current-state-raw-20261110.md)，用于对比"当时是什么样"。
 
-## 节点容量
-```text
-m01        4     5801092Ki    110   10.0.0.61
-master01   4     6063400Ki    110   10.0.0.121
-master02   4     4005168Ki    110   10.0.0.120
-worker01   6     10179360Ki   110   10.0.0.122
-worker02   6     10179356Ki   110   10.0.0.123
-worker03   4     8127784Ki    110   10.0.0.124
-```
+常用锚点：`#1-版本`、`#2-节点与容量`、`#3-对象计数`、`#4-组件版本`、`#5-prometheus-运行态`、
+`#6-存储`、`#7-入口`、`#8-ceph`、`#9-外部宿主机`、`#10-入口路由与鉴权`、`#11-保留期与告警链路`。
 
-## 命名空间
-```text
-argocd ceph-csi-operator-system ceph-csi-rbd cert-manager china-study-free cicd cilium-secrets cnpg-system compassio deeptutor default etcd-backup gitlab-runner grafana-operator kafka kube-node-lease kube-public kube-system logging metallb-system monitoring n8n nfs-provisioner oauth2-proxy open-webui opentelemetry tekton-operator tekton-pipelines traefik 
-```
+<!-- BEGIN GENERATED -->
 
-## Helm Releases
-```text
-NAME              	NAMESPACE    	REVISION	UPDATED                                	STATUS  	CHART                         	APP VERSION
-alloy             	logging      	3       	2026-11-09 21:21:24.408703536 +0800 CST	deployed	alloy-1.13.0                  	v1.20.0    
-argocd            	argocd       	15      	2026-11-10 13:39:17.246859448 +0800 CST	deployed	argo-cd-10.9.6                	v3.5.3     
-cert-manager      	cert-manager 	1       	2026-03-03 10:24:22.048547245 +0800 CST	deployed	cert-manager-v1.19.4          	v1.19.4    
-cilium            	kube-system  	4       	2026-11-09 10:10:06.276646 +0800 CST   	deployed	cilium-1.20.4                 	1.20.4     
-loki              	logging      	3       	2026-11-09 12:14:12.214452847 +0800 CST	deployed	loki-6.55.0                   	3.6.7      
-otel-operator     	opentelemetry	1       	2026-03-03 10:25:21.158569862 +0800 CST	deployed	opentelemetry-operator-0.106.0	0.145.0    
-prometheus        	monitoring   	13      	2026-11-09 14:33:58.051804859 +0000 UTC	deployed	kube-prometheus-stack-83.7.0  	v0.90.1    
-prometheus-adapter	monitoring   	3       	2026-11-09 22:55:09.892700316 +0800 CST	deployed	prometheus-adapter-5.3.0      	v0.12.0    
-tempo3            	logging      	6       	2026-09-28 18:44:57.415859646 +0800 CST	deployed	tempo-distributed-3.7.0       	3.0.3      
-vpa               	kube-system  	2       	2026-10-12 16:41:36.994626176 +0800 CST	deployed	vertical-pod-autoscaler-0.12.0	1.7.1      
-```
+### 1. 版本
 
-## ArgoCD Applications
-```text
-app-of-apps                  Synced   Healthy
-china-study-free             Synced   Healthy
-compassio                    Synced   Healthy
-deeptutor                    Synced   Healthy
-open-webui                   Synced   Healthy
-platform-alloy-config        Synced   Healthy
-platform-ceph-csi            Synced   Healthy
-platform-ceph-csi-drivers    Synced   Healthy
-platform-ceph-csi-operator   Synced   Healthy
-platform-cicd                Synced   Healthy
-platform-cilium-l2           Synced   Healthy
-platform-cnpg-cluster        Synced   Healthy
-platform-cnpg-operator       Synced   Healthy
-platform-cnpg-plugin         Synced   Healthy
-platform-etcd-backup         Synced   Healthy
-platform-gateway-api         Synced   Healthy
-platform-grafana             Synced   Healthy
-platform-grafana-operator    Synced   Healthy
-platform-kafka-cluster       Synced   Healthy
-platform-kafka-operator      Synced   Healthy
-platform-metallb             Synced   Healthy
-platform-monitoring-crds     Synced   Healthy
-platform-monitoring-rules    Synced   Healthy
-platform-monitoring-stack    Synced   Healthy
-platform-monitoring-wecom    Synced   Healthy
-platform-sealed-secrets      Synced   Healthy
-platform-sso-oauth2-proxy    Synced   Healthy
-platform-traefik             Synced   Healthy
-platform-ui                  Synced   Healthy
-tekton-config                Synced   Healthy
-tekton-operator              Synced   Healthy
-```
+| 组件 | 版本 |
+|---|---|
+| Kubernetes | server v1.35.9 / client v1.35.9 |
 
-## CNI / Service 数据面
-```text
-NAME           READY   STATUS    RESTARTS      AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-cilium-5675l   1/1     Running   2 (19h ago)   29h   10.0.0.123   worker02   <none>           <none>
-cilium-7zr5l   1/1     Running   1 (19h ago)   29h   10.0.0.121   master01   <none>           <none>
-cilium-88bkp   1/1     Running   1 (19h ago)   29h   10.0.0.61    m01        <none>           <none>
-cilium-brnfm   1/1     Running   1 (19h ago)   29h   10.0.0.124   worker03   <none>           <none>
-cilium-gdfsr   1/1     Running   1 (19h ago)   29h   10.0.0.120   master02   <none>           <none>
-cilium-h28cj   1/1     Running   1 (19h ago)   29h   10.0.0.122   worker01   <none>           <none>
+### 2. 节点与容量
 
-true
-native
-true
+| 节点 | 角色 | kubelet | runtime | OS | CPU/内存 |
+|---|---|---|---|---|---|
+| m01 | control-plane | v1.35.9 | 2.3.2 | Rocky 9.6 | 4C / 5.5Gi (allocatable 4023428Ki) |
+| master01 | control-plane | v1.35.9 | 2.3.2 | Ubuntu 22.04.5 | 4C / 5.8Gi (allocatable 4810024Ki) |
+| master02 | control-plane | v1.35.9 | 2.3.2 | Ubuntu 22.04.5 | 4C / 3.8Gi (allocatable 3116336Ki) |
+| worker01 | worker | v1.35.9 | 2.3.2 | Ubuntu 22.04.5 | 6C / 9.7Gi (allocatable 8401696Ki) |
+| worker02 | worker | v1.35.9 | 2.3.2 | Ubuntu 22.04.5 | 6C / 9.7Gi (allocatable 8401692Ki) |
+| worker03 | worker | v1.35.9 | 2.3.2 | Ubuntu 22.04.5 | 4C / 7.8Gi (allocatable 6350120Ki) |
 
-KVStore:                 Disabled   
-Kubernetes:              Ok         1.35 (v1.35.9) [linux/amd64]
-Kubernetes APIs:         ["cilium/v2::CiliumCIDRGroup", "cilium/v2::CiliumClusterwideNetworkPolicy", "cilium/v2::CiliumEndpoint", "cilium/v2::CiliumNetworkPolicy", "cilium/v2::CiliumNode", "core/v1::Pods", "networking.k8s.io/v1::NetworkPolicy"]
-KubeProxyReplacement:    True   [eth0   10.0.0.124 fe80::be24:11ff:feb2:3691 (Direct Routing)]
-Host firewall:           Disabled
-SRv6:                    Disabled
-CNI Chaining:            none
-CNI Config file:         successfully wrote CNI configuration file to /host/etc/cni/net.d/05-cilium.conflist
-Cilium:                  Ok   1.20.4 (v1.20.4-beb276d2)
-NodeMonitor:             Listening for events on 4 CPUs with 64x4096 of shared memory
-Cilium health daemon:    Ok   
-IPAM:                    IPv4: 46/254 allocated from 10.244.5.0/24, 
-IPv4 BIG TCP:            Disabled
-IPv6 BIG TCP:            Disabled
-BandwidthManager:        Disabled
-Routing:                 Network: Native   Host: BPF
-Attach Mode:             Legacy TC
-Device Mode:             veth
-Masquerading:            BPF   [eth0]   10.244.0.0/16  [IPv4: Enabled, IPv6: Disabled]
-Controller Status:       234/234 healthy
-Proxy Status:            OK, ip 10.244.5.157, 0 redirects active on ports 10000-20000, Envoy: embedded
-Global Identity Range:   min 256, max 65535
-Hubble:                  Ok              Current/Max Flows: 4095/4095 (100.00%), Flows/s: 198.32   Metrics: Ok
-Encryption:              Disabled        
-Cluster health:          6/6 reachable   (2026-11-10T08:00:44Z)   (Probe interval: 2m33.896961447s)
-```
+### 3. 对象计数
 
-## 存储
-```text
-NAME          PROVISIONER        RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
-ceph-rbd-sc   rbd.csi.ceph.com   Retain          Immediate           true                   220d
-nfs-sc        example.com/nfs    Delete          Immediate           false                  296d
+| 对象 | 数量 |
+|---|---|
+| namespaces | 29 |
+| pods | 138 |
+| deployments | 74 |
+| statefulsets | 12 |
+| daemonsets | 7 |
+| services | 107 |
+| cronjobs | 1 |
+| PVC | 17 |
+| PV | 17 |
+| StorageClass | 2 |
+| ServiceMonitor | 26 |
+| PodMonitor | 16 |
+| PrometheusRule | 43 |
+| IngressRoute | 19 |
+| ArgoCD Application | 31 |
 
-     17 Bound
+### 4. 组件版本
 
-17
-```
+| 层 | 组件 | 版本 |
+|---|---|---|
+| CNI | Cilium | v1.20.4 |
+| 数据面 | kube-proxy | 已移除（Cilium KPR 取代） |
+| 运行时 | containerd | 2.3.2 |
+| etcd | etcd | 3.6.6-0 |
+| DNS | CoreDNS | v1.13.1 |
+| 监控 | Prometheus | v3.11.2 |
+| 监控 | Grafana | 12.4.3 |
+| 监控 | Alertmanager | v0.32.0 |
+| 日志 | Loki | 3.6.7 |
+| 追踪 | Tempo | 3.0.3 |
+| 采集 | Alloy | v1.20.0 |
+| GitOps | ArgoCD | v3.5.3 |
+| 入口 | Traefik | v3.7.17 |
+| 数据库 | CNPG operator | v0.15.1 |
+| 存储 | Ceph-CSI RBD | v3.18.2 |
 
-## Ceph
-```text
-  cluster:
-    id:     594e535e-d82c-11f0-afa7-bc24112b746f
-    health: HEALTH_OK
- 
-  services:
-    mon: 3 daemons, quorum ceph-02,ceph-03,ceph-01 (age 5d)
-    mgr: ceph-02.wzbtbx(active, since 5d), standbys: ceph-01.egryfx
-    mds: 1/1 daemons up, 2 standby
-    osd: 6 osds: 6 up (since 5d), 6 in (since 10M)
-    rgw: 2 daemons active (2 hosts, 1 zones)
- 
-  data:
-    volumes: 1/1 healthy
-    pools:   15 pools, 465 pgs
-    objects: 18.64k objects, 27 GiB
-    usage:   81 GiB used, 99 GiB / 180 GiB avail
-    pgs:     465 active+clean
- 
-  io:
-    client:   10 KiB/s rd, 103 KiB/s wr, 9 op/s rd, 8 op/s wr
- 
-```
+### 5. Prometheus 运行态
 
-## 监控 / 日志 / 追踪
-```text
-NAME                                             READY   STATUS    RESTARTS      AGE
-alertmanager-prometheus-alertmanager-0           2/2     Running   0             19h
-prometheus-adapter-659886599f-zwdbp              1/1     Running   0             17h
-prometheus-grafana-8975965b4-rk7gn               1/1     Running   0             179m
-prometheus-kube-state-metrics-5d768dd8ff-m5phv   1/1     Running   0             19h
-prometheus-operator-6d74f54c4c-n48hl             1/1     Running   0             19h
-prometheus-prometheus-node-exporter-2kjq5        1/1     Running   2 (19h ago)   44h
-prometheus-prometheus-node-exporter-4stgl        1/1     Running   1 (19h ago)   44h
-prometheus-prometheus-node-exporter-nd6cr        1/1     Running   1 (19h ago)   44h
-prometheus-prometheus-node-exporter-sjdxz        1/1     Running   1 (19h ago)   19h
-prometheus-prometheus-node-exporter-vm6v5        1/1     Running   1 (19h ago)   44h
-prometheus-prometheus-node-exporter-vnwx9        1/1     Running   1 (19h ago)   44h
-prometheus-prometheus-prometheus-0               2/2     Running   0             17h
-wecom-adapter-7ddcb575f-jthfk                    1/1     Running   0             19h
-wecom-adapter-7ddcb575f-phlxl                    1/1     Running   0             19h
+| 指标 | 值 |
+|---|---|
+| alerting rules | 51 组 / 248 条 |
+| recording rules | 16 组 / 94 条 |
+| 规则求值错误 | 0 |
+| target | 115 个，up 115 |
+| retention.time | 15d |
+| retention.size | 25GiB |
+| firing | InfoInhibitor, Watchdog |
 
-NAME                                        READY   STATUS    RESTARTS      AGE
-alloy-b7c77                                 2/2     Running   0             18h
-alloy-fcc5c                                 2/2     Running   0             18h
-alloy-lgmwg                                 2/2     Running   0             18h
-alloy-mmvxv                                 2/2     Running   0             18h
-alloy-mns8z                                 2/2     Running   0             18h
-alloy-pptz2                                 2/2     Running   0             18h
-loki-backend-0                              2/2     Running   0             19h
-loki-canary-9w2rb                           1/1     Running   2 (19h ago)   32h
-loki-canary-h927j                           1/1     Running   1 (19h ago)   32h
-loki-canary-mvcfr                           1/1     Running   1 (19h ago)   32h
-loki-chunks-cache-0                         2/2     Running   0             19h
-loki-gateway-67fcc7bb44-7g4tr               1/1     Running   0             19h
-loki-read-b7c85bb-pw9c6                     1/1     Running   0             19h
-loki-results-cache-0                        2/2     Running   0             19h
-loki-write-0                                1/1     Running   0             19h
-tempo3-backend-scheduler-0                  1/1     Running   0             19h
-tempo3-backend-worker-0                     1/1     Running   0             19h
-tempo3-block-builder-0                      1/1     Running   3 (19h ago)   19h
-tempo3-block-builder-1                      1/1     Running   0             19h
+### 6. 存储
 
-41
-14
-```
+| 项 | 值 |
+|---|---|
+| StorageClass | ceph-rbd-sc, nfs-sc |
+| PV 总数 / 非 Bound | 17 / 0 |
+| PVC 总数 / 非 Bound | 17 / 0 |
+| 默认 SC 回收策略 | ceph-rbd-sc = Retain（删除后需手工清 RBD 镜像） |
 
-## 入口
-```text
-NAME      CONTROLLER                      PARAMETERS   AGE
-traefik   traefik.io/ingress-controller   <none>       297d
-NAME          TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-traefik       LoadBalancer   10.111.240.160   10.0.0.252    80:30156/TCP,443:30306/TCP   43d
-traefik-api   ClusterIP      10.107.202.109   <none>        9000/TCP                     34m
-NAMESPACE          NAME                        AGE
-argocd             argocd                      43d
-argocd             argocd-http-redirect        43d
-kube-system        hubble                      5h9m
-kube-system        hubble-http-redirect        5h9m
-logging            alloy                       5h9m
-logging            alloy-http-redirect         5h9m
-monitoring         grafana                     43d
-monitoring         grafana-http-redirect       34d
-monitoring         prometheus                  291d
-monitoring         prometheus-http-redirect    34d
-oauth2-proxy       oauth2-alloy                43m
-oauth2-proxy       oauth2-hubble               43m
-oauth2-proxy       oauth2-tekton               43m
-oauth2-proxy       oauth2-traefik              43m
-tekton-pipelines   tekton-dashboard            2d18h
-tekton-pipelines   tekton-dashboard-http       2d18h
-traefik            traefik-dashboard           297d
-traefik            traefik-xyz                 5h9m
-traefik            traefik-xyz-http-redirect   5h9m
-traefik            traefik-xyz-root            19m
-```
+### 7. 入口
 
-## 外部交付宿主机（2026-11-11 补充）
+| 项 | 值 |
+|---|---|
+| Traefik Service 类型 | LoadBalancer |
+| Traefik LB 地址 | 10.0.0.252 |
+| API VIP | 10.0.0.168 |
 
-GitLab `192.168.67.201` / Harbor `192.168.67.202` 不是物理机，而是
-Windows Hyper-V 宿主 `SYZX-HY2-TX`（`192.168.67.110`）上的 `ubuntu01` / `ubuntu02` VM：
+<!-- END GENERATED -->
 
-| VM | IP | vCPU | 内存 | VHDX 实际/虚拟 |
-|---|---|---:|---:|---|
-| ubuntu01 | 192.168.67.201 | 2 | 8GB | 62.7GB / 85GB |
-| ubuntu02 | 192.168.67.202 | 2 | 6GB | 39.4GB / 64GB |
+### 8. Ceph
 
-证据：[hyperv-host-20261111/README.md](hyperv-host-20261111/README.md)。
+| 项 | 值（`ceph -s`，2026-11-11） |
+|---|---|
+| 集群 ID | `594e535e-d82c-11f0-afa7-bc24112b746f` |
+| 版本 / 健康 | **18.2.8 reef** / `HEALTH_OK` |
+| mon | 3 个（ceph-01/02/03 = `10.0.0.31/41/51`），quorum 正常 |
+| mgr | active `ceph-02`，standby `ceph-01`（**ceph-03 无 mgr**，ScrapeConfig 只抓前两台） |
+| OSD | 6 个（每台 VM 2 个，class `hdd`），6 up / 6 in |
+| pools / pgs | 15 pools / 465 pgs，全 `active+clean` |
+| 对象 / 容量 | 19.88k objects / 32 GiB；**98 GiB used，82 GiB / 180 GiB avail** |
+| RGW | 2 daemons active（`http://10.0.0.31:7480`），bucket 无 lifecycle 规则 |
+| 备份 | CNPG barman → 同一套 Ceph 的 S3（`s3://pg-backups/`），**同集群，不构成容灾** |
+
+### 9. 外部宿主机
+
+| 宿主机 | 地址 | 角色 | 承载 |
+|---|---|---|---|
+| Proxmox `teacher` | `192.168.67.156` / `10.0.0.1`（同机双网段） | PVE 8.4.13，内核 6.8.12-15-pve，80 线程 / 62 GiB | K8s 6 节点（VM 119–124）、Ceph 3 节点（VM 116/117/118 = nfs01/backup/db01） |
+| Windows `SYZX-HY2-TX` | `192.168.67.110` | Windows 10 Pro + Hyper-V | `ubuntu01`（GitLab 19.5.0，201，2C/8G）、`ubuntu02`（Harbor 2.14.5，202，2C/6G）、`ubuntu03`(Off)、`kali`(Off) |
+
+PVE 存储：`local-lvm` thin，PE **4 MiB**，Free PE 4096 = **16 GiB**；根文件系统 94 G / 已用 29 G（32%）。
+
+### 10. 入口路由与鉴权
+
+| 入口 | IngressRoute 后端 | 鉴权方式 |
+|---|---|---|
+| `argocd.*` | `argocd-server` | ArgoCD 自带 OIDC/Dex（**不过 oauth2-proxy**） |
+| `grafana.*` | `prometheus-grafana` | Grafana 原生 `auth.generic_oauth`（**不过 oauth2-proxy**） |
+| `hubble.*` | `oauth2-proxy-hubble` | oauth2-proxy（反向代理）+ Traefik `basicAuth` 中间件 |
+| `alloy.*` | `oauth2-proxy-alloy` | 同上 |
+| `tekton.*` | `oauth2-proxy-tekton` | 同上 |
+| `traefik-xyz.*` | `oauth2-proxy-traefik` | 同上 |
+| `prometheus.*` | `prometheus-operated` | 无（内网） |
+
+> 关键点：oauth2-proxy 是**反向代理模式**（IngressRoute 的服务直接写 `oauth2-proxy-<host>`），
+> 不是 ForwardAuth；ArgoCD 与 Grafana 走各自的原生 OIDC，不在 oauth2-proxy 后面。
+
+### 11. 保留期与告警链路
+
+| 信号 | 组件 | 有效保留 | 备注 |
+|---|---|---|---|
+| Metrics | Prometheus v3.11.2 | **15d / 25GiB** | 本地 PVC（`ceph-rbd-sc`） |
+| 告警 | Alertmanager v0.32.0 | 120h | 本地 PVC |
+| Logs | Loki 3.6.7 | 120h | Ceph RGW，bucket 无 lifecycle |
+| Traces | Tempo 3.0.3 | 120h | `tempo3-config` 的 `block_retention` |
+
+告警接收器：`n8n-webhook`（集群内 `http://n8n-svc.n8n.svc.cluster.local:5678/webhook/k8s-alerts`）、
+`wecom`（企业微信群机器人）。**没有 SMTP**，`default-email` 存在但无 route 引用。
+抑制规则 3 条（InfoInhibitor / 同 namespace warning / Node 级联）。
+
+### 12. 变更历史（只记影响"数字"的改动）
+
+| 日期 | 改了什么 | 依据 |
+|---|---|---|
+| 2026-11-10 | 本文首版（原 `current-state.md` 原始 dump） | 存档为 `current-state-raw-20261110.md` |
+| 2026-11-11 | 改为"结构化 + 生成式"：数字由 `collect_current_state.py` 产出，手写部分只留拓扑/配置 | 本次审计第三轮 |
+| 2026-11-11 | Ceph ScrapeConfig 收敛到 ceph-01/02（ceph-03 无 mgr）；`ceph_*` 1090 序列 | platform-gitops + live patch |
+| 2026-11-11 | 告警规则 CNI 家族去重，规则 250 → **248**；n8n webhook 改回集群内 | platform-gitops `742e8e8` / `eca603e` |

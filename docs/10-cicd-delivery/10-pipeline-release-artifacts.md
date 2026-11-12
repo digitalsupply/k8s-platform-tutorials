@@ -340,16 +340,17 @@ openwebui: cache 保留 3 个；open-webui 仓库 always retain
 
 ### 5.1 本集群现状
 
-```text
-RollingUpdate 25%/25%   51 个 Deployment
-未设 rollingUpdate/Recreate  12 个
-RollingUpdate 0/1        5 个
-RollingUpdate 25%/1      3 个
-RollingUpdate 25%/50%    1 个
-RollingUpdate 25%/0      1 个（metrics-server）
-RollingUpdate 1/1        1 个
-合计                    74 个（2026-11-11 复核）
+```bash
+# 这份分布会随着新部署变动，别写死数字；要现算就一条命令：
+kubectl get deploy -A -o json | jq -r '
+  [.items[] | .spec.strategy.rollingUpdate as $r
+   | (.spec.strategy.type + " " + (($r.maxSurge//"-")|tostring) + "/" + (($r.maxUnavailable//"-")|tostring))] 
+  | group_by(.) | map({(.[0]): length}) | add'
 ```
+
+> 2026-11-11 的一次取值：25%/25% 51 个、未设/Recreate 12 个、0/1 5 个、25%/1 3 个、25%/50% 1 个、
+> 25%/0 1 个（metrics-server）、1/1 1 个，合计 74 个 Deployment（总数见
+> [current-state](../00-cluster-overview/assets/current-state.md#3-对象计数)）。
 
 Argo Rollouts CRD **未安装**，没有 `Rollout` 资源；发布主要靠原生 Deployment +
 ArgoCD 同步。证据：[`evidence/deploy-strategies.txt`](assets/pipeline-release/evidence/deploy-strategies.txt)。

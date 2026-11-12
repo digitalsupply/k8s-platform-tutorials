@@ -23,7 +23,7 @@
 - 已有的 6 个 Application 一旦被 app-of-apps 接管，`prune`/`selfHeal` 行为需要重新设计。
 
 完成 P0 后（2026-11-09）：CNPG、Kafka、CI、app-of-apps、Sealed Secrets 全部落地；
-到 2026-11-10，ArgoCD 已有 **31 个 Application，全部 `Synced/Healthy`**。
+ArgoCD 管着全套平台与业务应用，**应用数量与健康度不在这里写死**：见 [current-state](../00-cluster-overview/assets/current-state.md) §3（`kubectl -n argocd get applications` 可现场复核；2026-11-11 为 31 个，全部 Synced/Healthy）。
 
 ## 主要概念与原理
 

@@ -298,7 +298,7 @@ terraform import 'proxmox_virtual_environment_vm.node["k8s-lab-w01"]' teacher/13
 
 ```text
 app-of-apps -> clusters/prod/applications/
-31 个 Application，全部 Synced/Healthy
+应用数量与健康度见 [current-state](../00-cluster-overview/assets/current-state.md) §3（写文时为 31 个，全部 Synced/Healthy）
 syncPolicy: automated prune=false selfHeal=true
 ```
 
