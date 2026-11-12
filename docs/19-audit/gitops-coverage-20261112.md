@@ -103,7 +103,7 @@ kube-vip、metrics-server、nfs-provisioner、n8n、cloudflared、gitlab-runner�
 
 4. **Loki / Tempo 从 helm CLI 转成 Application**
    - Loki：values 已在 `platform/logging/values.yaml`（文件头写着"手动 `helm upgrade --reuse-values`"），
-     加一个 chart App 即可；**但 S3 凭据现在只在 helm release 里**，转换前要先把
+     加一个 chart App 即可；**但 S3 凭据现在只在 helm release 里，且被渲染进 `logging/loki` 的 ConfigMap（明文，没有 Secret）**，转换前要先把
      `access_key_id/secret_access_key` 做成 SealedSecret 并以 `existingSecret` 方式注入，否则会写进 git 明文。
    - Tempo：仓里连 values 都没有，先 `helm get values tempo3 -n logging` 导出，再建
      `platform/logging/tempo/values.yaml` + Application。
