@@ -88,3 +88,5 @@ kubectl get prometheusrules,servicemonitors -A --no-headers | wc -l
 kubectl -n monitoring exec prometheus-prometheus-prometheus-0 -c prometheus -- \
   wget -qO- 'http://127.0.0.1:9090/api/v1/query?query=ALERTS%7Balertstate%3D%22firing%22%7D'
 ```
+
+- **凭据面收敛（2026-11-12）**：[security-hardening-20261112.md](security-hardening-20261112.md) —— 集群里 15 处 `glpat-` 明文（含 2 个 root/admin、`scope=api` 的 PAT，以及 `last-applied-configuration` 注解里的原文）全部收敛：ArgoCD 改每仓 deploy token（只读）、CI 改 group token（仅仓库读写）、cicd 7 个 Secret 全 SealedSecret 入库、旧 token 已 revoke（401 验证）。附 4 个迁移坑。

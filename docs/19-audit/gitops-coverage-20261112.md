@@ -2,7 +2,7 @@
 
 - **审计时间**：2026-11-12 15:0x CST
 - **集群**：6 节点 v1.35.9（m01 / master01-02 / worker01-03）
-- **ArgoCD**：v3.5.3，**41 个 Application**，声明管理 **764** 个对象（2026-11-12 四批纳管之后；审计时为 31/586）
+- **ArgoCD**：v3.5.3，**42 个 Application**，声明管理 **771** 个对象（2026-11-12 四批纳管 + 凭据入库之后；审计时为 31/586）
 - **判定口径**：以 **ArgoCD 自己的 `status.resources`** 为准（不是看 label —— ServerSideApply + 历史 helm 安装会让 label 不可靠）
 - **数据来源**：本机只读命令，脚本见 §8
 
@@ -64,7 +64,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 | 类别 | 数量 | 说明 |
 |---|---:|---|
 | ArgoCD Application | 31 | 全部 Synced/Healthy |
-| ArgoCD 声明的对象 | 764 | 平均 19 个/app；最大 `platform-monitoring-stack` 113、`platform-cert-manager` 48 |
+| ArgoCD 声明的对象 | 771 | 平均 19 个/app；最大 `platform-monitoring-stack` 113、`platform-cert-manager` 48 |
 | helm CLI 安装的 release | 10 | 见 §3，**全部不在 ArgoCD 里**（仅 argocd 自身的 release secret 带了个无关 label） |
 | 手工 `kubectl apply` 的工作负载 | 7 Deploy + 1 DS → **1 Deploy + 1 DS**（2026-11-12 后） | 剩余：metrics-server、coredns + kube-vip（DS） |
 | 未纳管 ConfigMap | 77 | 其中 5 个是调试残留（含**明文凭据**，见 §6） |
@@ -529,6 +529,17 @@ platform-cilium                    Synced / Healthy，35/35 个资源 Synced
 验证时踩的小坑（记下来省一次排查）：Loki 在 `logging` 命名空间，不是 `loki`。
 `curl http://loki-gateway.loki.svc/...` 会得到 `Could not resolve host` / `000`，
 看着像网络坏了，实际是名字写错。
+
+
+### 7.5 追加：凭据面（2026-11-12）
+
+覆盖度收尾时扫出 15 处 `glpat-` 明文（2 个 root/admin、`scope=api`，六处复用），
+其中 `cicd/gitlab-auth` 的 `last-applied-configuration` 注解里是完整原文。
+同日收敛完成：ArgoCD 6 个仓库改 deploy token（只读）、CI 改 group token（仅仓库读写）、
+cicd 7 个 Secret 全 SealedSecret 入库、旧 token revoke。
+
+处置细节、4 个迁移坑与验收数据见 [security-hardening-20261112.md](security-hardening-20261112.md)。
+这一条不在原 169 条里 —— 看文档看不出来，只能扫集群。
 
 ---
 
