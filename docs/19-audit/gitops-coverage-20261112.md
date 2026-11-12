@@ -66,7 +66,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 | ArgoCD Application | 31 | 全部 Synced/Healthy |
 | ArgoCD 声明的对象 | 586 | 平均 19 个/app；最大 `platform-monitoring-stack` 113 |
 | helm CLI 安装的 release | 10 | 见 §3，**全部不在 ArgoCD 里**（仅 argocd 自身的 release secret 带了个无关 label） |
-| 手工 `kubectl apply` 的工作负载 | 7 Deploy + 1 DS | n8n、cloudflared、gitlab-runner、buildkitd、metrics-server、nfs-provisioner、coredns + kube-vip（DS） |
+| 手工 `kubectl apply` 的工作负载 | 7 Deploy + 1 DS → **1 Deploy + 1 DS**（2026-11-12 后） | 剩余：metrics-server、coredns + kube-vip（DS） |
 | 未纳管 ConfigMap | 77 | 其中 5 个是调试残留（含**明文凭据**，见 §6） |
 | 未纳管 ServiceMonitor / PodMonitor | 11 / 16 | 多数是 helm chart 自带（随 chart 走），但 cilium/alloy/cert-manager 的就与 chart 绑定 |
 | 未纳管 CRD | 44 / 146 | cilium 10、tekton 系 17、cert-manager 6、otel 4、argoproj 3、VPA 2、grafana/strimzi 各 1 |
@@ -84,15 +84,15 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 | **Cilium**（CNI 数据面） | helm CLI rev4（自举时装） | `platform/network/cilium/values.yaml` **无引用** | 只有 `platform-cilium-l2`（一条策略） | 🔴 **P0（Tier 0.5）**：values 必须入库 + 可选 adopt |
 | **Loki**（日志） | helm CLI rev3，**手动 `-f` 升级** | `platform/logging/values.yaml` | 无 | 🔴 **P0（纯配置未入库，无自举约束）** |
 | **Tempo**（追踪） | helm CLI rev6 | **无 values 文件** | 无 | 🔴 **P0（同上）** |
-| **n8n + cloudflared** | kubectl apply | 无 | 无 | 🔴 **P0**（告警接收端） |
+| **n8n + cloudflared** | kubectl apply | 无 | **✅ `platform-n8n`（2026-11-12）** | 🔴 P0 → ✅ 已纳管 |
 | **kube-vip**（API VIP） | kubectl apply（自举时装） | **无 manifest** | 无 | 🔴 **P0（Tier 0，建议不 adopt）**：manifest 入库备查即可 |
 | **ArgoCD 自身** | helm CLI rev15 | `platform/argocd/values.yaml` **无引用** | 无（自举，可接受但要记录） | 🟠 P1 |
 | **Alloy**（日志采集） | helm CLI rev3 | `platform/logging/alloy-values.yaml` **无引用** | 只有 `platform-alloy-config`（配置 CR） | 🟠 P1 |
 | **cert-manager** | helm CLI rev1 | 无 | 无 | 🟠 P1 |
-| **gitlab-runner** | kubectl apply | 无 | 无 | 🟠 P1（CI 执行端） |
-| **buildkitd** | kubectl apply | CM 未纳管 | `platform-cicd` 只覆盖部分 | 🟠 P1 |
-| **otel-collector**（CR） | kubectl apply | 无 | 无（operator 由 helm 装） | 🟠 P1 |
-| **nfs-provisioner + nfs-sc** | kubectl apply | 无 | 无 | 🟠 P1（3 个 PVC 依赖） |
+| **gitlab-runner** | kubectl apply | 无 | **✅ `platform-gitlab-runner`** | 🟠 P1 → ✅ 已纳管 |
+| **buildkitd** | kubectl apply | CM 未纳管 | **✅ `platform-buildkitd`** | 🟠 P1 → ✅ 已纳管 |
+| **otel-collector**（CR） | kubectl apply | 无 | **✅ `platform-otel-collector`**（只收 CR） | 🟠 P1 → ✅ 已纳管 |
+| **nfs-provisioner + nfs-sc** | kubectl apply | 无 | **✅ `platform-nfs-provisioner`** | 🟠 P1 → ✅ 已纳管 |
 | **metrics-server** | kubectl apply | 无 | 无 | 🟡 P2（kube-system 自举可接受） |
 | **VPA** | helm CLI rev2 | 无 | 无 | 🟡 P2 |
 | **prometheus-adapter** | helm CLI rev3 | `prometheus-adapter-values.yaml` + 自带 chart 目录 **均无引用** | 无 | 🟡 P2 |
@@ -293,8 +293,9 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
   helm get values vpa -n kube-system         > platform/vpa/values.live.yaml
   kubectl get ds kube-vip-ds -n kube-system -o yaml > platform/network/kube-vip/daemonset.yaml
 
-第 2 批（业务影响小）    ── 接 app：n8n 优先（告警接收端）
+第 2 批（✅ 已完成 2026-11-12）── 接 app：n8n 优先（告警接收端）
   n8n + cloudflared、gitlab-runner、buildkitd、otel-collector CR、nfs-provisioner
+  5 个 app 全部 Synced/Healthy；只剩 metrics-server / coredns 还是手工 apply
 
 第 3 批（需窗口）        ── 接日志/追踪（无自举约束）
   Loki（先 SealedSecret 化 S3 凭据）→ Alloy → Tempo
@@ -341,6 +342,49 @@ diff /tmp/a.yaml /tmp/b.yaml          # 期望：只有 REPLACE_ME 两行 + chec
 
 顺带产出：对账时发现 `monitoring/prometheus` 的 helm release 已漂移 4 处（见 §6 第 3 条），
 其中告警接收端 URL 还指向不可达的公网地址。
+
+### 7.2 第 2 批执行记录（2026-11-12，platform-gitops `4633929`）
+
+范围：n8n + cloudflared（P0）、gitlab-runner、buildkitd、nfs-provisioner、otel CR（P1）。
+原则：manifest 从 live 导出（去 status/managedFields/ownerReferences，PVC 去 `volumeName`），
+先 `kubectl diff` 确认零变更，再建 Application（`prune: false` + `selfHeal`）。
+
+| 组件 | Application | 对象数 | 顺带修掉的问题 |
+|---|---|---|---|
+| n8n + cloudflared | `platform-n8n` | 8（含 2 SealedSecret） | 告警接收端终于可重建；两个 Secret 封成 SealedSecret |
+| gitlab-runner | `platform-gitlab-runner` | 6 | **`runners.toml` 里有明文 runner token，ConfigMap→Secret+SealedSecret** |
+| buildkitd | `platform-buildkitd` | 5 | Harbor CA 与配置入库；`harbor-auth` 封成 SealedSecret |
+| nfs-provisioner | `platform-nfs-provisioner` | 5 | Deployment/SA/ClusterRole/Binding/StorageClass `nfs-sc` 全入库 |
+| otel-collector | `platform-otel-collector` | 1（只收 CR） | operator 生成的 Deployment/Service 不入库（正确做法） |
+
+验收（实测）：
+
+```text
+platform-n8n               Synced / Healthy
+platform-gitlab-runner     Synced / Healthy
+platform-buildkitd         Synced / Healthy
+platform-nfs-provisioner   Synced / Healthy
+platform-otel-collector    Synced / Healthy
+
+n8n webhook 端到端          POST http://n8n-svc.n8n:5678/webhook/k8s-alerts → 200
+n8n / buildkitd / nfs pod   AGE 未变（2d19h / 2d20h / 2d20h），零重启
+gitlab-runner               rollout 成功（换挂载必然重启一次），Secret sha256 与旧 CM 一致
+```
+
+**踩到的三个坑**（已写进 `platform-gitops/platform/README.adopting-existing-resources.md`）：
+
+1. `Application.source.directory.recurse` 默认 **false** —— `sealed/` 子目录里的 SealedSecret
+   被静默跳过，sync 却报 Synced（`status.resources` 只有 6 个对象）。补 `recurse: true` 后变 8 个。
+2. SealedSecret **不肯接管已存在的 Secret**：`already exists and is not managed by SealedSecret`；
+   ArgoCD 把这条 `Synced=False` 判成整个 app **Degraded**（工作负载其实是好的）。
+   加 managed 标签、手工补 ownerReferences 都无效（v0.41.2 只认自己写的 ownerRef，给 up 后不重试）。
+   最终做法：删旧 Secret → 触发 reconcile → 控制器重建，data sha256 前后一致（`85000d02f1ae` 等）。
+3. operator 会把 CR 上的 `argocd.argoproj.io/tracking-id` 抄进 Pod 模板 → 新 ReplicaSet →
+   otel-collector 的新 Pod 被调度到 worker02，从 ghcr.io 拉镜像卡了 5 分钟（本网络对外很慢）。
+   单副本 + 滚动策略，服务未中断；但接管 operator CR 时要预期一次无意义滚动并确认目标节点有镜像。
+
+**第 2 批没有做**：Alloy（P1）、ArgoCD 自身、Loki/Tempo/Cilium 的 Application（留给第 3 批，
+Loki 要先 SealedSecret 化 S3 凭据）；`cicd` 里的 Tekton 相关 Secret（`gitlab-auth` 等 6 个）仍未封。
 
 ---
 
