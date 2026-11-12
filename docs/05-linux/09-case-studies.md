@@ -197,7 +197,7 @@ overlay 58G 33G 25G 57% ...（多个）
 - 不要把 page cache 当内存泄漏；
 - Harbor 与 GitLab 分盘，避免 CI 构建把盘写满。
 
-## 案例 7：Cilium/CSI 是 privileged，业务 Pod 也加 `SYS_ADMIN`
+## 案例 7：CSI 与构建器是 privileged；Cilium 靠 capability，不是 privileged
 
 ### 现象
 
@@ -205,12 +205,12 @@ overlay 58G 33G 25G 57% ...（多个）
 summary: pods=138 hostNetwork=35 privileged=10 capAdd=19
 ```
 
-Cilium 加 `NET_ADMIN,NET_RAW,SYS_ADMIN,SYS_MODULE,SYS_PTRACE,...`；
+Cilium agent 是 `drop: ALL` + 13 个 capability（`NET_ADMIN,NET_RAW,SYS_ADMIN,SYS_MODULE,SYS_RESOURCE,CHOWN,KILL,DAC_OVERRIDE,FOWNER,SETGID,SETUID,IPC_LOCK,SYSLOG`，实测），不是 privileged；
 Ceph-CSI nodeplugin 加 `SYS_ADMIN`；`deeptutor` 加 `CHOWN,DAC_OVERRIDE,FOWNER,SETGID,SETUID`。
 
 ### 原理
 
-- CNI/CSI 需要修改网络/挂载，privileged 是“必要之恶”；
+- CNI 只需要改网络命名空间/BPF，给 capability 就够；privileged 是 CSI（挂载宿主设备）与构建器（mount/chroot）这类组件的“必要之恶”；
 - 业务 Pod 加 `SYS_ADMIN` 基本等于放弃隔离；
 - `hostNetwork` 让 Pod 共享节点网络命名空间；
 - `allowPrivilegeEscalation`/seccomp/readOnlyRootFilesystem 是最后防线。

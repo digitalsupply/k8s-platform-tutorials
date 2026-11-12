@@ -25,6 +25,7 @@
 - **P0 12/12 已修**：第 2 章每条末尾都有「修复状态」，逐条的改动、验证命令、提交见 [fix-log.md](fix-log.md)。
 - 其中 2 条由仓库作者先修（burn-rate/SLO 模板 `41666d8`、kube-proxy 残留 `c201de5`），本轮沿用其写法未覆盖。
 - P1 顺带修了 6 条（VXLAN 开销、Traefik 301/308、etcd quota、etcd 恢复 runbook、GitLab 版本、PM/SM 口径）。
+- **第二轮**按「当前状态表 vs 历史记录」再清一轮：改 17 处当前值 + 15 处技术错误，17 个历史文档加统一状态头，并撤回 4 条审计误判。见 [fix-log.md](fix-log.md) §9。
 - 现场故障 **5/5 已处理**：`KubeProxyDown` 与残留 Service 随 `c201de5` 消失；Ceph `ScrapeConfig` 改为抓 ceph-01+ceph-02（`ceph_*` 序列回到 1090，两条 critical 假告警消失）；n8n webhook 在 `platform-gitops` `da1fc72` 改回 in-cluster（ArgoCD 已同步、AM 已重载）。根因与验证见 fix-log §5。
 
 ## 1. 文档说 vs 机器是（2026-11-11 实测）

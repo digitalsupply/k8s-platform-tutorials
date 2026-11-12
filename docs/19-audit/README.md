@@ -44,7 +44,8 @@
 - **P0 12/12 已修**：Cilium 安装参数、kube-vip env 名、`--target-ram-mb`、JSON Patch 成员、脱敏脚本、AM 抑制模板、rule 标签、GitLab nginx 键、CNPG 恢复字段。每条都有可复现验证（`bash -n` / `helm template` / 线上配置文件）。
 - 作者先修了 2 条（burn-rate 与 SLO 模板、kube-proxy 残留），本轮沿用其「修复状态」写法，不覆盖原文。
 - 顺带修了 6 条 P1：VXLAN 开销 76→50 字节、Traefik GET 301/非 GET 308、etcd quota 2GiB、etcd 恢复改 `etcdutl` + 三节点、GitLab 19.5.0、PM/SM 口径。
-- **未修但已定位**：Ceph mgr 抓的是 standby（`ScrapeConfig` 硬编码 ceph-01）、n8n webhook 指向已死的公网隧道（集群内 `n8n-svc` 返回 200）。根因与修复命令见 fix-log §5。
+- **第二轮（当前状态 vs 历史记录）**：17 处当前值改成实测（TIME_WAIT/conntrack/Deployment/SM-PM/证书/etcd keys）、15 处技术错误修正（PromQL offset、CNI 覆盖规则改 Cilium、Cilium 不是 privileged、GitLab 端口表、下线顺序）、**17 个历史文档加统一状态头**（Calico 时代 5 篇、1.29 时代 2 篇、Keycloak 已作废 10 篇）；同时撤回 4 条我自己的误判（Sidekiq 端口、cookie secret、Ceph 20.2.0 待核项、YAML 检查器缺 PyYAML 导致的假 0 错误）。
+- **集群侧**：Ceph `ScrapeConfig` 改为抓 ceph-01+ceph-02（`ceph_*` 序列回到 1090、两条 critical 假告警消失）；n8n webhook 在 `platform-gitops` 改回 in-cluster（AM 已重载）；CNI 覆盖规则也从 `calico-node` 改成 `cilium-*`（`742e8e8`，Prometheus 规则求值 0 错误）。
 
 ## 修复关键
 

@@ -1,5 +1,12 @@
 # SSO 运维与基础概念教程
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../../../13-sso-oidc/README.md)。
+
+
+
 > 面向：需要维护 Grafana / ArgoCD / Harbor / Traefik / Hubble / Alloy / Tekton 登录体系的人
 > 环境：GitLab 作为当前 IdP；oauth2-proxy 负责无原生登录 UI 的反向代理
 > 最后更新：2026-11-10

@@ -54,7 +54,7 @@
 
 **一句话**：逐个替换 Pod，`maxSurge/maxUnavailable` 控制速度与容量。
 
-**本环境**：54 个 Deployment 用 25%/25%；`metrics-server` 用 25%/0 保证容量。
+**本环境**：51 个 Deployment 用 25%/25%（全集群 74 个）；`metrics-server` 用 25%/0 保证容量。
 
 ## 10. 蓝绿
 

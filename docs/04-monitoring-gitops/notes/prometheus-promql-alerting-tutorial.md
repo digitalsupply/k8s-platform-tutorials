@@ -176,7 +176,7 @@ count by (job) (up)
 
 ```text
 kubelet 18 | apiserver 3 | alloy 6 | node-exporter 6 | kube-etcd 3
-| kube-proxy 6 | kube-controller-manager 3 | kube-scheduler 3
+| kube-proxy 0（已移除） | kube-controller-manager 3 | kube-scheduler 3
 | argocd/argocd 5 | coredns 2 | kube-state-metrics 1 | ceph-mgr 1
 | traefik/traefik 1 | cert-manager 3 | ... 合计 125
 ```
@@ -718,10 +718,11 @@ speaker-zv64c -> 0     speaker-62nbr -> 0     speaker-vtcl8  -> 0
 
 ```promql
 # 环比昨天同一时刻（增长 30% 就告警）
-sum(rate(http_requests_total[15m])) > 1.3 * sum(rate(http_requests_total[15m])) offset 1d
+sum(rate(http_requests_total[15m]))
+  > 1.3 * sum(rate(http_requests_total[15m] offset 1d))   # offset 必须跟在选择器后面，不能挂在聚合结果上
 
-# 本周同比
-sum(...) / sum(...) offset 1w
+# 本周同比（同样把 offset 放进选择器）
+sum(rate(http_requests_total[15m])) / sum(rate(http_requests_total[15m] offset 1w))
 ```
 
 > ⚠️ `offset` 必须写在选择器之后：`metric{...}[5m] offset 1h`；且窗口从"当前时刻 - offset"往前推，**offset 窗口不能超出数据保留期（本集群 15 天）**。

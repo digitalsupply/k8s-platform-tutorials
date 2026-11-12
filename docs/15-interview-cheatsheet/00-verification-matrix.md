@@ -22,7 +22,7 @@
 | 僵尸进程 `kill -9` 无效，需父进程 wait | ✅ | 05 实验：`State: Z`，`PPid` |
 | 负载高 CPU 低是 D 状态/IO 阻塞 | ⚠️ | PVE load 8.21/40 核；GitLab IO PSI 35.95；未持续制造 D |
 | free 的 cache 可回收，看 available | ✅ | worker01 free 332Mi/available 5.9Gi |
-| TIME_WAIT 主动关闭方，会自愈 | ✅ | worker01 TIME_WAIT 127 |
+| TIME_WAIT 主动关闭方，会自愈 | ✅ | worker01 TIME_WAIT 121（2026-11-11） |
 | CLOSE_WAIT 是应用没 close | ✅ | 实验制造 CLOSE_WAIT=1 |
 | 三次握手 SYN/SYN-ACK/ACK | ✅ | tcpdump loopback |
 | refused/timeout/reset 区别 | ✅ | 本机实测三种异常 |
@@ -42,7 +42,7 @@
 
 | 断言 | 状态 | 证据 |
 |---|---|---|
-| TIME_WAIT 2MSL | ✅ | `ss` 127 个 TIME_WAIT；状态机 |
+| TIME_WAIT 2MSL | ✅ | `ss` 121 个 TIME_WAIT（2026-11-11）；状态机 |
 | CLOSE_WAIT 是代码问题 | ✅ | 实验 CLOSE_WAIT，未 close |
 | 三次握手防历史 SYN/确认双工 | ✅ | tcpdump |
 | refused=有 RST | ✅ | `ConnectionRefusedError` |
@@ -98,11 +98,11 @@
 | PDB 限制自愿中断 | ✅ | 11 PDB；CNPG primary allowed=0 |
 | 探针三件套 | ✅ | live 51/ready 53/startup 10 |
 | 优雅退出 preStop+SIGTERM+grace | ⚠️ | 只有 1 个 preStop；china-study-free sleep5+grace30 |
-| 版本偏差 kubelet≤apiserver 3 minor | ✅ | 6 节点全 1.35.9 |
+| 版本偏差 kubelet≤apiserver 3 minor | 📚 | 规则本身正确，但本环境 6 节点零偏差，**未复现过偏斜** |
 | cordon/drain | ✅ | worker03 dry-run 30+ Pod，未真正 cordon |
 | 节点自愈 | ⚠️ | 6 节点 Ready，压力 False；未注入故障 |
 | kured | ❌ | 未部署 |
-| 证书轮换 | ✅ | leaf 326d/CA 9y，rotateCertificates=true |
+| 证书轮换 | ⚠️ | 配置正确（rotateCertificates=true）、但 **从未触发**（无 CSR，leaf 还剩 326 天） |
 | etcd snapshot save/restore | ⚠️ | snapshot 133MB/8234 keys/S3；未做恢复演练 |
 | Velero | ❌ | 未部署 |
 | CRD/Operator | ✅ | 146 CRD，Ceph/CNPG/Strimzi 等 |
@@ -166,7 +166,7 @@
 | 应用 tag 用 SHA | ✅ | compassio/deeptutor 全 SHA40 |
 | 禁止 latest | ⚠️ | 基础镜像仍有 `latest`；openwebui 有 `manual-test1` |
 | tag 不可变 | ❌ | Harbor immutable rules = 0 |
-| 滚动发布 | ✅ | 集群 54 个 25%/25%；lab 4 秒完成 |
+| 滚动发布 | ✅ | 集群 51 个 25%/25%（共 74 个 Deployment）；lab 4 秒完成 |
 | 蓝绿 | ✅ | lab selector blue→green，响应变化 |
 | 金丝雀 | ⚠️ | Argo Rollouts 未装；Traefik 权重可分流 |
 | Feature Flag | ❌ | 无 flag 系统；ConfigMap 仅静态开关 |
@@ -194,7 +194,7 @@
 | `histogram_quantile` | ✅ | 不聚合 188 条/122 NaN；`sum by (le)` 后 p99=0.0229s |
 | bucket 选择 | ✅ | 10 个桶（0.005–60s），0.1–1s 跨度过大 |
 | 黑盒监控 | ❌ | 0 Probe、无 blackbox exporter |
-| 白盒监控 | ✅ | 52 job，27 ServiceMonitor + 16 PodMonitor |
+| 白盒监控 | ✅ | 52 job = 27 SM + 16 PM + 9 个 chart 内置 scrapeConfig（115 target） |
 | 四层监控 | ✅ | 基础设施/中间件/应用/业务均有实际指标 |
 | 业务指标 | ✅ | `compassio_users_total` 887 学生、LLM 27.6k/24h、DeepTutor 轮次 |
 | 日志结构化 | ⚠️ | Alloy `stage.json=0`、`sampling=0` |
@@ -337,7 +337,7 @@
 | 断言 | 状态 | 证据 |
 |---|---|---|
 | 节点网络/默认网关 | ✅ | eth0 10.0.0.124/24，default 10.0.0.1 |
-| Pod/Service CIDR | ✅ | 10.244/16、10.96/12、VIP 10.0.0.252 |
+| Pod/Service CIDR | ✅ | 10.244/16、10.96/12；Traefik LB IP 10.0.0.252、API VIP 10.0.0.168 |
 | Cilium native/KPR | ✅ | routing-mode=native、KPR=true、无 kube-proxy DS |
 | L2 宣告 | ✅ | CiliumL2AnnouncementPolicy/traefik-l2 |
 | Traefik LB | ✅ | 10.0.0.252，externalTrafficPolicy=Cluster |
@@ -346,11 +346,11 @@
 | somaxconn | ✅ | 4096 |
 | syn backlog | ⚠️ | 512，低于 8192 建议 |
 | syncookies | ✅ | 1 |
-| TIME_WAIT | ✅ | 185，正常 |
+| TIME_WAIT | ✅ | 121，正常（2026-11-11 复核） |
 | CLOSE_WAIT | ⚠️ | 1，需观察 |
 | ListenOverflows | ✅ | 0 |
 | softnet drop | ✅ | 0 |
-| conntrack | ✅ | 953/262144 |
+| conntrack | ✅ | 773/262144（2026-11-11） |
 | keepalive | ❌ | 7200，大于典型 LB idle |
 | 端口范围 | ⚠️ | 28,232 个，可能耗尽 |
 | tcp_rmem/rmem_max | ⚠️ | max 6MB vs 208KB，不匹配 |

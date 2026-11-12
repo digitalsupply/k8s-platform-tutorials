@@ -22,14 +22,15 @@
 ### 1. 删除一个组件的正确顺序
 
 ```text
-盘点依赖 → 备份 → 停流量/缩容 → 卸载控制器（Operator/Helm）
-→ 删自定义资源 → 删 CRD → 删 Webhook/APIService → 删 RBAC → 删命名空间
-→ 验证 API 健康 → 清理监控/告警
+盘点依赖 → 备份 → 停流量/缩容 → **删自定义资源（此时 controller 还在，负责摘 finalizer）**
+→ 卸载控制器（Operator/`helm uninstall`）→ 删 CRD（会级联删剩余 CR）
+→ 删 Webhook/APIService → 删 RBAC → 删命名空间 → 验证 API 健康 → 清理监控/告警
 ```
 
 顺序反了会出现：
 
-- CRD 删了但 CR 还在 → 孤儿对象；
+- 先卸载 controller 再删 CR → finalizer 没人摘，CR 卡在 `Terminating`（接着 ns 也卡住）；
+- 顺序对了但 CRD 先删 → CR 被**级联删除**，不可恢复（不是"留孤儿"）；
 - Webhook 删了但 APIService 还在 → API 请求失败；
 - RBAC 删了但 controller 还在 → reconcile 报错；
 - 命名空间卡在 `Terminating` → finalizer 阻塞。

@@ -1,5 +1,12 @@
 # 第二阶段：收编 ArgoCD / Harbor / Ceph
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../README.md)。
+
+
+
 > **阅读校正（2026-11-10 实测）**：原文把 Ceph 版本写成 17.2.8（Quincy）。
 > 实际集群为 **18.2.8 Reef**（`ceph versions` 全部 18.2.8）。
 > 结论不变：Quincy/Reef 的 Dashboard SSO 都只支持 SAML 2.0，OAuth2/OIDC 需要 Tentacle+。

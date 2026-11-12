@@ -39,20 +39,20 @@ spec:
         severity: critical
   - name: cni.rules
     rules:
-    - alert: CalicoNodeNotReady
+    - alert: CiliumAgentNotReady
       annotations:
-        description: CNI 异常会导致该节点网络不可用，Pod 无法调度/通信
-        summary: 'Calico CNI Pod 未就绪: {{ $labels.pod }}'
-      expr: sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"calico-node-.*",condition="true"}) < 1
+        description: 'Cilium agent 未就绪会导致该节点网络不可用。CNI 已从 Calico 换 Cilium（2026-11-09）；原规则匹配 calico-node，在 Cilium 集群是空向量（哑告警）。'
+        summary: 'Cilium agent 未就绪: {{ $labels.pod }}'
+      expr: sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"cilium-[a-z0-9]+",condition="true"}) < 1
       for: 5m
       labels:
         severity: critical
-    - alert: CalicoKubeControllersDown
+    - alert: CiliumOperatorNotReady
       annotations:
         description: 控制器异常会影响网络策略下发与 IP 回收。注意：该 Pod 无独立 metrics target（无 ServiceMonitor/PodMonitor），因此改用 kube-state-metrics
           的 kube_pod_status_ready 判定
-        summary: calico-kube-controllers 未就绪
-      expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"calico-kube-controllers-.*",condition="true"}) < 1
+        summary: cilium-operator 未就绪
+      expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"cilium-operator-.*",condition="true"}) < 1
       for: 5m
       labels:
         severity: warning

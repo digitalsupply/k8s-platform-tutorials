@@ -36,7 +36,7 @@
 
 **一句话**：先改连接池/keepalive/长连接，再谈 `tcp_tw_reuse`；不要提 `tcp_tw_recycle`。
 
-**本环境**：TIME_WAIT 185，正常；`tcp_tw_reuse=2`。
+**本环境**：TIME_WAIT 121，正常；`tcp_tw_reuse=2`（2026-11-11 复核）。
 
 ## 7. CLOSE_WAIT 大量
 

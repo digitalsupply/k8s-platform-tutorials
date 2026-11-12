@@ -1,5 +1,12 @@
 # 平台统一认证（SSO）总体方案
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../../../13-sso-oidc/README.md)。
+
+
+
 > 目标：让 k8s 周边 Web UI 共用一套身份，减少独立账号和 basicAuth 密码
 > 范围：Grafana、ArgoCD、GitLab、Ceph Dashboard、Harbor、Traefik/Hubble/Tekton 等
 > 最后更新：2026-11-10

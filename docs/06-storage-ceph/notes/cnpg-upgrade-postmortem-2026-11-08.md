@@ -1,5 +1,10 @@
 # CNPG 1.22.0 → 1.30.1 升级复盘、踩坑修复与生产加固
 
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> 审计记录见 [19 章](../../19-audit/README.md)。
+
 > 集群：kubeadm v1.35.9（6 节点：m01 / master01 / master02 / worker01-03）
 > 数据库：CloudNativePG `pg16-ceph`（PostgreSQL 16.15，2 实例，namespace `cnpg-system`）
 > 执行日期：2026-11-08

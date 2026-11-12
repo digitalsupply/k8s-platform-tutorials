@@ -1,5 +1,10 @@
 # ceph-csi-rbd-nodeplugin 累计重启问题：分析与修复报告
 
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> 审计记录见 [19 章](../../19-audit/README.md)。
+
 **日期**：2026-10-05
 **告警**：`🚨 Pod 累计重启 23 次: ceph-csi-rbd/ceph-csi-rbd-nodeplugin-vghd6`
 **结果**：✅ 已修复根因，重启计数停止增长

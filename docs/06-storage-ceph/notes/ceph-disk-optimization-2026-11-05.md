@@ -1,5 +1,10 @@
 # K8s 3M3W + Ceph 磁盘占用分析与两轮清理执行记录
 
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> 审计记录见 [19 章](../../19-audit/README.md)。
+
 > 环境：Proxmox VE 主机 `teacher`（192.168.2.156 / 10.0.0.1，931.5G NVMe）
 > K8s：3 master（m01、master01、master02）+ 3 worker（worker01/02/03），v1.35.9，containerd 2.3.2
 > Ceph：ceph-01/02/03（VM 116/117/118），Reef 18.2.8，6 OSD × 30G

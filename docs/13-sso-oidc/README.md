@@ -389,7 +389,8 @@ providers:
 | Reef 18.2 | SAML 2.0 |
 | Tentacle+ | SAML 2.0 + OAuth2/OIDC（mgmt-gateway + oauth2-proxy） |
 
-GitLab 是 OIDC/SAML 的 **SP**，不是 SAML IdP，所以不能直接给 Ceph 做 SAML 登录。
+GitLab 在这里是 **OIDC 的 IdP**（OAuth2 provider，Grafana/ArgoCD/Harbor 都连它），
+但只是 **SAML 的 SP**、不是 SAML IdP，所以不能直接给 Ceph 做 SAML 登录。
 要收编 Ceph，至少需要：
 
 1. 部署 Keycloak 之类 SAML IdP；

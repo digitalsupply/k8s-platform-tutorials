@@ -1,5 +1,12 @@
 # Keycloak、basicAuth 与 ForwardAuth：概念和区别
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../../../13-sso-oidc/README.md)。
+
+
+
 > 目的：解释 Keycloak 是什么、basicAuth 是什么，以及它们与 ArgoCD/Harbor
 > 已经接入的 GitLab OIDC 有什么区别
 > 适用环境：Grafana / ArgoCD / Harbor 已接 GitLab OIDC；Ceph 和

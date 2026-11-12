@@ -24,9 +24,9 @@
 ## 3. 执行顺序
 
 - [ ] 停流量 / 缩容到 0
-- [ ] 卸载 Operator 或 Helm release
-- [ ] 删除 CR（等待 finalizer 释放）
-- [ ] 删除 CRD（`kubectl wait --for=delete`）
+- [ ] **先删 CR**（此时 controller 还在，由它走完 finalizer；这一步不能放到卸载之后）
+- [ ] 卸载 Operator 或 Helm release（`helm uninstall` 不删 `crds/` 里的 CRD）
+- [ ] 删除 CRD（会**级联删除**剩余 CR，不可恢复；`kubectl wait --for=delete`）
 - [ ] 删除 Webhook，再删 APIService
 - [ ] 按 label + binding subject 删除 RBAC
 - [ ] 删除命名空间（确认不卡 `Terminating`）

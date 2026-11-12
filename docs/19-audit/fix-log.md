@@ -10,8 +10,8 @@
 | 批次 | 条数 | 已修 | 待处理 | 不修（历史阶段） |
 |---|---|---|---|---|
 | P0（照抄会失败） | 12 | **12** | 0 | 0 |
-| P1（事实/语义错误） | 95 | 6 | 89 | — |
-| P2（内部矛盾/版漂） | 48 | 2 | 46 | 见 §4 口径 |
+| P1（事实/语义错误） | 95 | 21（第一轮 6 + 第二轮 15） | 74 | — |
+| P2（内部矛盾/版漂） | 48 | 2 + 17 个文件加状态头 | 见 §9.5 | 见 §4 口径 |
 | 现场真实故障 | 5 | 4 | 0 | 1（观察：ceph-03 无 mgr） |
 
 P0 全部闭环，且每条都有可复现的验证命令（`bash -n` / `helm template` / 线上 `/etc/gitlab/gitlab.rb`）。
@@ -112,3 +112,90 @@ ssh tfadmin@192.168.67.110 'powershell -NoProfile -Command "Get-VM | Format-Tabl
 
 > 所有主机操作均为只读（`pveversion`/`pvesm status`/`qm list`/`qm guest cmd`/`grep`/`ss`/`docker ps`/`Get-VM`）。
 > 唯一对集群的写操作是本轮之前用户已完成的 `kubeProxy.enabled=false`；本轮未改集群。
+
+---
+
+## 9. 第二轮：按「当前状态表 vs 历史记录」重清一遍（2026-11-11 晚）
+
+第一轮修的是"照抄会失败"；这一轮按你提的口径，把剩余条目分成两类处理：
+
+- **A 类｜当前状态**：描述"现在是什么"的表/句子 → 必须等于实测值，**改数值**。
+- **B 类｜历史记录**：`notes/` 里描述"当时发生了什么" → **不改正文**，只在文首加统一状态头（`状态：历史快照 / 已作废`+ 采集时间 + 集群版本 + 指向 current-state）。
+- **C 类｜技术性错误**：与年代无关的机制/命令/语法错（例如 PromQL 不合法、Capability 说成 privileged）→ 无论哪一类都改。
+- **D 类｜审计误判**：我判错或测错的，**撤回并把理由写下来**。
+
+### 9.1 A 类：当前状态表（已改 17 处）
+
+| 文件 | 原值 | 实测值（2026-11-11） |
+|---|---|---|
+| `15/README.md` ×2、`00-verification-matrix` ×3、`11-middleware-os`、`15-network` | TIME_WAIT 127 / 185 / 189 | **121**（worker01，`ss -tan state time-wait`；随流量波动） |
+| `11-middleware-os`、`00-verification-matrix` | conntrack 947 / 953 | **773 / 262144** |
+| `08-cicd-release`、`00-verification-matrix`、`10-pipeline-release-artifacts` | 54 个 25%/25% | **51**（全集群 74 个；补 25%/50%、1/1 两类） |
+| `09-observability`、`00-verification-matrix` | "52 job = 27 SM + 16 PM" | 52 = 27 SM + 16 PM + **9 个 chart 内置 scrapeConfig**（115 target） |
+| `00-verification-matrix` | 证书轮换 ✅ | ⚠️ 配置对但**从未触发**（无 CSR） |
+| `00-verification-matrix` | kubelet 可低 3 minor ✅ | 📚 规则对，但本环境**零偏差未复现** |
+| `00-verification-matrix` | "VIP 10.0.0.252" | Traefik LB 10.0.0.252 / **API VIP 10.0.0.168** |
+| `10-irreversibles` | etcd keys 8243 | **8234** |
+| `04-current-state` | 68 groups / 251 rules | **51 alerting groups / 250 rules；16 recording groups / 94 rules**（表头加"采集时间"） |
+| `13/README` | "GitLab 是 OIDC/SAML 的 SP" | GitLab 是 **OIDC 的 IdP**、SAML 的 SP |
+
+### 9.2 C 类：技术性错误（已改 15 处 + GitOps 源）
+
+| 位置 | 改动 |
+|---|---|
+| `04/notes/prometheus-promql-alerting-tutorial.md:720` | `sum(...) offset 1d` → `sum(rate(x[15m] offset 1d))`（原写法 parse error） |
+| 同文 `:179` | target 清单里 `kube-proxy 6` → **0（已移除）** |
+| `04/manifests/rules/coverage-gap-alerts.yaml`、`bsm-coverage-alerts.yaml` | `CalicoNodeNotReady`→`CiliumAgentNotReady`（`pod=~"cilium-[a-z0-9]+"`）、`CalicoKubeControllersDown`/`CNIKubeControllersDown`→`CiliumOperatorNotReady`；**同时改了 GitOps 源** `platform-gitops` `742e8e8`，ArgoCD 已同步，Prometheus 规则求值 0 错误 |
+| `05/04-permissions`、`05/09-case-studies`（3 处） | "Cilium 是 privileged" → Cilium 是 `drop: ALL` + 13 caps；privileged 只有 9 个 ceph-csi + 1 个 buildkitd |
+| `03/gitlab-19.4-install.md` | `8082=KAS / 8092=exporter` → 8082/8092 是 **Sidekiq 指标/健康检查**，KAS **8150**（内部 8153），exporter **9168** |
+| `03/gitlab-port-80-troubleshooting.md`（2 处） | sidekiq 行注明"指标+健康检查，不承载业务流量" |
+| `01/notes/.../01-现状盘点:116` | containerd 2.0 的时间点纠正为"升 **1.36** 之前"；先升 containerd 的真实理由是 1.7.22 < 矩阵下限 1.7.28 且 1.7 已 EOL |
+| `09/README`（顺序 + 矛盾点）、`09/scripts/cleanup_checklist.md` | 顺序改成 **删 CR（controller 在线）→ 卸 Operator/Helm → 删 CRD**；"CRD 删了留孤儿"改成"级联删除、不可恢复" |
+| `07/notes/kube-proxy-nftables-diagnosis.md` | "Calico BPF 兜底、服务未中断"改为与 README 一致的"没有 BPF 兜底，Service 不可用"，并标注那是未验证的猜测 |
+
+### 9.3 B 类：历史记录加状态头（17 个文件，正文不动）
+
+```text
+docs/07-networking/notes/kube-proxy-nftables-diagnosis.md        ← 2026-10 Calico/kube-proxy 时代
+docs/06-storage-ceph/notes/cnpg-upgrade-postmortem-2026-11-08.md
+docs/06-storage-ceph/notes/ceph-csi-restart-analysis.md
+docs/06-storage-ceph/notes/ceph-disk-optimization-2026-11-05.md
+docs/08-control-plane-ha/notes/kube-vip-apiserver-analysis.md
+docs/00-cluster-overview/notes/k8s-cluster-report.md             ← 2026-09 K8s 1.29.8 / Calico 3.27.4
+docs/00-cluster-overview/notes/production-readiness-gaps-20261109.md
+docs/13-sso-oidc/notes/01..05-*.md                               ← 已作废：Keycloak 方案
+docs/11-gitops-platform/notes/platform-gitops-repo/{sso-README,SSO-OPS-TUTORIAL,KEYCLOAK-BASICAUTH-EXPLAINED,GRAFANA-SSO,argocd-README}.md
+```
+
+统一格式：
+
+```text
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），照本文排障前先看现状：current-state.md。
+```
+
+Keycloak 那 10 篇用另一套头：`状态：已作废（Keycloak 时代的 SSO 方案）` + 说明最终用 GitLab 作 IdP + 指向 13 章 README。这样"逐字节重复的旧架构文档"从误导源变成可辨别的归档。
+
+### 9.4 D 类：审计误判与自查更正（4 条）
+
+| 原判 | 实际情况 | 处理 |
+|---|---|---|
+| "Sidekiq 不存在任何监听端口，8082/8092 是错的" | **错判**。`ss -lntp` 显示 8082/8092 都是 ruby（sidekiq-cluster 指标 / health-checks），文档原文是对的 | 撤回，改为补注"指标+健康检查，不承载业务流量"；真正错的是同一文档里 KAS/exporter 的端口 |
+| "cookie secret 长度单位写错" | **错判**。oauth2-proxy 按字符串字节计，`openssl rand -hex 16` = 32 字符 = 32 字节，合法 | 撤回，不改 |
+| "Ceph 被写成 20.2.0 Tentacle" | 该处是**待核清单项**，同文 §10.2 已实测否掉（18.2.8 reef） | 撤回；只在"待核项未回填结论"层面保留提醒 |
+| 第一轮说"所有 YAML 可解析（0 错误）" | **测量缺陷**：检查器用的 venv 里没有 PyYAML，`if yaml:` 为假 → 整段被静默跳过 | 改用 `/usr/bin/python3` 重验 197 个 YAML：33 个是 Helm/占位符模板（按设计跳过），**真实报错 1 个**——`alertmanagerconfigs` CRD 里 `=` 键触发 PyYAML 的 `tag:yaml.org,2002:value` 限制（`kubectl` 能正常解析，不是 YAML 缺陷）；检查器已改成缺 PyYAML 时显式告警而不是静默跳过 |
+
+### 9.5 剩余 backlog（约 60 条，尚未处理）
+
+多为"同一事实抄写不一致"和细节表述，不影响上手，按需再清：
+
+- `04`：日志轮转文件数 14/17、PromQL 章节里若干"坑"的表述、Tempo 采样成本数字；
+- `05`：`sudo` 与环境变量继承、`su` 无日志、`fs.nr_open`、cgroup 磁盘配额、`oscap` profile 名；
+- `06`：PV 数 18/17、Released PV 清理顺序两份文档相反、`radosgw-admin caps` 用法、PE 大小算式；
+- `12`：`virt-customize` machine-id、扩容三步缺 LV/文件系统、thinline 容量算式；
+- `16`：Kafka 堆大小单位、Nginx 并发公式漏反向代理双连接；
+- `13`：Grafana 管理员组映射两处不一致、oauth2-proxy 接入模式描述相反。
+
+需要的是一条条重测再改，不适合批量替换——这类我建议按"谁维护谁核"的方式，用 `assets/current-state.md` 当唯一数字源。
+

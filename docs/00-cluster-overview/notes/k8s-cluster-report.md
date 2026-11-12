@@ -1,5 +1,8 @@
 # Kubernetes 集群基本信息报告
 
+> **状态：历史快照（2026-09，K8s 1.29.8 / Calico 3.27.4）**
+> 升级前的集群盘点，保留用于对比"升级前后差异"。别把它当现状：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+
 > 生成时间: 2026-09-27  
 > 集群 API Server: `https://10.0.0.168:6443`
 

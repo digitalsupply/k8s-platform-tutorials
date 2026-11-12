@@ -11,9 +11,9 @@
 
 - `/etc/shadow` 在 PVE/Ubuntu 上是 `640 root:shadow`，在 m01 上是 `000 root:root`；
 - `/usr/bin/sudo`、`passwd`、`su` 带 setuid；`ping` 是 file capability；
-- 容器里 Cilium、Ceph-CSI nodeplugin、BuildKit 是 `privileged`；
+- 容器里 **Ceph-CSI nodeplugin、BuildKit 是 `privileged`**；Cilium agent **不是**（`drop: ALL` + 13 个 capability）；
 - 普通应用 Pod 有的加了 `SYS_ADMIN`、`DAC_OVERRIDE`；
-- 38 个 Pod 使用 hostNetwork，10 个 privileged；
+- 35 个 Pod 使用 hostNetwork，10 个 privileged（9 个 ceph-csi-rbd + 1 个 buildkitd，2026-11-11 实测）；
 - 有人把“root 能读”当成“权限没问题”，忽略了 capability/LSM/seccomp。
 
 ## 2. 主要概念

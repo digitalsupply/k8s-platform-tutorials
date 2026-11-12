@@ -22,7 +22,7 @@
 | 僵尸进程怎么清 | `kill -9` 无效；杀父进程或让父进程 `wait()` | 05 实验：`State: Z`，`PPid` 指向父进程 |
 | 负载高 CPU 低 | 有 `D` 状态进程卡在 IO/NFS；看 `vmstat` 的 `b`、`wchan`、PSI | PVE load 8.21/40 核；GitLab IO PSI `full 35.95`；本环境无持续 D |
 | free 的 cache 要不要清 | 不用；cache 可回收，看 `available` | worker01 `free` 332Mi 但 `available` 5.9Gi |
-| TIME_WAIT vs CLOSE_WAIT | TIME_WAIT 主动关闭方，会自愈；CLOSE_WAIT 应用没 `close()` | worker01 TIME_WAIT 127；实验 CLOSE_WAIT 1 |
+| TIME_WAIT vs CLOSE_WAIT | TIME_WAIT 主动关闭方，会自愈；CLOSE_WAIT 应用没 `close()` | worker01 TIME_WAIT 121、CLOSE_WAIT 1（2026-11-11 复核；这类计数随时间波动，早期快照为 127） |
 | 三次握手为什么不是两次 | 防历史重复 SYN + 确认双方收发能力 | tcpdump 抓到 SYN / SYN-ACK / ACK |
 | refused / timeout / reset | refused=有 RST；timeout=无响应；reset=建立后被重置 | 本机实测三种异常 |
 | df 和 du 不一致 | 文件已删除但被进程持有；`lsof +L1` | 200MiB 删除文件仍被 Python 打开，`(deleted)` |
@@ -235,7 +235,7 @@
 | 3s/5s/30s | SYN/DNS/LB idle | ndots:5；proxy_read_timeout 600s |
 | `ss -ti` | rtt/cwnd/retrans | 单连接信息量最大 |
 | 两个队列 | syn backlog / accept | somaxconn 4096；syn backlog 512 |
-| TIME_WAIT/CLOSE_WAIT | 主动关闭/应用没 close | 185 / 1 |
+| TIME_WAIT/CLOSE_WAIT | 主动关闭/应用没 close | 121 / 1（2026-11-11，worker01） |
 | DNS ndots | search 放大 | Pod `ndots:5` + 3 search |
 | 502/504/499 | 上游断/慢/客户端断 | Traefik/nginx 链路 |
 | 超时层级 | 客户端>LB>Ingress>应用>DB | 应用 600s，注意倒挂 |

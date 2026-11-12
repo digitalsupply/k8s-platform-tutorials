@@ -341,11 +341,14 @@ openwebui: cache 保留 3 个；open-webui 仓库 always retain
 ### 5.1 本集群现状
 
 ```text
-RollingUpdate 25%/25%   54 个 Deployment
-Recreate                12 个
+RollingUpdate 25%/25%   51 个 Deployment
+未设 rollingUpdate/Recreate  12 个
 RollingUpdate 0/1        5 个
 RollingUpdate 25%/1      3 个
+RollingUpdate 25%/50%    1 个
 RollingUpdate 25%/0      1 个（metrics-server）
+RollingUpdate 1/1        1 个
+合计                    74 个（2026-11-11 复核）
 ```
 
 Argo Rollouts CRD **未安装**，没有 `Rollout` 资源；发布主要靠原生 Deployment +

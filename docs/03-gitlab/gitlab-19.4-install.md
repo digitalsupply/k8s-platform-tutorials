@@ -149,8 +149,10 @@ ss -tlnp
 - `0.0.0.0:80` - Nginx（GitLab HTTP）初始配置
 - `0.0.0.0:8060` - Nginx 状态/metrics
 - `127.0.0.1:8080` - Puma（Rails 应用）
-- `127.0.0.1:8082` - GitLab KAS
-- `127.0.0.1:8092` - GitLab Exporter
+- `127.0.0.1:8082` - Sidekiq 指标（sidekiq-cluster metrics）
+- `127.0.0.1:8092` - Sidekiq 健康检查
+- `127.0.0.1:8150` - GitLab KAS（内部 API 8153）
+- `127.0.0.1:9168` - gitlab-exporter（指标）
 - PostgreSQL、Redis 等内部服务运行在 localhost
 
 ### 8.2 端口 80 访问异常处理

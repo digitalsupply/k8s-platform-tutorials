@@ -1,5 +1,12 @@
 # Grafana SSO / LDAP 接入方案
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../README.md)。
+
+
+
 > 目标：把 `https://grafana.k8s.local` 的登录从本地 admin 账号切换为统一身份认证
 > 当前 Grafana：12.4.3（OSS），kube-prometheus-stack 83.7.0
 > 最后更新：2026-11-10

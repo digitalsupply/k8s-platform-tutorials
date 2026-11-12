@@ -1,5 +1,10 @@
 # kube-proxy nftables 模式诊断与修复报告
 
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> 审计记录见 [19 章](../../19-audit/README.md)。
+
 ## 诊断过程
 
 ### 1. 确认当前模式
@@ -69,8 +74,9 @@ nft[3902509]: segfault at 0 ip 0000000000000000 error 14 in nft[558389342000+200
 
 - Calico FelixConfiguration：`bpfConnectTimeLoadBalancing: TCP`，`nftablesMode: Auto`
 - Calico IPPool：`natOutgoing: true`，`ipipMode: Always`
-- Calico BPF 在数据面兜底，ClusterIP/NodePort 仍可达
-- 服务实际未中断，但完全依赖 Calico BPF
+- **更正（2026-11-11 审计）**：本集群 Calico 是 `calico_backend: bird` + iptables，`FELIX_BPFENABLED` 从未开启，**没有 BPF 数据面兜底**。
+  没有 kube-proxy 就没有组件为 ClusterIP 做 DNAT —— 与 [07/README.md](../README.md) 的"Service 全部不可用"一致；
+  本文原结论"服务未中断"是当时的猜测，未经抓包/连通性证据支持。
 
 ### 7. 配置问题
 

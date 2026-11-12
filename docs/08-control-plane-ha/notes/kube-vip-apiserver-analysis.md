@@ -1,5 +1,10 @@
 # kube-vip / API Server 访问关系分析
 
+> **状态：历史快照（2026-10，K8s 1.29.8 / Calico / kube-proxy-IPVS）**
+> 本文是当时的过程记录与命令，保留原样以便复盘；其中"当前"指当时的当前。
+> 集群现在已经是 K8s 1.35.9 + Cilium 1.20.4（kube-proxy 已移除），**照本文排障前先看现状**：[current-state.md](../../00-cluster-overview/assets/current-state.md)。
+> 审计记录见 [19 章](../../19-audit/README.md)。
+
 > 集群：6 节点（3 control-plane + 3 worker），kube-vip v1.2.4，ARP/L2 模式
 > VIP：`10.0.0.168:6443`　SDK/分析时间：2026-10-11
 

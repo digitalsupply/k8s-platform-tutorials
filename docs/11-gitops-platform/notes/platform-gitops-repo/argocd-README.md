@@ -1,5 +1,12 @@
 # ArgoCD 配置（bootstrap 例外）
 
+> **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
+> Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
+> 当前方案见 [13 章 README](../../../13-sso-oidc/README.md)。
+
+
+
 ArgoCD 是平台的 bootstrap 组件，由 Helm release `argocd` 安装，**不能由 ArgoCD
 自己同步自己的配置**。因此本目录的 `values.yaml` 是声明式 source of truth，
 变更通过 `helm upgrade` 应用。

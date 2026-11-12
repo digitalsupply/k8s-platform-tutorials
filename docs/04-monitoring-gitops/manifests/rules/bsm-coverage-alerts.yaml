@@ -21,16 +21,16 @@ spec:
     - alert: CNIComponentNotReady
       annotations:
         description: CNI 故障=该节点网络不可用，影响面最大
-        summary: 'Calico CNI 未就绪: {{ $labels.pod }}'
-      expr: sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"calico-node-.*",condition="true"}) < 1
+        summary: 'Cilium agent 未就绪: {{ $labels.pod }}'
+      expr: sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"cilium-[a-z0-9]+",condition="true"}) < 1
       for: 5m
       labels:
         severity: critical
-    - alert: CNIKubeControllersDown
+    - alert: CiliumOperatorNotReady
       annotations:
         description: 网络策略下发与 IP 回收依赖此控制器
-        summary: calico-kube-controllers 未就绪
-      expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"calico-kube-controllers-.*",condition="true"}) < 1
+        summary: cilium-operator 未就绪
+      expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"cilium-operator-.*",condition="true"}) < 1
       for: 5m
       labels:
         severity: critical
