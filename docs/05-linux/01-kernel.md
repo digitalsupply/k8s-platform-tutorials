@@ -23,7 +23,7 @@
 
 - 同一份 eBPF/Cilium 配置，在不同内核上行为不完全一致；
 - Ceph-CSI 3.18 标准镜像要求 `x86-64-v3`，旧 CPU 直接 `SIGILL`；
-- m01 是 SELinux，其他节点是 AppArmor，容器安全策略不能照抄；
+- m01 内核编译了 selinux（**实际未启用**，见 §3.4），其他节点是 apparmor；容器安全策略不能照抄；
 - PVE 的 `6.8.12-15-pve` 是 Proxmox 定制内核，不是 Debian 原版；
 - 很多人把 `/proc` 当“配置文件”，改了重启就丢。
 
@@ -216,7 +216,7 @@ lockdown,capability,landlock,yama,apparmor        # Ubuntu / PVE
 - **yama**：ptrace 限制；
 - **lockdown**：内核完整性保护。
 
-但注意：宿主启用 SELinux ≠ 容器启用 SELinux。本集群 containerd 配置里
+但注意：LSM 在 `lsm` 列表里 ≠ 已启用，宿主启用 ≠ 容器启用。本集群 containerd 配置里
 `enable_selinux = false`，所以容器进程不会自动获得 SELinux 标签。**宿主 LSM 和容器 LSM 要分开看。**
 
 ### 3.5 内核日志
