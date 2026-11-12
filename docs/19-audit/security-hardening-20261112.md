@@ -157,6 +157,28 @@ verify-checkchanges      (deeptutor-check-changes)        True Succeeded
 这条是 OpenCode 先提出来的，实测确认属实后才动手 —— 记录时保留这个顺序，
 因为"别人说他打断了"和"我证明它打断了"是两件事。
 
+### 5.1 OpenCode 的第二条判断：保护分支会 403 —— 实测**不成立**
+
+它推测：旧 root PAT 是 Owner 能绕过保护分支，换成 Developer 角色的 group token 后
+`git push origin HEAD:main` 可能 403。这条在 GitLab 侧确实无法从代码判断，所以直接做了实测：
+
+```text
+# 用 ci-rw 真推到 compassio-gitops 的 main
+2b6b77c..388111c  HEAD -> main            ← rc=0
+# 用 deeptutor 的 ci-rw 真推到 deeptutor-gitops 的 main
+563fce4..a7cdc93  HEAD -> main            ← rc=0
+```
+
+所以这两个 `*-gitops` 的 `main` **允许 Developer 推送**（这几条流水线一直是机器在写），
+不需要放开保护分支，也不需要把 token 提到 Maintainer。
+
+顺带测出一条有价值的细节：**普通推送可以，强推被拒**（`! [remote rejected] ... pre-receive hook declined`）。
+即保护分支存在、允许 Developer 正常提交、禁止 force push —— 这正是 gitops 仓该有的配置。
+副作用：验证用的两个空提交留在 `main` 上（无内容变更，ArgoCD 同步后无 diff），
+想清掉得走 MR 或 Maintainer 强推。
+
+`security-hardening-20261112.md:103` 那种"只测临时分支"的验收确实不够 —— 上面这条就是补上的。
+
 ## 6. 留给以后
 
 - ArgoCD 的 6 个 repo 凭据**没有**入库（它们是 bootstrap 级 Secret，每个集群一套）。
