@@ -110,7 +110,54 @@ ArgoCD 仓库凭据                  6 个全部是 gldt- 的 deploy token（use
 撤销的旧 token：`cicd-agent`（id=1）、`deeptutor-gitops`（id=2），HTTP 204。
 保留的：`ci-rw` × 2（id=3 → digitalsupply，id=4 → deeptutor）。
 
-## 5. 留给以后
+## 5. 回归：这次收敛打断了 deeptutor 流水线（已修）
+
+凭据按 group 切分之后，`deeptutor-cicd` 的第一跳会 401。
+
+**根因**：四条流水线共用 Task `git-clone`，而它的 `secretKeyRef` 写死
+`name: gitlab-auth` —— 那是 digitalsupply 的 token。openwebui / compassio / china-study-free
+的源码仓和 gitops 仓都在 digitalsupply，所以没事；只有 deeptutor 的源码仓在 `deeptutor` group，
+跨 group 读不到。同一个问题还出现在 `deeptutor-check-changes`（它也要 clone 一次）。
+
+**证据（实机，改造前）**：
+
+```text
+git ls-remote http://ci-rw:<digitalsupply tok>@192.168.67.201/deeptutor/deeptutor.git
+  → remote: HTTP Basic: Access denied ... improperly scoped
+
+TaskRun verify-clone-wrongsecret（显式传 gitlab-auth 克隆 deeptutor）
+  → False StepFailed / fatal: Authentication failed for '.../deeptutor/deeptutor.git/'
+```
+
+**修法（不动其它三条流水线）**：
+
+| 对象 | 改动 |
+|---|---|
+| Task `git-clone` | 新增参数 `gitlab-secret-name`（默认 `gitlab-auth`，行为不变），两个 `secretKeyRef.name` 改用 `$(params.gitlab-secret-name)` |
+| Task `deeptutor-check-changes` | `secretKeyRef.name` → `deeptutor-gitlab-auth` |
+| Pipeline `deeptutor-cicd` | `clone` 任务传 `gitlab-secret-name=deeptutor-gitlab-auth` |
+
+**验证（实机 TaskRun，2026-11-12）**：
+
+```text
+verify-clone-deeptutor   (secret=deeptutor-gitlab-auth)  True Succeeded  Cloned commit 8eaa141
+verify-clone-openwebui   (默认 secret=gitlab-auth)        True Succeeded  Cloned commit a077c80
+verify-checkchanges      (deeptutor-check-changes)        True Succeeded
+```
+
+一正一反两条 TaskRun 都跑过：用错 secret 必失败，用对 secret 必成功 —— 不是只看 YAML 改对。
+
+**顺带确认的两件事**：
+
+- 全部 Task 里**没有** GitLab REST API 调用（`grep -n 'api/v4\|PRIVATE-TOKEN\|curl '` 为空），
+  所以新 token 缺 `api` scope 不构成风险。将来若加 `gitlab-set-status` 一类任务，需要 `read_api`/`api`。
+- worker01 没有 `alpine/git:v2.45.2` 缓存，从 Docker Hub 拉会卡 4 分钟以上（PodInitializing），
+  与凭据无关；worker02 有缓存。这一步让 TaskRun 看起来像"卡住"。
+
+这条是 OpenCode 先提出来的，实测确认属实后才动手 —— 记录时保留这个顺序，
+因为"别人说他打断了"和"我证明它打断了"是两件事。
+
+## 6. 留给以后
 
 - ArgoCD 的 6 个 repo 凭据**没有**入库（它们是 bootstrap 级 Secret，每个集群一套）。
   轮换方式：GitLab 建新 deploy token → `kubectl -n argocd patch secret <name> --type merge
