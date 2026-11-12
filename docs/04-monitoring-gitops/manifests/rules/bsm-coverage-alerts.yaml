@@ -26,10 +26,10 @@ spec:
       for: 5m
       labels:
         severity: critical
-    - alert: CiliumOperatorNotReady
+    - alert: CNIControllersNotReady
       annotations:
         description: 网络策略下发与 IP 回收依赖此控制器
-        summary: cilium-operator 未就绪
+        summary: cilium-operator 未就绪（CNI 控制器）
       expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"cilium-operator-.*",condition="true"}) < 1
       for: 5m
       labels:
