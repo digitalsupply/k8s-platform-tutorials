@@ -210,7 +210,7 @@ done
 
 # 2. 验证
 systemctl status zabbix-server mariadb nginx php-fpm --no-pager | grep -E "Active:"
-mysql -uzabbix -p"$(grep -oP 'DBPassword=<redacted>' /etc/zabbix/zabbix_server.conf)" \
+mysql -uzabbix -p"$(grep -oP 'DBPassword=\K.*' /etc/zabbix/zabbix_server.conf)" \
   -e "select status, count(*) from hosts group by status;"
 ss -lnt | grep -E ":(80|443|3306|10051)"
 

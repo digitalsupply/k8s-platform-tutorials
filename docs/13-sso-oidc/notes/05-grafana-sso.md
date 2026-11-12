@@ -158,7 +158,8 @@ grafana:
       use_refresh_token: true
       # GitLab 把用户所属组放在 ID token 的 groups claim 里。
       # 组路径示例：digitalsupply/devops
-      role_attribute_path: "contains(groups[*], 'digitalsupply/devops') && 'GrafanaAdmin' || 'Viewer'"
+      role_attribute_path: "contains(['root'], nickname) && 'GrafanaAdmin' || contains(groups[*], 'digitalsupply') && 'GrafanaAdmin' || 'Viewer'"
+      # 2026-11-11 按线上 grafana.ini 对齐：root 用户直接 GrafanaAdmin；digitalsupply 组成员也提权
       role_attribute_strict: false
       allow_assign_grafana_admin: true
 ```

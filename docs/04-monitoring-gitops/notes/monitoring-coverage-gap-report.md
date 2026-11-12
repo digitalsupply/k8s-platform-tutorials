@@ -163,7 +163,7 @@ sum(rate(loki_distributor_bytes_received_total[5m])) == 0
 # ingest chunk 堆积（内存压力）
 max(loki_ingester_memory_chunks) > 30000
 # 查询延迟高
-histogram_quantile(0.95, sum(rate(loki_request_duration_seconds_bucket[5m]))) > 2
+histogram_quantile(0.95, sum by (le) (rate(loki_request_duration_seconds_bucket[5m]))) > 2
 # cache 未命中（查询慢的常见原因）
 rate(loki_cache_hits[5m]) / rate(loki_cache_requests[5m]) < 0.8
 ```
@@ -173,7 +173,8 @@ rate(loki_cache_hits[5m]) / rate(loki_cache_requests[5m]) < 0.8
 统一用 `metrics:9090` 端口，配一个带 `namespace` 维度的通用 PodMonitor + relabel 合并成一个 job，再补：
 ```promql
 # Knative 请求延迟高
-histogram_quantile(0.95, sum(rate(knative_request_count_sum...))) > 1
+histogram_quantile(0.95, sum by (le) (rate(knative_request_duration_seconds_bucket[5m]))) > 1
+# 原文拿 _sum 当桶用（histogram_quantile 只吃 _bucket），且漏了 by (le)
 # 队列积压
 max(knative_queue_depth) > 100
 ```

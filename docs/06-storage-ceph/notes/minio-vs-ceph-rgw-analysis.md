@@ -219,9 +219,17 @@ radosgw-admin bucket list     # 查 bucket 归属 → 全部在 Ceph
 
 排查 RGW 时发现几项值得处理（与 MinIO 无关，是 Ceph 自身的）：
 
-### 🔴 1. `testbucket` 存在 —— CVE-2024-9331 的已知特征
+### 🔴 1. 存在一个叫 `testbucket` 的 bucket（**不是 CVE**）
 
-Ceph 官方安全公告 **CVE-2024-9331**：Ceph 在特定配置下会自动创建名为 `testbucket` 的 bucket，攻击者可读取任意 bucket 数据。
+原文引用的 **CVE-2024-9331 查无此条**（NVD / GitHub Advisory 均无 Ceph 相关记录），"Ceph 自动建 testbucket、可读任意数据" 也没有官方安全公告支撑。
+`testbucket` 通常是 RGW 冒烟测试或客户端脚本留下的空桶。真正的风险点是**桶的匿名访问**，不是某个 CVE：
+
+```text
+$ curl -s -o /dev/null -w '%{http_code}' http://10.0.0.31:7480/testbucket/
+403          # 2026-11-11 实测：匿名 GET 被拒，桶不是 public-read
+```
+
+结论：**保留原判断"值得清理"，但去掉 CVE 归因**；清理前确认 `radosgw-admin bucket stats --bucket=testbucket` 里对象数为 0、且 ACL 无 `public-read`。
 
 本集群实测：
 ```

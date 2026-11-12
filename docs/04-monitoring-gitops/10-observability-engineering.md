@@ -282,7 +282,7 @@ p99    = 0.0229s
 
 | 坑 | 现象 | 修法 |
 |---|---|---|
-| Counter 重置 | `rate` 出现负值/尖刺 | Prometheus 会处理重置，但窗口太短会抖动 |
+| Counter 重置 | `rate` 出现**尖刺**（不会出现负值） | `rate`/`increase` 内置重置检测，跨重置点按"当前值"补偿；窗口太短会抖动，但结果恒 ≥ 0 |
 | `absent()` 用错 | 指标消失时不告警 | `absent(metric)` 或 `unless` 组合 |
 | label 匹配 | `=` 精确、`=~` 正则、`!=` 不等于 | 正则要锚定，避免 `.*` 扫全量 |
 | `topk` 位置 | `topk(5, sum by (pod)(...))` vs `sum by(pod)(topk(...))` | 先聚合再 topk |
@@ -465,7 +465,7 @@ steady raw: ~2.9 GiB (不含索引/压缩)
 ```text
 kubelet 未显式配置 containerLogMaxSize/MaxFiles
 -> 默认 10Mi × 5（每容器）
-worker01 已出现 14 个 *.log.* 轮转文件，最大约 10.5MB
+worker01 当时出现 14 个 *.log.* 轮转文件，最大约 10.5MB（2026-11-11 复核为 24 个——这类计数随业务日志量变化，看量级与单文件上限即可）
 containerd max_container_log_line_size = 16384
 /var/log 326M，其中 /var/log/pods 183M
 ```

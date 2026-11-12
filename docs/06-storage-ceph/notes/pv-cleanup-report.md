@@ -3,7 +3,7 @@
 > **执行日期**：2026-10-06
 > **集群上下文**：`kubernetes-admin@kubernetes`
 > **客户端版本**：kubectl v1.35.9
-> **执行结果**：✅ 成功删除 **10 个失效 PV（95Gi）**，集群剩余 **18 个 PV 全部 Bound 且健康**
+> **执行结果**：✅ 成功删除 **10 个失效 PV（95Gi）**，清理后集群剩余 **18 个 PV 全部 Bound 且健康**（2026-10-05 当时快照；2026-11-11 复核 17 个）
 
 ---
 
@@ -323,7 +323,7 @@ kubectl get pv --no-headers | awk '$5=="Failed"{print "  "$1}'
 |---|---|
 | 清理前 PV 总数 | 28（18 Bound + 10 Released） |
 | 本次删除 | **10 个 Released PV，共 95Gi**（9 个 ceph-rbd 85Gi + 1 个 NFS 10Gi） |
-| 清理后 PV 总数 | **18，全部 Bound** |
+| 清理后 PV 总数 | **18，全部 Bound**（当时快照；2026-11-11 为 17） |
 | YAML 备份 | ✅ `/tmp/opencode/pv-backup/`（11 个文件） |
 | 安全校验 | ✅ 删除前 0 引用，删除后 PVC 全在、Pod 全正常 |
 | 底层数据 | ⏸ 保留未删（Retain 策略），待人工评审后再做第 7 节深度清理 |

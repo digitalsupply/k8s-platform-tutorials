@@ -104,7 +104,7 @@ other::---
 | 位 | 符号 | 作用 |
 |---|---|---|
 | setuid | `rws` | 执行时 euid = 文件 owner |
-| setgid | `rws`（组位） | 执行时 egid = 文件 group；目录下新文件继承组 |
+| setgid | `r-s`（组位为 s，组执行位本身不置位时显示 `S`） | 执行时 egid = 文件 group；目录下新文件继承组 |
 | sticky | `rwt` | 目录下只有 owner/root 能删自己的文件（`/tmp`） |
 
 真实实验：

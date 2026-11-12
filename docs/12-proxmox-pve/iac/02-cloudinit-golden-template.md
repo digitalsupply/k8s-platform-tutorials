@@ -133,7 +133,8 @@ template: 1
 
 注意：
 
-- **cloud-init 盘必须挂 `scsi1`**：openEuler guest 只有 PATA，没有 ATAPI，`ide2` 检测不到；
+- **cloud-init 盘必须挂 `scsi1`**：`q35` 机型**没有 IDE 控制器**，`ide2` 上的 cloud-init 盘（映射成 IDE/ATAPI 光驱）guest 根本看不到；
+  用 `i440fx` 时 `ide2` 才行。与 PATA/ATAPI 的协议差异无关，是**机型没有 IDE 总线**。
 - 模板上不要保留 `ipconfig0`，交给 Terraform 按 VM 设置；
 - 移除 `searchdomain: local`，否则 cloud-init 可能把主机名设成 FQDN；
 - 模板基盘是只读的，注入前 `lvchange -prw`，完成后 `lvchange -pr`。
@@ -153,8 +154,10 @@ virt-customize -a /dev/pve/base-9010-disk-1 \
   --run-command 'dnf -y --disablerepo="*" --enablerepo=dvd install qemu-guest-agent' \
   --run-command 'ln -sf /usr/lib/systemd/system/qemu-guest-agent.service /etc/systemd/system/multi-user.target.wants/qemu-guest-agent.service'
 
-# virt-customize 会随机化 machine-id，需要再次清空
-truncate -s 0 /etc/machine-id   # 在 guest 内或 chroot 执行
+# virt-customize 并不会随机化 machine-id（它只按 --run-command 执行你给的命令），
+# 模板盘里留的是源机的 id，克隆后会重复。两种正确做法：
+#   a) 离线：virt-customize -a <disk> --run-command 'truncate -s 0 /etc/machine-id'
+#   b) 首次启动：cloud-init 的 machine-id 模块会重新生成（推荐，别在宿主机上 truncate 宿主自己的文件）
 ```
 
 > libguestfs 应用环境的网关是 **`169.254.2.2`**，不是 `10.0.2.2`。写错会一直连接超时。

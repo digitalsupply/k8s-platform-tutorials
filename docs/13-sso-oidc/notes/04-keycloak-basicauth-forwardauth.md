@@ -1,6 +1,8 @@
 # Keycloak、basicAuth 与 ForwardAuth：概念和区别
 
 > **状态：已作废（Keycloak 时代的 SSO 方案）**
+> 另有两点与现状不同：①本平台**最终用反向代理模式**，不是 ForwardAuth——线上 IngressRoute 的后端直接就是 `oauth2-proxy-<host>` Service（`alloy`/`hubble`/`tekton` 三处实测），本文的 ForwardAuth 是试错记录；
+> ②hubble/alloy/tekton 的 Traefik Middleware 现在是 `basicAuth`（与 oauth2-proxy 并存的两套鉴权），见 13 章 README。
 > 这套设计没有落地：平台最终用 **GitLab CE 作为 OIDC IdP**（Grafana/ArgoCD/Harbor 原生 OIDC，
 > Traefik/Hubble/Alloy/Tekton 走 oauth2-proxy）。本文里的 `sso.k8s.local`、Keycloak realm、SAML 流程**都不是当前配置**。
 > 当前方案见 [13 章 README](../README.md)。

@@ -459,12 +459,16 @@ spec:
 当前 6 个节点实测：
 
 ```text
-m01       all=2 default=2 eth0=2 eth1=2
-master01  all=2 default=2 eth0=2 eth1=2
-master02  all=2 default=2 eth0=2 eth1=2
-worker01  all=2 default=2 eth0=2 eth1=2
-worker02  all=2 default=2 eth0=2 eth1=2
-worker03  all=2 default=2 eth0=2 eth1=2
+# 2026-11-11 复核（6 节点一致）：all=0，default/eth0/eth1 仍为 2
+m01       all=0 default=2 eth0=2 eth1=2
+master01  all=0 default=2 eth0=2 eth1=2
+master02  all=0 default=2 eth0=2 eth1=2
+worker01  all=0 default=2 eth0=2 eth1=2
+worker02  all=0 default=2 eth0=2 eth1=2
+worker03  all=0 default=2 eth0=2 eth1=2
+
+# 说明：rp_filter 的实际生效值是 max(all, <iface>)，所以 all=0 + eth*=2 仍等于严格模式(2)。
+# 当时表里把 all 也写成 2 —— 与现在的实测不符（也可能当时确实设了 all=2，后被改成 0）。
 ```
 
 ---

@@ -89,10 +89,12 @@ threads-max = 44971  （远未触及）
 | opencode ×2 | 17 + 16 | Node 运行时，可接受 |
 | containerd-shim | 15 × N | 每个容器一个 shim，11 容器 = 165 线程（固定开销） |
 | calico-node ×6 | 8–14 | Go 运行时 GOMAXPROCS=4 派生 |
-| kube-apiserver | **12** | 偏低但正常（Go 1.2G 堆仅 12 线程，**说明 GC 并行度不足，是延迟风险**） |
+| kube-apiserver | **12** | 正常。Go 的 GC 并行度由 P 的数量（GOMAXPROCS）决定，**不是 OS 线程数**；12 个线程 ≈ GOMAXPROCS(4) + 后台 runtime 线程 |
 
 **关键观察**：
-- **kube-apiserver 只有 12 个线程却持有 1.4 GiB 堆** —— 说明 Go GC 没能及时回收。日志中大量 `Trace ... (total time: 3501ms)`，单请求 3.5s，这是 GC STW + 内存压力的直接症状。
+- **kube-apiserver 12 个线程 + 1.4 GiB 堆** 本身不构成"GC 没回收"的证据：Go 1.2G 堆完全在合理区间，且线程数与 GC 无关。
+- 日志里的 `Trace ... (total time: 3501ms)` 是**请求级链路追踪**（apiserver tracing/审计耗时），不是 GC STW；
+  GC STW 会出现在 `gctrace` / `GODEBUG=gctrace=1` 输出里，单次通常是**亚毫秒到几毫秒**。要判 GC 压力请看 `go_gc_duration_seconds` 或 `apiserver_request_duration_seconds` 的 p99，不是看线程数。
 - containerd-shim 带来 ~165 个常驻空转线程，属于 cgroup v2 + containerd 的固定成本，**无法消除**。
 
 ---

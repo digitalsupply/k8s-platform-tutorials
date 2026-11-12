@@ -435,7 +435,7 @@ Packer 示例：[`assets/kvm-cloud-boot/cloud-image/packer-proxmox.pkr.hcl`](ass
 
 ## 8. 引导细节：UEFI、Secure Boot、PXE、initramfs
 
-### 7.1 本环境的引导方式
+### 8.1 本环境的引导方式
 
 | 对象 | 引导 | Secure Boot |
 |---|---|---|
@@ -464,13 +464,13 @@ Boot0001* EFI SCSI Device
 ...
 ```
 
-### 7.2 PXE/网络引导
+### 8.2 PXE/网络引导
 
 - K8s VM `boot: order=scsi0;ide2`，没有 `net0`，不走 PXE；
 - Hyper-V 的 UEFI 启动项里有 `EFI Network`，但 BootOrder 第一是本地磁盘；
 - PXE 需要 DHCP/TFTP/HTTP boot server + 网卡 PXE ROM；本环境没有专门 PXE 服务。
 
-### 7.3 initramfs 缺驱动的真实风险
+### 8.3 initramfs 缺驱动的真实风险
 
 - KVM initramfs 有 `virtio_scsi`；
 - Hyper-V initramfs 有 `hv_storvsc`；

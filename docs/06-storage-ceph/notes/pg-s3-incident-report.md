@@ -38,7 +38,7 @@
 
 ### 【原因】
 
-PostgreSQL 16 的 CLOG（`pg_xact`）以 8KB 为一个段文件记录事务状态。
+PostgreSQL 16 的 CLOG（`pg_xact`）每个**段文件 256KB**（SLRU 段 = 32 个 8KB 页）记录事务状态；8KB 是页面大小，不是段大小。
 `pg16-ceph-2` 的 `pg_xact/0000` 大小为 **0 字节**：
 
 ```
@@ -232,7 +232,7 @@ The provided 'x-amz-content-sha256' header does not match what was computed.
 
 | 检验 | 结果 |
 |---|---|
-| 是否同一 Ceph | 否。PG 用 `ceph-rbd-sc`（clusterID `594e535e-…`，pool `k8s-rbd`）；tempo3 用 RGW `10.0.0.31:7480` |
+| 是否同一 Ceph | **是**。两者是同一套 Ceph（mon `10.0.0.31/41/51`，clusterID `594e535e-…`），只是访问路径不同：PG 走 RBD（pool `k8s-rbd`），tempo3 走 RGW（`10.0.0.31:7480`）。原判断"不是同一个 Ceph"把"不同接入方式"当成了"不同集群" |
 | 时间关联 | 否。PG 自 6/18 起坏；S3 失败自 9/28 21:11 起 |
 | 数据关联 | 否。PG 库为 `postgres/n8n/mytest`，tempo3 用 Kafka + RGW，不经 PG |
 | 同为"存储层" | 仅为表象相似：PG 是**文件被截断**，tempo3 是**客户端编码错误**，无共同成因 |

@@ -45,6 +45,7 @@
 - 作者先修了 2 条（burn-rate 与 SLO 模板、kube-proxy 残留），本轮沿用其「修复状态」写法，不覆盖原文。
 - 顺带修了 6 条 P1：VXLAN 开销 76→50 字节、Traefik GET 301/非 GET 308、etcd quota 2GiB、etcd 恢复改 `etcdutl` + 三节点、GitLab 19.5.0、PM/SM 口径。
 - **第二轮（当前状态 vs 历史记录）**：17 处当前值改成实测（TIME_WAIT/conntrack/Deployment/SM-PM/证书/etcd keys）、15 处技术错误修正（PromQL offset、CNI 覆盖规则改 Cilium、Cilium 不是 privileged、GitLab 端口表、下线顺序）、**17 个历史文档加统一状态头**（Calico 时代 5 篇、1.29 时代 2 篇、Keycloak 已作废 10 篇）；同时撤回 4 条我自己的误判（Sidekiq 端口、cookie secret、Ceph 20.2.0 待核项、YAML 检查器缺 PyYAML 导致的假 0 错误）。
+- **第三轮（按模块清 backlog）**：06 Ceph 12 处（Ceph 版本 20.2.0→18.2.8、PV 18→17、`radosgw-admin caps` 语义、Released PV 顺序、CLOG 8KB→256KB、CVE 归因删除）、12 Proxmox 7 处（PE 4M、扩容补 lv/fs 两步、switchover→`cnpg promote`、q35 无 IDE）、05 Linux 9 处（SELinux 未启用、sudo `env_reset`、`fs.nr_open`、cgroup 无磁盘配额、setgid `r-s`）、04 监控 11 处（Prometheus 15d/25GiB 不是 5d、RGW 不是 MinIO、通知渠道是 webhook 不是邮件、两条 PromQL 修语法）、13 SSO 2 处（Grafana 角色映射对齐线上、oauth2-proxy 反代模式）。同时撤回 3 条误判（Kafka 堆大小、cnpg 复盘的 Calico 属当时事实）。
 - **集群侧**：Ceph `ScrapeConfig` 改为抓 ceph-01+ceph-02（`ceph_*` 序列回到 1090、两条 critical 假告警消失）；n8n webhook 在 `platform-gitops` 改回 in-cluster（AM 已重载）；CNI 覆盖规则也从 `calico-node` 改成 `cilium-*`（`742e8e8`，Prometheus 规则求值 0 错误）。
 
 ## 修复关键

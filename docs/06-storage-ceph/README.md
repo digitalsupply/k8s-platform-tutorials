@@ -270,7 +270,7 @@ kubectl delete pv <pv>
 rbd -p k8s-rbd rm <image>
 ```
 
-本集群最终删除 **10 个失效 PV（95Gi）**，集群剩余 18 个 PV 全部 Bound。
+本集群最终删除 **10 个失效 PV（95Gi）**，清理后剩 18 个 PV；2026-11-11 复核为 **17 个，全部 Bound**（`kubectl get pv | wc -l` = 17）。
 
 ### 2. PostgreSQL 备份上线
 

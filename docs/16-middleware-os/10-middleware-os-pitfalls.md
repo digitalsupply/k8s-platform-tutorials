@@ -244,6 +244,7 @@ free -m; grep -E 'Cached|Dirty|Writeback' /proc/meminfo
 
 ```text
 最大并发连接 ≈ worker_processes × worker_connections
+反向代理场景要 ÷2：每个被代理请求占用「客户端→Nginx」+「Nginx→上游」两条连接
 但受 worker_rlimit_nofile / 系统 fd / somaxconn / backlog 限制
 ```
 
@@ -442,7 +443,7 @@ MySQL：O_DIRECT 减少双缓存、fsync/刷盘决定持久性，
 Kafka：page cache 是主缓存，堆别太大；sendfile 零拷贝；
        fd 要 100k，磁盘顺序写。
 
-Nginx：并发 ≈ worker_processes × worker_connections，
+Nginx：并发 ≈ worker_processes × worker_connections（反代场景 ÷2，一请求两条连接），
        但受 worker_rlimit_nofile、somaxconn、backlog 限制。
 
 Java：JDK 10+ 容器感知；MaxRAMPercentage 控堆；

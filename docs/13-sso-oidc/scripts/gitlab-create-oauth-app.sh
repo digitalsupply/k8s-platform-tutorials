@@ -5,7 +5,7 @@
 #   export GITLAB_TOKEN='<admin api token>'
 #   export GITLAB_URL='http://192.168.67.201'          # 可选
 #   export GRAFANA_URL='https://grafana.k8s.local'     # 可选
-#   ./scripts/gitlab-create-grafana-oauth-app.sh
+#   ./scripts/gitlab-create-oauth-app.sh        # 文件名以仓库里实际存在的为准
 #
 # 说明：
 #   - GitLab 创建 Application 后 secret 只返回一次，脚本会写入 /tmp（600）并立刻 seal；

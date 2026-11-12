@@ -117,7 +117,8 @@ lowerdir（只读镜像层）
 overlay on /run/containerd/.../rootfs type overlay
 ```
 
-容器里的 `df` 通常显示宿主机根盘大小，不是容器配额；容器配额由 cgroup/文件系统 quota 决定。
+容器里的 `df` 通常显示宿主机根盘大小，不是容器配额；**cgroup v2 没有磁盘容量配额**（只有 `io.max` 带宽/IOPS 限制），
+容量要靠 **PVC/卷大小** 或 **XFS project quota**（`xfs_quota -x -c 'limit -p bhard=10g <prj>'`）来限制。
 
 ### 2.7 Ceph RBD：网络块设备
 

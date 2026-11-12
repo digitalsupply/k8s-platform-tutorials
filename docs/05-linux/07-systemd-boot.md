@@ -18,7 +18,7 @@
 | 主机 | firmware | loader | kernel | userspace | 总时间 |
 |---|---:|---:|---:|---:|---:|
 | PVE 宿主 | **3min 4s** | 8.5s | 12.9s | 29.4s | **3min 55s** |
-| m01 | 2.0s | - | 3.2s（initrd） | 7.7s | 12.9s |
+| m01 | - | 2.0s | 3.2s（initrd） | 7.7s | 12.9s |
 | worker01 | - | - | 4.1s | 19.0s | 23.1s |
 | GitLab 201 | 100ms | 232ms | 533ms | 6.7s | 7.6s |
 | Harbor 202 | 32ms | 240ms | 577ms | 5.1s | 5.9s |

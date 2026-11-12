@@ -274,7 +274,9 @@ ScheduledBackup: pg16-ceph-daily-full
 - **如果要把业务读缓存放进去**：上 **Redis Sentinel（1 主 2 从 + 3 Sentinel）** 或 Redis Cluster；应用连接串要支持 Sentinel（`redis+sentinel://`）或前置代理。
 - 当前 `allkeys-lru` 会淘汰限流 key；如果内存吃紧，建议：
   - 缓存 key 用 `volatile-lru` + TTL；
-  - 限流/锁用独立 DB 或独立实例，避免被缓存淘汰。
+  - **注意：Redis 的 `maxmemory` 与淘汰策略是实例级、不分 DB**——`SELECT 1` 换个 DB 一样会被 `volatile-lru` 淘汰。
+    要隔离必须用**独立实例**（或至少独立 Redis 进程），或把限流/锁的状态做成可重建（重建时以 PG 为准）。
+    换个 DB 号只是逻辑分区，不是资源隔离。
 - 加密码/ACL + NetworkPolicy；当前无密码，同命名空间任何 pod 都能读写。
 
 #### P2：业务缓存设计

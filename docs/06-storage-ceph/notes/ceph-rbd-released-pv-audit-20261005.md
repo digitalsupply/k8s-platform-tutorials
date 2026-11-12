@@ -252,11 +252,13 @@ Loki 3.6.7 采用 TSDB + `tsdb-shipper`，**真实日志数据以 chunk 形式�
 
 ```promql
 # 1) Released PV 存量与增量
-count(kube_persistentvolume_status_phase{phase="Released"} > 0)
+count(kube_persistentvolume_status_phase{phase="Released"} == 1)
 increase(kube_persistentvolume_status_phase{phase="Released"}[1h])
 
 # 2) 单个 Released PV 滞留过久（如 > 24h）
-(time() - kube_persistentvolume_created{phase="Released"} > 86400)
+#    kube_persistentvolume_created 没有 phase 标签，必须 join status_phase
+(time() - on(persistentvolume) kube_persistentvolume_created
+   and on(persistentvolume) kube_persistentvolume_status_phase{phase="Released"} == 1) > 86400
 
 # 3) Ceph 侧容量与预期 PV 声明容量背离（泄漏探测）
   ceph_rbd_stat_bytes{}                     # 或 pool 内镜像数指标
@@ -319,7 +321,10 @@ ssh root@10.0.0.31 'rbd trash rm --pool k8s-rbd csi-vol-f3256b3c-f1fe-4fd3-b756-
 
 ### 6.3 第二步：清理 7 个 Loki PV（PV 对象 + RBD 镜像必须成对删除）
 
-> 🔴 **关键顺序**：因 `Retain` 策略，删 PV 不会删镜像。**必须先删镜像、再删 PV**；若只删 PV，就会再产出 7 个新的僵尸镜像（`pg16-ceph-1` 的 2 个就是这么来的）。
+> 🔴 **关键点**：`reclaimPolicy: Retain` 下，删 PV **不会**触发 CSI 删镜像，镜像必须手工 `rbd rm`。
+> 推荐顺序：**先删 PV（对象）→ 再删镜像**；反过来（先删镜像）也不会泄漏，但会留下指向空镜像的 Released PV，语义脏、易误绑。
+> 真正会泄漏的只有一种：**删了 PV 却忘了删镜像**（`pg16-ceph-1` 那 2 个僵尸卷就是这么来的）。
+> 原文写的"若只删 PV 就会再产出 7 个新僵尸镜像"因果说反了——那 7 个是当时**既已存在**的孤儿，删 PV 不会新造镜像。
 
 ```bash
 # 逐个：先删 RBD 镜像

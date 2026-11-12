@@ -10,9 +10,12 @@
 | 批次 | 条数 | 已修 | 待处理 | 不修（历史阶段） |
 |---|---|---|---|---|
 | P0（照抄会失败） | 12 | **12** | 0 | 0 |
-| P1（事实/语义错误） | 95 | 21（第一轮 6 + 第二轮 15） | 74 | — |
-| P2（内部矛盾/版漂） | 48 | 2 + 17 个文件加状态头 | 见 §9.5 | 见 §4 口径 |
-| 现场真实故障 | 5 | 4 | 0 | 1（观察：ceph-03 无 mgr） |
+| P1（事实/语义错误） | 95 | **46**（第一轮 6 + 第二轮 15 + 第三轮 25） | ~49 | — |
+| P2（内部矛盾/版漂） | 48 | **28**（数值统一 11 + 17 个文件加状态头） | ~25（见 §10.7） | 见 §4 口径 |
+| 现场真实故障 | 5 | 5 | 0 | 1（观察：ceph-03 无 mgr） |
+
+> 三轮合计改动：文档 130 处、GitOps 源仓 3 个提交；「已修」按**发现条目**计，一条问题可能对应多处编辑。
+> 只剩 §10.7 里那批"需要补业务口径"的 25 条左右。
 
 P0 全部闭环，且每条都有可复现的验证命令（`bash -n` / `helm template` / 线上 `/etc/gitlab/gitlab.rb`）。
 
@@ -200,3 +203,92 @@ Keycloak 那 10 篇用另一套头：`状态：已作废（Keycloak 时代的 SS
 
 需要的是一条条重测再改，不适合批量替换——这类我建议按"谁维护谁核"的方式，用 `assets/current-state.md` 当唯一数字源。
 
+---
+
+## 10. 第三轮：按模块清 backlog（2026-11-11 深夜）
+
+前两轮清掉了 P0 与"当前状态表"，这一轮按模块把 P1/P2 里剩余的技术错误逐条核到线上再改。
+规则不变：**A 当前状态改数值｜B 历史记录加状态头｜C 技术错误无论年代都改｜D 判错的撤回**。
+
+### 10.1 06 存储 / Ceph（12 处）
+
+| 位置 | 改动 | 实测依据 |
+|---|---|---|
+| `notes/ceph-csi-upgrade-to-operator-2026-11-09.md` | Ceph **20.2.0 Tentacle → 18.2.8 Reef** | `ceph -s`：`ceph version 18.2.8 reef` |
+| `README.md`、`notes/pv-cleanup-report.md` ×2 | 18 个 PV → **17**（清理报告标"当时快照"） | `kubectl get pv \| wc -l` = 17，全部 Bound |
+| `notes/ceph-rbd-released-pv-audit-20261005.md` | 清理顺序与因果：`Retain` 下删 PV 不触发 CSI 删镜像；**先删 PV → 再删镜像**；"只删 PV 会新造 7 个僵尸卷"是错的（那 7 个是既有孤儿） | 语义推理 + 原文自述的两条时间线 |
+| 同上（告警段） | `kube_persistentvolume_created{phase="Released"}` → 与 `kube_persistentvolume_status_phase{phase="Released"} == 1` 做 `and on(persistentvolume)`；`count(… > 0)` → `count(… == 1)` | `kube_persistentvolume_created` 无 `phase` 标签 |
+| `notes/minio-vs-ceph-rgw-analysis.md` | 删掉 **CVE-2024-9331** 归因（NVD/GHSA 查无此条）；改为"匿名访问才是风险" | `curl http://10.0.0.31:7480/testbucket/` → **403**（非 public） |
+| `notes/pg-s3-incident-report.md` | CLOG 段 **8KB → 256KB**（8KB 是页） | PG SLRU 段 = 32 × 8KB |
+| 同上（交叉验证表） | "不是同一个 Ceph" → **是同一套**（同 mon / 同 clusterID `594e535e…`），RBD 与 RGW 只是两种接入方式 | `kubectl get sc ceph-rbd-sc` 的 clusterID；tempo3 的 PVC 也是 `ceph-rbd-sc` |
+| `notes/ceph-rbd-released-pg-backup-…md` | `radosgw-admin caps add … "read,write,delete"` → **S3 bucket policy**；并更正"caps add 不存在"（caps 是 admin-ops 权限，参数要 `--caps=`） | `radosgw-admin` 子命令语义（caps = users/buckets/usage/meta） |
+| `notes/cnpg-upgrade-postmortem-2026-11-08.md` | rp_filter 实测表：**all=0**（default/eth0/eth1=2） | 6 节点逐个读 `/proc/sys/net/ipv4/conf/*/rp_filter` |
+
+### 10.2 12 Proxmox / IaC（7 处）
+
+| 位置 | 改动 | 实测依据 |
+|---|---|---|
+| `notes/pve-vg-thinpool-analysis-2026-11-06.md` | `64M × 4096 = 16G` → **`PE 4M × 4096 = 16G`** | `vgdisplay -v pve`：`PE Size 4.00 MiB`、`Free PE 4096` |
+| 同上 | `root 45G/94G (51%)` → **29G/94G (32%)**（标注 11-06 当时为 45G/51%） | `df -h /`：94G / 29G / 62G / 32% |
+| 同上 | `discard_passdown` 因果：三层（VM `discard=on` + pool `discard_passdown` + SSD）都要开 | 存储栈语义 |
+| `iac/05-batch-ops.md` | "delete pod <primary> = switchover" → **`kubectl cnpg promote`**，并说明 delete 是 failover | CNPG 语义 |
+| 同上 | 扩容补 **`lvextend` + `resize2fs`**（原来只 growpart+pvresize，`df` 不会变），并修掉单引号里换行的写法 | LVM 扩容流程 |
+| `10-kvm-…md` | 第 8 章子标题 `7.1/7.2/7.3` → **8.1/8.2/8.3** | 目录层级 |
+| `iac/02-cloudinit-golden-template.md` | "openEuler 只有 PATA 没有 ATAPI" → **q35 机型没有 IDE 控制器**，`ide2` 不可见；`virt-customize` **不会**随机化 machine-id（用 cloud-init 或 `--run-command 'truncate -s 0 …'`） | q35 硬件拓扑 |
+
+### 10.3 05 Linux（9 处）
+
+| 位置 | 改动 | 实测依据 |
+|---|---|---|
+| `01-kernel.md` | "m01 SELinux 启用" → **内核注册了 selinux LSM，但 `/sys/fs/selinux` 为空、无 selinuxfs 挂载 = 未启用** | node-exporter 读 `/host/sys/kernel/security/lsm`（含 selinux）与 `/host/sys/fs/selinux`（空目录）；worker01 为 apparmor |
+| `sudo-su-详解.md` ×3 | 提权工具的默认环境策略改为 **`env_reset` 清空环境**（只留白名单），非登录壳同理；`su` 有 PAM 日志但**无命令级审计** | sudoers 默认策略 |
+| 同上 | `sudo` 加 `-i` 再带 `-c` 不合法 → 改成 `sudo -i sh -c '…'`（`-c` 是 su 的选项） | `sudo --help` |
+| `08-kernel-params-limits.md` | "`fs.nr_open` 不能超过 `file-max`" → **无此约束**（前者单进程闸门、后者系统总量） | 内核文档 |
+| `03-filesystem-storage.md` | "容器配额由 cgroup 决定" → **cgroup v2 无磁盘容量配额**（只有 io.max），容量靠 PVC / XFS project quota | cgroup v2 无容量控制器 |
+| `04-permissions…md` | setgid 符号 `rws` → **`r-s`**（无组执行位时显示 `S`） | `ls -l` 语义 |
+| `notes/memory-analysis-m01.md` | "12 线程 = GC 并行度不足 / trace 3.5s = GC STW" → **OS 线程数 ≠ GC 并行度**（看 GOMAXPROCS/P），trace 是请求级追踪，GC STW 看 `gctrace`/`go_gc_duration_seconds` | Go runtime 语义 |
+| `notes/app-removal-record.md` | 脱敏坏掉的 `grep -oP 'DBPassword=<redacted>'` → `grep -oP 'DBPassword=\K.*'` | 可直接执行 |
+| `07-systemd-boot.md` | m01 行整列错位，补一个 `-`（firmware 无值） | 12.9 = 2.0+3.2+7.7 |
+
+### 10.4 04 监控 / SLO（11 处）
+
+| 位置 | 改动 | 实测依据 |
+|---|---|---|
+| `notes/retention-unification-5d.md` | 加状态头：**Prometheus 现在是 15d / 25GiB**，不是 5d；对象存储是 **Ceph RGW 不是 MinIO**（文中 12 处 `mc`/ILM 在 RGW 上跑不通）；表内两行同步改 | `--storage.tsdb.retention.time=15d`、`size=25GiB`；Loki 配置里 endpoint `http://10.0.0.31:7480` |
+| `notes/prometheus-promql-alerting-tutorial.md` | 通知渠道：**邮件（QQ 企业邮 SMTP）→ Webhook（n8n + 企业微信）**；`default-email` 存在但无 route 引用 | AM 生成配置里 receiver 只有 `n8n-webhook`、`wecom` |
+| 同上 | `kubectl get prometheus prometheus` → **`prometheus-prometheus`** | 该 CR 实例名实测 |
+| 同上 | `histogram_quantile` 漏 `by (le)` 的后果：**空结果**，不是"+Inf 垃圾值" | PromQL 语义 |
+| 同上 | 抑制示例 `equal: [node]` 对 `KubePod.*` 无效（那些告警没 node 标签），补 `on(namespace,pod) group_left(node) kube_pod_info` 的写法 | 指标标签 |
+| 同上 | promtool 用例 2 注释"3 次"与 `values: '0+1x10'`（10 次）矛盾 → 改 `0+1x3` | 数据自证 |
+| `notes/monitoring-coverage-gap-report.md` | Loki 规则补 `by (le)`；Knative 规则把 `_sum` 改成 `_bucket` | 同上 |
+| `10-observability-engineering.md` | "Counter 重置 → rate 出现负值" → **rate 恒 ≥0，只会尖刺** | PromQL 语义 |
+| 同上 | 轮转文件 "14 个" → 当时 14 / **2026-11-11 复核 24 个**（动态量） | alloy `find /var/log/pods -name '*.log.*'` = 24 |
+| `notes/observability-lab.md` | "14 个 ServiceMonitor" → 当时 14 / **现 27 SM + 16 PM** | `kubectl get servicemonitors -A` |
+
+### 10.5 13 SSO（2 处）
+
+| 位置 | 改动 | 实测依据 |
+|---|---|---|
+| `notes/05-grafana-sso.md` | `role_attribute_path` 与线上不一致 → 对齐到线上（`root` 用户名或 `digitalsupply` 组 → GrafanaAdmin） | `kubectl -n monitoring get cm prometheus-grafana` 的 `grafana.ini` |
+| `notes/04-…forwardauth.md` | 补一句：**最终是反向代理模式**（IngressRoute 后端直接是 `oauth2-proxy-<host>`），ForwardAuth 只是试错；另说明 hubble/alloy/tekton 的 Middleware 现在是 `basicAuth` | `kubectl get ingressroute -n logging alloy` → services `['oauth2-proxy-alloy']` |
+
+### 10.6 本轮撤回 / 不改（3 条）
+
+| 原判 | 结论 |
+|---|---|
+| "Kafka `MaxHeapSize=1.99GB` 与证据/单位对不上" | **不改**。env 只有 `-Xms128M`、无 `-Xmx`，JVM 取容器/宿主内存的 1/4；1.99GB ≈ 8GiB÷4，与注释一致。节点内存现在 9.7GiB，今天重算得 2.4GB —— 数值随节点变，不是错 |
+| "cnpg 复盘把 CNI 写成 Calico（实际 Cilium）" | **撤回**。该文写于 2026-11-08，Cilium 迁移是 2026-11-09，**当时确实是 Calico**；已在文首状态头说明 `calico-node` 只是借来调试 |
+| "`testbucket` 是 CVE-2024-9331" | 原文错，但不是"撤回"：CVE 编号查无此条、实测匿名访问 403 —— 已按 C 类改掉归因 |
+
+### 10.7 剩余（约 25 条）
+
+多为"同一事实多处抄写不一致"或需要业务口径才能定值的项：
+
+- `04`：PromQL 章节里若干"坑"的表述、Tempo 采样成本数字；
+- `05`：`oscap` profile 名、cgroup 磁盘配额示例（原理已改，示例未重写）；
+- `06`：README 与 notes 间的 PV/PVC 明细核对（本次只统一了总数）；
+- `12`：`thinline` 容量算式、thin pool 的 LV 明细表；
+- `13`：Grafana 组映射在 `notes/02` 里还有一份旧写法，需连 SSO 章节一起重写；
+- `16`：Kafka 堆大小随节点内存变化的算法（数值已确认合理，未写"如何按节点算"）。
+
+这些不再按"文档 bug"处理，属于**需要作者补业务口径**的部分；建议以 `00-cluster-overview/assets/current-state.md` 当唯一数字源，以后只维护那一处。

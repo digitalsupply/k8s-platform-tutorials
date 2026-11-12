@@ -209,7 +209,8 @@ lockdown,capability,landlock,yama,selinux,bpf     # m01
 lockdown,capability,landlock,yama,apparmor        # Ubuntu / PVE
 ```
 
-- **SELinux**：m01（Rocky）启用；
+- **SELinux**：m01（Rocky）内核注册了 `selinux` LSM，但 **`/sys/fs/selinux/` 是空目录、`/proc/1/mountinfo` 里没有 selinuxfs 挂载 → 实际未启用（disabled，无策略加载）**。
+  `lsm` 文件里有名字只说明内核编译了该 LSM，不等于启用；2026-11-11 用 node-exporter 的 `/host/sys` 复核。
 - **AppArmor**：Ubuntu/PVE 启用；
 - **landlock**：用户态沙箱能力；
 - **yama**：ptrace 限制；

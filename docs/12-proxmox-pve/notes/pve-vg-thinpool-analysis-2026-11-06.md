@@ -42,7 +42,7 @@ pve <930.51g 16.00g 4.00m 238210 4096
 
 - 单块 NVMe：`/dev/nvme0n1p3`，约 930.51G；
 - 单个 VG：`pve`；
-- VG 剩余：64M × 4096 = 16G。
+- VG 剩余：**PE 4M × 4096 = 16G**（`vgdisplay -v pve` 实测 `PE Size 4.00 MiB`、`Free PE 4096`；原文把 PE 写成 64M，与 4096×64M=256G 自相矛盾）。
 
 ### 1.2 LV 分配
 
@@ -64,7 +64,7 @@ pve <930.51g 16.00g 4.00m 238210 4096
 ### 1.3 当前使用率
 
 ```text
-root:    45G / 94G  (51%)
+root:    29G / 94G  (32%)     # 2026-11-11 复核；11-06 当时为 45G/51%
 swap:    0B / 8G
 data:    59.77%  (thin pool)
 meta:    1.99%
@@ -87,7 +87,9 @@ data 794.30g 59.77  1.99   64.00k
 
 - `42207/2123776`：元数据块使用 1.99%；
 - `7778885/13013888`：数据块使用 59.77%；
-- `discard_passdown`：TRIM/discard 会传递给底层，之前的 fstrim 能生效；
+- `discard_passdown`：thin pool 把 discard **继续下传**到 PV 所在设备；但它只是链路里的一环——
+  要 guest 里 `fstrim` 真正释放宿主机空间，需要 **VM 磁盘 `discard=on` + thin pool `discard_passdown` + 底层 SSD 支持**三层都开；
+  只开 `discard_passdown` 而 VM 没开 `discard=on`，guest 的 TRIM 根本到不了 pool。
 - `queue_if_no_space`：pool 满时 IO 排队等待，而不是立即报错。
 
 ### 1.4 `pvesm` 视角

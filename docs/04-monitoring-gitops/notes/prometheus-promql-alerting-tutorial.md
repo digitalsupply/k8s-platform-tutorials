@@ -39,7 +39,7 @@
 | 监控栈 | `kube-prometheus-stack-83.7.0`（Helm chart） | namespace `monitoring` |
 | Prometheus | **v3.11.2**，单副本，WAL 压缩开启 | `prometheus-prometheus-prometheus-0` |
 | Prometheus Operator | 通过 `PrometheusRule` CRD 管理规则 | `prometheus-operator` |
-| Alertmanager | 邮件（QQ 企业邮 SMTP）通知 | `prometheus-alertmanager` (10.111.199.90:9093) |
+| Alertmanager | **Webhook → n8n / 企业微信**（无 SMTP：`default-email` 只是 chart 自带的空壳 receiver，`routes` 里没接它） | `prometheus-alertmanager` (10.111.199.90:9093) |
 | kube-state-metrics | K8s 对象状态（Pod/Node/Deployment…） | `prometheus-kube-state-metrics` |
 | node-exporter | 主机指标（CPU/内存/磁盘/网络） | 6 个 DaemonSet Pod |
 | cAdvisor | 容器指标，由 kubelet 内置暴露 | `job="kubelet" metrics_path="/metrics/cadvisor"` |
@@ -609,7 +609,8 @@ histogram_quantile(0.99, sum by (le) (rate(x_bucket[5m])))
 # ✅ 想分维度看，把维度加在 by 后面，le 必须保留
 histogram_quantile(0.99, sum by (le, resource) (rate(x_bucket[5m])))
 
-# ❌ 忘记 by (le) -> 把所有桶混在一起 -> 结果永远是 +Inf 附近的垃圾值
+# ❌ 忘记 by (le) -> 桶维度被聚合掉 -> histogram_quantile 直接返回空结果（no data）
+#    不是"+Inf 垃圾值"：没有 le 标签时函数无法定位桶边界，只能返回空
 histogram_quantile(0.99, rate(x_bucket[5m]))
 ```
 
@@ -1762,7 +1763,7 @@ tests:
   - interval: 5m
     input_series:
       - series: 'kube_pod_container_status_restarts_total{namespace="default",pod="calm-app",container="app"}'
-        values: '0+1x10'
+        values: '0+1x3'   # 3 次（原来写 10 次，注释与数据矛盾）
     alert_rule_test:
       - eval_time: 60m
         alertname: KubePodHighRestartCount
@@ -1896,7 +1897,7 @@ kubectl -n monitoring delete prometheusrule alert-pipeline-selftest
 | 进程 | Operator 管理的 Pod（AM v0.32.0） | `alertmanager.service`（systemd，2026-09-27 启动） |
 | 地址 | `10.111.199.90:9093`（svc `prometheus-alertmanager`） | `0.0.0.0:9093`（本机） |
 | 配置来源 | Secret `alertmanager-prometheus-alertmanager` | `/etc/alertmanager/alertmanager.yml` |
-| 接收器 | `n8n-webhook`、`wecom`（Webhook） | `default-email`（QQ 企业邮 SMTP） |
+| 接收器 | `n8n-webhook`（集群内 `n8n-svc:5678`）、`wecom`（企业微信群机器人） | `default-email` 存在但**未被任何 route 引用**，发不出邮件 |
 | 当前告警数 | **10 条** ✅ | **0 条** ❌ |
 | 判定依据 | Prometheus CR 的 `alerting` 指向集群 svc | 主机 `prometheus.service` 已 `inactive`，无告警可发 |
 
@@ -1904,7 +1905,8 @@ kubectl -n monitoring delete prometheusrule alert-pipeline-selftest
 
 ```bash
 # 1) Prometheus 实际把告警发给谁
-kubectl get prometheus prometheus -n monitoring -o yaml | grep -A6 'alerting:'
+kubectl get prometheus -n monitoring prometheus-prometheus -o yaml | grep -A6 'alerting:'
+# 注意：CR 实例名是 prometheus-prometheus；写 `get prometheus prometheus` 会 NotFound
 
 # 2) Alertmanager 自己声明的配置（最权威）
 curl -s http://10.111.199.90:9093/api/v2/status | python3 -c 'import json,sys;print(json.load(sys.stdin)["config"]["original"])'
@@ -2014,8 +2016,13 @@ curl -XDELETE http://10.111.199.90:9093/api/v2/silence/<id>
 inhibit_rules:
   # 节点 NotReady → 抑制该节点上的所有 Kubelet/Pod 告警
   - source_matchers: ['alertname = "KubeNodeNotReady"']
-    target_matchers: ['alertname =~ "Kubelet.*|KubePod.*|Node.*"']
+    target_matchers: ['alertname =~ "Kubelet.*|Node.*"']
     equal: [node]
+  # 注意：`equal: [node]` 只对**带 node 标签**的目标生效。
+  # Kubelet* 系列有 node 标签；KubePod* 来自 kube_pod_status_ready（只有 namespace/pod），
+  # 直接写进上一条会静默不生效。要么给 Pod 类规则补 node 标签：
+  #   ... * on(namespace,pod) group_left(node) kube_pod_info
+  # 要么单独写一条不带 equal 的规则并控制在 namespace 级别。
 
   # 控制面 VIP 异常 → 抑制其引发的 apiserver 抖动告警
   - source_matchers: ['alertname = "KubeVIPLeaderNotRenewing"']

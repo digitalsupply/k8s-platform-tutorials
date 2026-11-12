@@ -83,13 +83,17 @@ kubectl get nodes
 kubectl -n kube-system get pods -l k8s-app=cilium -o wide | grep "$NODE"
 ```
 
-有 CNPG 主库的节点，先做 switchover：
+有 CNPG 主库的节点，先做 switchover（**主备有计划切换，不是 failover**）：
 
 ```bash
 kubectl -n cnpg-system get cluster pg16-ceph -o jsonpath='{.status.currentPrimary}'
-kubectl -n cnpg-system delete pod <primary-pod>
-# 等 primary 切换、2/2 ready
+# 指定要提升的 standby（cnpg 插件；会先做 checkpoint 再切换，业务几乎无感）
+kubectl cnpg promote pg16-ceph <standby-pod>
+# 等新 primary ready、旧 primary 变 replica
 ```
+
+> `kubectl delete pod <primary-pod>` 触发的是 **failover**（非计划切换，主库不做 checkpoint，可能丢最后几个事务），
+> 演练可以，正式维护窗口不要这么写。
 
 ### 3.3 批量开关机（非 K8s 节点）
 
@@ -258,10 +262,14 @@ qm shutdown 124 --timeout 120 && qm start 124
 kubectl wait --for=condition=Ready node/worker03 --timeout=600s
 kubectl uncordon worker03
 
-# 扩容 + discard
+# 扩容 + discard（三步：块设备 → 分区/LVM → 文件系统）
 qm resize 122 scsi0 +20G
-qm set 122 --scsi0 local-lvm:vm-122-disk-0,discard=on,ssd=1,iothread=1,size=80G
-ssh root@10.0.0.122 'growpart /dev/sda 2; pvresize /dev/sda2; fstrim -av'
+qm config 122 | grep -q 'discard=on' || \
+  qm set 122 --scsi0 local-lvm:vm-122-disk-0,discard=on,ssd=1,iothread=1
+# guest 内：分区 → PV → LV → 文件系统（少一步 df 都不会变）
+# 注意：单引号里不能换行，整条写成一行传给 guest
+ssh root@10.0.0.122 'growpart /dev/sda 2 && pvresize /dev/sda2 && lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv && resize2fs /dev/ubuntu-vg/ubuntu-lv && fstrim -av'
+# XFS 根分区把 resize2fs 换成 xfs_growfs /
 
 # Terraform 销毁
 terraform state list

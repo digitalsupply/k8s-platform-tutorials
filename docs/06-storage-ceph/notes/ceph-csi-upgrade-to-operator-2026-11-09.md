@@ -2,7 +2,7 @@
 
 - **日期**：2026-11-09
 - **集群**：`kubernetes-admin@kubernetes`（Kubernetes v1.35.9）
-- **Ceph**：外部 Ceph **20.2.0 Tentacle**（mon: `10.0.0.31/41/51:6789`）
+- **Ceph**：外部 Ceph **18.2.8 Reef**（mon: `10.0.0.31/41/51:6789`；原文误写 20.2.0 Tentacle，`ceph -s` 实测 18.2.8，2026-11-11 更正）
 - **范围**：`ceph-csi-rbd`、`ceph-csi-operator-system`、ArgoCD
 - **目标**：从 Helm 3.16.2 分阶段升级到 3.18.2，再迁移到 Ceph-CSI-Operator，全部纳入 GitOps。
 

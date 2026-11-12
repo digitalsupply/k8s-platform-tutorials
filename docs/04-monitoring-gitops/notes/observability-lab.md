@@ -555,7 +555,7 @@ sum(rate(http_request_latency_seconds_sum[3m])) / sum(rate(http_request_latency_
 
 **目标**：理解 ServiceMonitor → operator → 抓取配置 → target 的完整链路，掌握"新组件怎么接进 Prometheus"。
 
-**背景**：本集群的 Tempo **原本没有被监控**（只有 Loki、Grafana、Prometheus 自己等 14 个 ServiceMonitor）。我们给它加上。
+**背景**：本集群的 Tempo **原本没有被监控**（当时全集群只有 14 个 ServiceMonitor；2026-11-11 复核为 27 个 + 16 个 PodMonitor）。我们给它加上。
 
 **步骤 1：看懂目标 Service 的 label 与端口名**
 ```bash

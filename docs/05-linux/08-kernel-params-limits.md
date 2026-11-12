@@ -124,7 +124,7 @@ cat /sys/fs/cgroup/kubepods.slice/.../memory.max
 | 参数 | 作用 | 过大/过小风险 |
 |---|---|---|
 | `fs.file-max` | 系统级 fd 上限 | 太大无意义，太小会 `ENFILE` |
-| `fs.nr_open` | 单进程 fd 上限 | 不能超过 `file-max` |
+| `fs.nr_open` | 单进程 fd 上限（`RLIMIT_NOFILE` 的上限值） | 调小会让 `ulimit -n` 提不上去；**与 `fs.file-max` 无大小约束关系**（file-max 是系统级总量，nr_open 是单进程闸门） |
 | `kernel.pid_max` | PID 上限 | 太小会 `fork: Cannot allocate memory` |
 | `kernel.threads-max` | 线程上限 | 与内存/pid 相关 |
 | `vm.overcommit_memory` | 内存超分策略 | 1 容易 OOM，2 可能分配失败 |

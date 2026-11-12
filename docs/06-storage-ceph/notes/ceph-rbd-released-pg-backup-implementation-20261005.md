@@ -171,15 +171,26 @@ radosgw-admin user create --uid=pg-backup \
 # → access_key: <redacted>
 # → secret_key: <redacted>
 
-# 授予 bucket 级权限（最小权限）
-radosgw-admin caps add --uid=pg-backup --bucket=pg-backups "read,write,delete"
+# 授予对象读写权限：用 S3 bucket policy（最小权限），不是 radosgw-admin caps
+cat > /tmp/pg-backups-policy.json <<'JSON'
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow",
+ "Principal":{"AWS":["arn:aws:iam:::user/pg-backup"]},
+ "Action":["s3:GetObject","s3:PutObject","s3:DeleteObject","s3:ListBucket"],
+ "Resource":["arn:aws:s3:::pg-backups","arn:aws:s3:::pg-backups/*"]}]}
+JSON
+s3cmd setpolicy /tmp/pg-backups-policy.json s3://pg-backups
 
 # 用户配额，防止备份无限膨胀
 radosgw-admin quota set --uid=pg-backup --quota-type=user \
   --max-size 20G --max-objects 100000
 ```
 
-**踩坑记录**：本集群 RGW 版本（Reef 18.2.8 的 `radosgw-admin`）**不支持 `bucket create` 子命令**，`caps add` 也报 `Command not found`。改用 S3 REST API 直接 `PUT /pg-backups` 创建 bucket（手工 SigV4 签名），返回 200 成功。
+**踩坑记录（2026-11-11 更正）**：
+
+1. `radosgw-admin` **确实没有 `bucket create`**——bucket 只能通过 S3 API `PUT /<bucket>` 创建（原文用 SigV4 手工签名，正确）。
+2. `caps add` 报 `Command not found` 是**参数写法错**，不是子命令不存在：caps 必须跟在 `--caps=` 后面，且它授予的是 **admin-ops 权限**（`users`/`buckets`/`usage`/`metadata`），**与对象读写无关**。
+   正确写法：`radosgw-admin caps add --uid=pg-backup --caps="buckets=read"`。
+3. 要让 pg-backup 能读写 `pg-backups` 里的对象，应该用上面那条 **S3 bucket policy**（或 bucket ACL），`caps add` 做不到。
 
 ### 步骤 4：创建 Kubernetes Secret
 

@@ -17,10 +17,10 @@
 | `su -` | 切换到 root（登录壳） | root 的密码 | 全新登录环境 |
 | `su - root` | 同上 | root 的密码 | 全新登录环境 |
 | `su - user` | 切换到任意用户（登录壳） | user 的密码 | 全新登录环境 |
-| `sudo 命令` | 以 root 执行单条命令 | **你自己的密码** | 继承当前环境 |
-| `sudo -s` | 进入 root shell（非登录壳） | 自己密码 / 免密 | 保留当前环境 |
+| `sudo 命令` | 以 root 执行单条命令 | **你自己的密码** | **默认清空环境**（`env_reset`，只保留 `TERM`/`PATH` 等白名单） |
+| `sudo -s` | 进入 root shell（非登录壳） | 自己密码 / 免密 | 仍是 `env_reset` 后的环境（`-E` 才显式保留） |
 | `sudo -i` | 进入 root shell（**登录壳**） | 自己密码 / 免密 | 全新登录环境 |
-| `sudo su` | 借 sudo 之力执行 su | 自己密码 / 免密 | 保留原环境 |
+| `sudo su` | 借 sudo 之力执行 su | 自己密码 / 免密 | 保留 su 之前的环境（su 不带 `-` 不重置） |
 | `sudo su -` | sudo 版 `su -` | 自己密码 / 免密 | 全新登录环境 |
 | `sudo -u user 命令` | 以指定用户执行命令 | 自己密码 / 免密 | 指定用户身份 |
 
@@ -187,7 +187,9 @@ sudo -l                           # 自查：我有什么权限 / 是否免密
 sudo visudo
 ```
 
-- 能 sudo 就别共享 root 密码：sudo 有完整审计日志（`/var/log/auth.log` / `/var/log/secure`），su 无日志。
+- 能 sudo 就别共享 root 密码：sudo 记**命令级**审计（`/var/log/auth.log` / `/var/log/secure` 里带完整命令行）；
+  `su` 走 PAM，**登录成功与失败都会记**（`su: pam_unix(su:session): session opened for user root by hao(uid=1000)`），
+  但**不记登录后执行了什么**——这才是选 sudo 的真正理由。
 - 慎用 `NOPASSWD: ALL`：等于为免密敞开大门；配合 2FA 或强密钥策略才建议。
 - 生产环境建议 `PermitRootLogin no`，禁止 root 直接 SSH，统一走普通用户密钥登录 + sudo，全程可审计。
 - 小心 /etc/sudoers 被改坏：一旦语法错误，所有人都无法提权，所以用 `visudo` 而不是直接改文件。
@@ -198,7 +200,8 @@ sudo visudo
 
 ```bash
 # 场景：普通用户 hao 下执行
-sudo su -c 'echo $HOME:$PATH'     # NON-login，$HOME 还是 /home/hao
-sudo -i -c 'echo $HOME:$PATH'     # login，$HOME 是 /root，PATH 是 root 的
+sudo sh -c 'echo $HOME:$PATH'     # NON-login，$HOME 还是 /home/hao
+sudo -i sh -c 'echo $HOME:$PATH'  # login，$HOME 是 /root，PATH 是 root 的
+# 注意：sudo 没有 -c 选项（-c 是 su 的）；`sudo -i -c '...'` 会报 illegal option -- c
 su -c 'echo $HOME'                # 需要 root 密码
 ```

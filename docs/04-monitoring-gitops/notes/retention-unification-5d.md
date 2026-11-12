@@ -3,7 +3,12 @@
 > 生成时间：2026-09-30 15:13 ~ 15:45 (CST)
 > 范围：`monitoring` / `logging` 两个命名空间的 Prometheus、Alertmanager、Loki、Tempo、Grafana Alloy，以及 MinIO 对象存储层
 > 目标：把 metrics / logs / traces 三条链路的保留窗口统一为 **5 天 = 120h**
-> 状态：**已实施并逐层验证通过**
+> 状态：**已实施并逐层验证通过**（2026-09-30 当时）
+>
+> **2026-11-11 复核（重要）**
+> - **Prometheus 现在不是 5d**：`--storage.tsdb.retention.time=15d`、`retention.size=25GiB`（本次审计实测）。"三链路统一 120h"只对 Loki/Tempo/Alertmanager 成立；
+> - 对象存储是 **Ceph RGW（`http://10.0.0.31:7480`）**，**不是 MinIO**。本文里的 `mc`/ILM/versioning 操作是按 MinIO 写的，在 RGW 上跑不通（RGW 用 `radosgw-admin` 与 S3 lifecycle API）；
+> - 下文保留当时的原始判断，便于复盘"当时以为的存储层兜底"。
 
 ---
 
@@ -115,9 +120,9 @@ Loki 官方文档对此有硬性要求：**对象存储的 lifecycle 策略必�
 
 | 信号 | 组件 | 有效保留 | 存储层兜底 | 是否对齐 |
 |---|---|---|---|---|
-| Metrics | Prometheus v3.11.2 | 5d | 本地 PVC，无 ILM | ✅ |
+| Metrics | Prometheus v3.11.2 | **15d / 25GiB**（2026-11-11） | 本地 PVC，无 ILM | ⚠️ 与 logs/traces 的 120h 不一致 |
 | Metrics（告警） | Alertmanager v0.32.0 | 120h | 本地 PVC | ✅ |
-| Logs | Loki 3.6.7 | 120h | MinIO 10d | ✅ |
+| Logs | Loki 3.6.7 | 120h | Ceph RGW（bucket 无 lifecycle 规则） | ✅ |
 | Traces | Tempo 3.0.3 | 120h | `tempo-traces` 无 ILM | ✅ |
 
 三层关系现在是：**Loki compactor 5 天是唯一的删除决策方，MinIO 10 天是纯兜底**（10 > 5 满足官方约束），Alloy 5 天不再读已被删除的区间。
