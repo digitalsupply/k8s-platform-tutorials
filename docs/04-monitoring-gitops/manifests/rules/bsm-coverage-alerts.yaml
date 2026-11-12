@@ -18,22 +18,9 @@ spec:
       for: 10m
       labels:
         severity: warning
-    - alert: CNIComponentNotReady
-      annotations:
-        description: CNI 故障=该节点网络不可用，影响面最大
-        summary: 'Cilium agent 未就绪: {{ $labels.pod }}'
-      expr: sum by (pod) (kube_pod_status_ready{namespace="kube-system",pod=~"cilium-[a-z0-9]+",condition="true"}) < 1
-      for: 5m
-      labels:
-        severity: critical
-    - alert: CNIControllersNotReady
-      annotations:
-        description: 网络策略下发与 IP 回收依赖此控制器
-        summary: cilium-operator 未就绪（CNI 控制器）
-      expr: sum(kube_pod_status_ready{namespace="kube-system",pod=~"cilium-operator-.*",condition="true"}) < 1
-      for: 5m
-      labels:
-        severity: critical
+    # CNI 就绪性告警统一放在 coverage-gap-alerts.yaml（CiliumAgentNotReady / CiliumOperatorNotReady）。
+    # 这里原本是 CalicoNodeNotReady + CalicoKubeControllersDown 的副本（表达式与上面完全相同），
+    # 在 Cilium 集群里是空向量，且会造成同一故障两套告警；2026-11-11 审计后删除。
     - alert: MetalLBSpeakerNotReady
       annotations:
         description: speaker 负责 ARP/NDP 应答，异常=LoadBalancer 流量不通
