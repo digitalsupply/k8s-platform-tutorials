@@ -147,7 +147,7 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
    入库目的只有一个：新建集群时照着它重建 / 对照参数。**不建议建 Application** —— 控制面组件被
    ArgoCD prune 或 sync 出错，代价是整台宿主机控制台见。
 
-4. **Loki / Tempo 从 helm CLI 转成 Application**
+4. **Loki / Tempo 从 helm CLI 转成 Application** —— ✅ *values 部分已入库（2026-11-12，见 §7.1）*
    - Loki：values 已在 `platform/logging/values.yaml`（文件头写着"手动 `helm upgrade --reuse-values`"），
      加一个 chart App 即可；**但 S3 凭据现在只在 helm release 里，且被渲染进 `logging/loki` 的 ConfigMap（明文，没有 Secret）**，转换前要先把
      `access_key_id/secret_access_key` 做成 SealedSecret 并以 `existingSecret` 方式注入，否则会写进 git 明文。
@@ -156,11 +156,11 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
 
 ### P1 — 该有、且实现成本低
 
-5. **Alloy**：`alloy-values.yaml` 无引用 → 补 chart App（releaseName `alloy`，chart `alloy-1.13.0`）；
+5. **Alloy**：`alloy-values.yaml` 无引用（✅ 已核对与 live 语义一致） → 补 chart App（releaseName `alloy`，chart `alloy-1.13.0`）；
    现有的 `platform-alloy-config` 继续只管配置 CR，两者分工写清楚。
-6. **ArgoCD 自身**：`platform/argocd/values.yaml` 无引用。要么补一个自举 App（推荐，改配置不必登机器），
+6. **ArgoCD 自身**：`platform/argocd/values.yaml` 无引用（✅ 已补齐缺失的 5 段，2026-11-12）。要么补一个自举 App（推荐，改配置不必登机器），
    要么在文件头注明"仅作记录，不自动应用"，避免下一个人以为改了就生效。
-7. **cert-manager**：整组（3 Deployment + webhook + CRD）无声明。至少把 `helm get values` 导出入库。
+7. **cert-manager**：整组无声明。✅ values 已入库（`platform/cert-manager/values.yaml`）。
 8. **gitlab-runner**：CI 执行端，配置在 `gitlab-runner-config` CM 里（含 runner token 的引用）。
    最小做法：Deployment + CM + SealedSecret 三件套入 `platform/cicd/`。
 9. **buildkitd**：`cicd/buildkitd*`（Deployment/CM/Service/CA）现在不在任何 app 里，
@@ -215,8 +215,14 @@ kubelet 注册            ──需要──►  apiserver（kubelet.conf 里的
    内容还是"给 MinIO bucket 设 ILM"，与实际（Ceph RGW）不符。
 3. **stale helm release 记录**：`monitoring/prometheus` 的 release (rev13) 与 ArgoCD App 同时存在。
    现在实际由 `platform-monitoring-stack` 渲染，但 `helm list` 仍显示它 —— 谁要跑 `helm upgrade prometheus`
-   就会和 ArgoCD 打架。建议 `helm -n monitoring uninstall prometheus --keep-history=false` 前先确认
-   ArgoCD 的 `prune: false` 不会删资源，或干脆在文档里写明"不要用 helm 碰它"。
+   就会和 ArgoCD 打架。**2026-11-12 实测拿到硬证据**：把该 release 的 values 与仓里
+   `platform/monitoring/values.yaml` 做语义比较，有 4 处漂移 ——
+   `alertmanager.config.receivers[1].webhook_configs[0].url` 还是旧的公网地址
+   `https://n8ntrace.ccwu.cc/...`（仓里早已改成 in-cluster）、`kubeProxy.enabled=true`（仓里是 false，
+   而 kube-proxy 已移除）、多出 `grafana.adminPassword`/`grafana.strategy`。
+   也就是说这个 release 停在 2026-10，谁照着它 `helm upgrade` 就会把告警接收端改回不可达地址。
+   建议 `helm -n monitoring uninstall prometheus --keep-history=false` 前先确认 ArgoCD 的 `prune: false`
+   不会删资源，或干脆在文档里写明"不要用 helm 碰它"。
 
 ---
 
@@ -278,7 +284,7 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
 ## 7. 建议的落地顺序
 
 ```text
-第 1 批（今天，零风险）  ── 导出 values 入库、不接 app
+第 1 批（✅ 已完成 2026-11-12）── 导出 values 入库、不接 app
   helm get values cilium -n kube-system      > platform/network/cilium/values.live.yaml
   helm get values loki   -n logging          > platform/logging/loki/values.live.yaml
   helm get values tempo3 -n logging          > platform/logging/tempo/values.live.yaml
@@ -287,7 +293,7 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
   helm get values vpa -n kube-system         > platform/vpa/values.live.yaml
   kubectl get ds kube-vip-ds -n kube-system -o yaml > platform/network/kube-vip/daemonset.yaml
 
-第 2 批（业务影响小）    ── 接 app
+第 2 批（业务影响小）    ── 接 app：n8n 优先（告警接收端）
   n8n + cloudflared、gitlab-runner、buildkitd、otel-collector CR、nfs-provisioner
 
 第 3 批（需窗口）        ── 接日志/追踪（无自举约束）
@@ -301,6 +307,40 @@ etcdutl snapshot restore ...                 # 见 09 章 runbook
 
 每批做完都验三件事：`argocd app diff` 为空、目标组件 Pod 未重建、`kubectl get app -o json` 里
 `status.sync.status=Synced` 且 `health=Healthy`。
+
+### 7.1 第 1 批执行记录（2026-11-12，platform-gitops `701a843`）
+
+原则：**只导出 values，不建 Application、不 touch 集群**。目标是"照文件能重建"。
+
+| 文件 | 之前 | 现在 | 渲染验证 |
+|---|---|---|---|
+| `platform/logging/values.yaml`（Loki） | 只有修复片段，缺 `deploymentMode`/`backend`/`read`/`write`/`schemaConfig`/`storage` | 完整值（S3 凭据→`REPLACE_ME`） | `helm template` 1642 行，差异仅 2 处 REPLACE_ME + 派生 checksum |
+| `platform/logging/tempo-values.yaml` | **文件不存在** | 完整值（`REPLACE_ME`） | 1922 行，差异仅 2 处 REPLACE_ME + checksum |
+| `platform/argocd/values.yaml` | 缺 `params`/`global`/`notifications`/`repoServer`/`server` 五段 | 补齐 | 34238 行，**0 差异** |
+| `platform/network/cilium/values.yaml` | 已有 | 核对 | 语义完全一致（本来就对） |
+| `platform/logging/alloy-values.yaml` | 已有 | 核对 | 语义完全一致 |
+| `platform/monitoring/prometheus-adapter-values.yaml` | 已有 | 核对 | 语义完全一致 |
+| `platform/cert-manager/values.yaml`、`platform/vpa/values.yaml`、`platform/otel/operator-values.yaml` | 不存在 | 新建 | 语义一致 |
+| `platform/network/kube-vip/kube-vip-ds.yaml` | 不存在 | Tier 0 manifest 快照（去 status/managedFields） | — |
+| `bootstrap/README.md` | 不存在 | Tier 0 顺序 + 每步用哪个文件 | — |
+| `scripts/export-helm-values.sh` | 不存在 | 导出 + **PyYAML 语义比较**（文本 diff 会把注释/键顺序报成差异） | 10 个 release 逐一对账 |
+
+验证方法（可复现）：
+
+```bash
+helm template loki /root/.cache/helm/repository/loki-6.55.0.tgz -n logging \
+  -f platform/logging/values.yaml > /tmp/a.yaml
+helm template loki /root/.cache/helm/repository/loki-6.55.0.tgz -n logging \
+  -f <(helm -n logging get values loki | sed '/^USER-SUPPLIED VALUES/d') > /tmp/b.yaml
+diff /tmp/a.yaml /tmp/b.yaml          # 期望：只有 REPLACE_ME 两行 + checksum
+```
+
+**第 1 批没有做**（留给后续批次）：建 Application、SealedSecret 化 S3 凭据、删调试 CM。
+所以现在 `helm upgrade -f` 仍然必须带 `--reuse-values`，否则会丢掉 `REPLACE_ME` 那两个键 ——
+这一点已写进两个 values 文件的头部警告。
+
+顺带产出：对账时发现 `monitoring/prometheus` 的 helm release 已漂移 4 处（见 §6 第 3 条），
+其中告警接收端 URL 还指向不可达的公网地址。
 
 ---
 
