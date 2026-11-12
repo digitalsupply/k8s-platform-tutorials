@@ -145,7 +145,7 @@ ssh tfadmin@192.168.67.110 'powershell -NoProfile -Command "Get-VM | Format-Tabl
 |---|---|
 | `04/notes/prometheus-promql-alerting-tutorial.md:720` | `sum(...) offset 1d` → `sum(rate(x[15m] offset 1d))`（原写法 parse error） |
 | 同文 `:179` | target 清单里 `kube-proxy 6` → **0（已移除）** |
-| `04/manifests/rules/coverage-gap-alerts.yaml`、`bsm-coverage-alerts.yaml` | `CalicoNodeNotReady`→`CiliumAgentNotReady`（`pod=~"cilium-[a-z0-9]+"`）、`CalicoKubeControllersDown`/`CNIKubeControllersDown`→`CiliumOperatorNotReady`；**同时改了 GitOps 源** `platform-gitops` `742e8e8`，ArgoCD 已同步，Prometheus 规则求值 0 错误 |
+| `04/manifests/rules/coverage-gap-alerts.yaml`、`bsm-coverage-alerts.yaml` | `CalicoNodeNotReady`→`CiliumAgentNotReady`（`pod=~"cilium-[a-z0-9]+"`）、`CalicoKubeControllersDown`→`CiliumOperatorNotReady`；bsm 里那两条与 coverage-gap 表达式完全相同的副本**直接删除**（同一故障会出两套告警）。**GitOps 源** `platform-gitops` `742e8e8` + `eca603e`，ArgoCD 已同步：248 条规则、CNI 家族只剩 2 条、求值 0 错误、firing 只剩 Watchdog + InfoInhibitor |
 | `05/04-permissions`、`05/09-case-studies`（3 处） | "Cilium 是 privileged" → Cilium 是 `drop: ALL` + 13 caps；privileged 只有 9 个 ceph-csi + 1 个 buildkitd |
 | `03/gitlab-19.4-install.md` | `8082=KAS / 8092=exporter` → 8082/8092 是 **Sidekiq 指标/健康检查**，KAS **8150**（内部 8153），exporter **9168** |
 | `03/gitlab-port-80-troubleshooting.md`（2 处） | sidekiq 行注明"指标+健康检查，不承载业务流量" |

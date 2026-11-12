@@ -34,7 +34,7 @@
 | PrometheusRule 总数 | 44 |
 | 带 `platform.gitops/managed=true` | 44 |
 | 来源 | 35 chart + 6 platform + 2 deeptutor + 1 compassio |
-| Prometheus 加载 | 51 alerting groups / 250 alerting rules；16 recording groups / 94 recording rules |
+| Prometheus 加载 | 51 alerting groups / 248 alerting rules；16 recording groups / 94 recording rules |
 | health 异常 | 0（规则求值本身无错；注意 `KubeProxyDown`/Ceph 两条曾因组件下线而常驻 firing，2026-11-11 已清理） |
 
 ## 4. Selector
