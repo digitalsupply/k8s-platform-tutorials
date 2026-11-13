@@ -184,6 +184,7 @@ crictl rmi --prune
 | [k8s-cluster-audit-2026-10-03.md](../01-kubernetes-k3s/notes/k8s-cluster-audit-2026-10-03.md) | 磁盘/镜像/资源巡检与 52GB 回收 |
 | [default-ns-pod-provenance.md](../01-kubernetes-k3s/notes/default-ns-pod-provenance.md) | default 命名空间残留 Pod 的来源追踪 |
 | [2026-11-09-weekly-postmortem-index.md](notes/2026-11-09-weekly-postmortem-index.md) | 7 轮改造总索引：CNPG、GitOps、Grafana、Sealed Secrets、Vault、存储迁移 |
+| [root-artifact-cleanup-20261113.md](notes/root-artifact-cleanup-20261113.md) | /root 老旧软件版本/安装包清理：K8s/Ceph/Harbor 清单、保留项、验证 |
 
 ## 配套资产
 
