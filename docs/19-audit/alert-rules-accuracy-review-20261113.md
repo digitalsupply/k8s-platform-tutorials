@@ -7,6 +7,8 @@
 
 > **与同目录既有审计的关系**：`alert-rules-coverage-20261113.md` 采样更早（40 个 PrometheusRule / 231 条 alert），侧重“哪些指标不存在、哪些该有没有”；本文采样于 2026-11-13 06:30 UTC（44 个 PrometheusRule / 248 条 alert），侧重“自建 100 条规则的全面性、准确性、告警链路与修复路线”。两文互补，冲突处以各自采样时点为准。本文对其中一条结论做了复核更正：`CephPoolNearFull` / `CephPoolCriticallyFull` 在本集群实际不可用，原因是 `ceph_pool_percent_used` 返回 0–1 小数而阈值写成 85/95（见 §4.1），不是“实际可用”。
 
+> **P0 修复状态（2026-11-13 07:40 UTC）**：规则级 P0 已修复并上线，详见 [alert-rules-p0-fix-20261113.md](alert-rules-p0-fix-20261113.md)。当前 **264 条 alerting rule、0 条 health 异常**；`CIPipelineStalled`、`Tempo3LiveStoreClientsLost`、`MetalLBSpeakerNotReady` 误报已消失；CNPG 实例指标已接入（2 个 target up）；Watchdog/InfoInhibitor 已改走 `noop`。仍暂缓：用户入口 blackbox/Probe、Kafka broker/JMX、Prometheus/Alertmanager HA、外部 dead-man switch（原因见修复记录 §4）。
+
 ---
 
 ## 0. 执行摘要
