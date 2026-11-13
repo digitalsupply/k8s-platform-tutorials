@@ -149,6 +149,7 @@ Alertmanager：
 | `platform-gitops` | `4ecadc3` | MetalLB speaker 改 DaemonSet desired/ready |
 | `platform-gitops` | `1f5ccc3` | 修正 null receiver YAML 引用 |
 | `platform-gitops` | `bffaadb` | 用 noop 替代 null，确保 Watchdog 路由生效 |
+| `platform-gitops` | `8429959` | etcd 备份新鲜度增加指标缺失兜底 |
 | `deeptutor-gitops` | `68a87a1` | 删除死指标告警 + 修正 CI 停滞/失败判定 + 单测 |
 
 ArgoCD 已自动同步：
