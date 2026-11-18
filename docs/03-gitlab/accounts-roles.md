@@ -7,7 +7,7 @@ GitLab 是本环境的代码仓库和身份中心：
 - 安装在 `192.168.67.201`，Omnibus 方式，**19.5.0 CE**；
 - `external_url` 是 `http://192.168.67.201`，当前监听 80；
 - 容器 registry **未启用**；
-- 只有两个用户：`root` 和 `GitLabDuo`；
+- 只有两个人工账号：`root` 和 `GitLabDuo`（另有 2 个组自动创建的机器人账号）；
 - 11 个项目、2 个组，全部 private；
 - 同时作为 Grafana、ArgoCD、Harbor 等系统的 OAuth/OIDC 提供方。
 
@@ -128,8 +128,14 @@ deeptutor/deeptutor-gitops
 
 ### 坑 2：以为有 GitLab Container Registry
 
-`gitlab-ctl status` 没有 registry 进程，`gitlab.rb` 也没有 registry 配置。
-本环境的镜像仓库是 **Harbor**，不要按 GitLab Registry 的地址去 push。
+GitLab 本身自带容器 Registry，但本机**没有启用**（19.5.0 CE）：
+
+- `gitlab-ctl status` 没有 `registry` 进程；
+- `gitlab.rb` 中 `registry_enabled`、`registry_external_url`、
+  `gitlab_default_projects_features_container_registry` 均保持注释（未配置）；
+- 项目页面没有 Registry 标签页，`registry.192.168.67.201` 之类的地址不可用。
+
+本环境的镜像仓库是 **Harbor**（`192.168.67.202:8443`），不要按 GitLab Registry 的地址去 push。
 
 ### 坑 3：沿用旧文档的 8088
 
@@ -161,15 +167,19 @@ ArgoCD 的 GitLab repo secret、CI/脚本里大量使用 `root`。
 ```bash
 # 版本与状态
 cat /opt/gitlab/embedded/service/gitlab-rails/VERSION
+gitlab-rails runner 'puts Gitlab::VERSION'
 gitlab-ctl status
 
 # 用户/组/项目（只读元数据）
-gitlab-rails runner 'User.pluck(:id,:username,:admin,:state)'
-gitlab-rails runner 'Group.pluck(:id,:full_path,:visibility_level)'
-gitlab-rails runner 'Project.pluck(:id,:path_with_namespace,:visibility_level)'
+# 注意：gitlab-rails runner 不会自动打印表达式结果，需要显式 puts；
+# 且 GitLab 19.x 中 full_path / path_with_namespace 不是真实数据库列，
+# pluck 直接使用会报 PG::UndefinedColumn，改用 path / namespaces.path 组合。
+gitlab-rails runner 'puts User.pluck(:id,:username,:admin,:state).inspect'
+gitlab-rails runner 'puts Group.pluck(:id,:name,:path,:visibility_level).inspect'
+gitlab-rails runner 'puts Project.joins(:namespace).pluck(:id,"namespaces.path",:path,:visibility_level).inspect'
 
 # OAuth 应用（不输出 secret）
-gitlab-rails runner 'Doorkeeper::Application.pluck(:id,:name,:scopes,:redirect_uri)'
+gitlab-rails runner 'puts Doorkeeper::Application.pluck(:id,:name,:scopes,:redirect_uri).inspect'
 ```
 
 > 生产环境修改角色/2FA/SSO 前先在测试项目验证，避免把管理员锁在门外。
