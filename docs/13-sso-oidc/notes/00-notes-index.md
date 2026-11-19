@@ -12,6 +12,7 @@
 | [05-grafana-sso.md](05-grafana-sso.md) | Grafana SSO 三种方案 |
 | [06-argocd-helm-bootstrap.md](06-argocd-helm-bootstrap.md) | ArgoCD bootstrap 与 OIDC/RBAC |
 | [07-sealed-secrets.md](07-sealed-secrets.md) | Sealed Secrets 迁移记录 |
+| [08-gitlab-oauth-apps-oauth2-proxy.md](08-gitlab-oauth-apps-oauth2-proxy.md) | GitLab Admin 区 OAuth 应用管理（列含义/`oauth2-` 前缀）、OIDC 用户归属（root 证据）、三端原生 OIDC 配置、oauth2-proxy 的 K8s 形态（2026-11-18 实测补充） |
 
 ## 阅读校正
 

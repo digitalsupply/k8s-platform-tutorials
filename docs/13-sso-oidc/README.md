@@ -136,7 +136,7 @@ curl -s http://192.168.67.201/.well-known/openid-configuration | jq .
 
 ```text
 原生 OIDC：Grafana、ArgoCD、Harbor
-反向代理：Traefik、Hubble、Alloy、Tekton（oauth2-proxy）
+反向代理：Traefik、Hubble、Alloy、Tekton、Headlamp（oauth2-proxy）
 SAML：Ceph（当前缺 SAML IdP，暂缓）
 ```
 
@@ -226,7 +226,8 @@ PG::UndefinedTable: relation "oauth_application_granular_scopes" does not exist
 
 ### 2. GitLab OAuth Application
 
-当天一共创建了 7 个 Application（client ID 不是秘密，secret 只返回一次）：
+当天一共创建了 7 个 Application（client ID 不是秘密，secret 只返回一次）；
+后续 2026-11-13 为 Headlamp 补建了第 8 个（`oauth2-headlamp`）：
 
 | 应用 | redirect URI | scopes |
 |---|---|---|
@@ -237,8 +238,13 @@ PG::UndefinedTable: relation "oauth_application_granular_scopes" does not exist
 | `oauth2-alloy` | `https://alloy.xyz/oauth2/callback` | `openid profile email` |
 | `oauth2-tekton` | `https://tekton.xyz/oauth2/callback` | `openid profile email` |
 | `oauth2-traefik` | `https://traefik.xyz/oauth2/callback` | `openid profile email` |
+| `oauth2-headlamp` | `https://headlamp.devops.com/oauth2/callback` | `openid profile email` |
 
 创建后 secret 只显示一次，立即 seal 成 SealedSecret，不落 Git。
+
+> 管理页面（Admin Area → Instance OAuth applications）的列含义、`oauth2-` 前缀
+> 是否带有技术区别、以及各应用字段实测差异，见
+> [08 · GitLab 实例 OAuth 应用管理](notes/08-gitlab-oauth-apps-oauth2-proxy.md)。
 
 ### 3. Grafana：原生 OIDC
 
@@ -332,9 +338,9 @@ Harbor 不在 K8s 里，配置存在自己的数据库，不能 GitOps。流程�
 - 保留本地 admin 作为 break-glass；
 - 回滚只需把 `auth_mode` 改回 `db_auth`。
 
-### 6. Traefik / Hubble / Alloy / Tekton：oauth2-proxy 反向代理
+### 6. Traefik / Hubble / Alloy / Tekton / Headlamp：oauth2-proxy 反向代理
 
-部署 4 个独立实例，每个 host 一个 GitLab OAuth Application：
+部署 5 个独立实例（4 个 `.xyz` 组 + 1 个 headlamp），每个 host 一个 GitLab OAuth Application：
 
 | host | oauth2-proxy | upstream |
 |---|---|---|
@@ -342,8 +348,9 @@ Harbor 不在 K8s 里，配置存在自己的数据库，不能 GitOps。流程�
 | `hubble.xyz` | `oauth2-proxy-hubble` | `hubble-ui.kube-system.svc:80` |
 | `alloy.xyz` | `oauth2-proxy-alloy` | `alloy.logging.svc:12345` |
 | `tekton.xyz` | `oauth2-proxy-tekton` | `tekton-dashboard.tekton-pipelines.svc:9097` |
+| `headlamp.devops.com` | `oauth2-proxy-headlamp` | `headlamp.headlamp.svc:80` |
 
-为什么是 4 个实例而不是 1 个：
+为什么是多个独立实例而不是 1 个：
 
 - `*.xyz` 是公共后缀，`hubble.xyz` / `alloy.xyz` / `tekton.xyz` / `traefik.xyz`
   之间没有共享父域，cookie 无法跨域；
@@ -365,6 +372,10 @@ Harbor 不在 K8s 里，配置存在自己的数据库，不能 GitOps。流程�
 --skip-provider-button=true
 --upstream=<后端 Service>
 ```
+
+> oauth2-proxy 在 K8s 里的具体形态（Deployment + Service + Secret、配置注入方式、
+> 流量链路、五实例映射），见
+> [08 · oauth2-proxy 形态](notes/08-gitlab-oauth-apps-oauth2-proxy.md)。
 
 Traefik 需要：
 
@@ -557,8 +568,8 @@ Quincy/Reef 只支持 SAML 2.0，GitLab 不是 SAML IdP。
 
 ### 坑 14：oauth2-proxy 临时固定 worker02
 
-镜像首次拉取慢，4 个实例临时 `nodeSelector: worker02`。
-所有 worker 缓存镜像后应移除，否则 worker02 故障会同时打掉 4 个 UI 登录入口。
+镜像首次拉取慢，5 个实例临时 `nodeSelector: worker02`。
+所有 worker 缓存镜像后应移除，否则 worker02 故障会同时打掉 5 个 UI 登录入口。
 
 ### 坑 15：不要关掉本地 admin
 
@@ -633,7 +644,7 @@ chmod 600 sealed-secrets-key-*.yaml
 # 1. OIDC discovery
 curl -s http://192.168.67.201/.well-known/openid-configuration | jq .
 
-# 2. 四个 oauth2-proxy UI 都应 302 到 GitLab
+# 2. 五个 oauth2-proxy UI 都应 302 到 GitLab
 for h in hubble alloy tekton; do
   curl -sk --resolve $h.xyz:443:10.0.0.252 \
     -o /dev/null -w "$h %{http_code} %{redirect_url}\n" https://$h.xyz/
@@ -693,7 +704,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | 检查项 | 结果 |
 |---|---|
 | GitLab | 19.5.0 CE，OIDC discovery 200，issuer `http://192.168.67.201` |
-| GitLab OAuth Applications | 7 个（Grafana/ArgoCD/Harbor/4 个 oauth2-proxy） |
+| GitLab OAuth Applications | 8 个（Grafana/ArgoCD/Harbor/5 个 oauth2-proxy） |
 | Grafana | `https://grafana.k8s.local/login` 返回 200，页面含 GitLab |
 | ArgoCD | `/auth/login` 返回 303，跳 GitLab `/oauth/authorize`，带 PKCE |
 | Harbor | `auth_mode=oidc_auth`，`oidc_provider_name=GitLab`，`/c/oidc/login` 302 |
@@ -701,7 +712,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | Alloy | 302 到 GitLab，带 PKCE |
 | Tekton | 302 到 GitLab，带 PKCE |
 | Traefik | `/dashboard/` 302 到 GitLab，带 PKCE |
-| oauth2-proxy | 4 个 Deployment 1/1 Running，v7.15.6 |
+| oauth2-proxy | 5 个 Deployment 1/1 Running，v7.15.6 |
 | Ceph | 18.2.8 Reef，Dashboard 仍为本地账号；OIDC 不可用，需 SAML IdP |
 
 ## 本目录文档
@@ -721,7 +732,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 
 | 资产 | 说明 |
 |---|---|
-| [assets/oauth2-proxy/values.yaml](assets/oauth2-proxy/values.yaml) | 4 个 oauth2-proxy 实例、host、clientID、upstream |
+| [assets/oauth2-proxy/values.yaml](assets/oauth2-proxy/values.yaml) | 5 个 oauth2-proxy 实例、host、clientID、upstream |
 | [assets/oauth2-proxy/deployment.yaml](assets/oauth2-proxy/deployment.yaml) | Helm 模板：oauth2-proxy Deployment |
 | [assets/oauth2-proxy/ingressroutes.yaml](assets/oauth2-proxy/ingressroutes.yaml) | `/oauth2/*` 回调路由模板 |
 | [assets/oauth2-proxy/service.yaml](assets/oauth2-proxy/service.yaml) | 每个实例的 ClusterIP Service |
@@ -730,7 +741,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/monitoring-values.yaml](assets/monitoring-values.yaml) | Grafana OIDC values |
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
-| [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、4 个 UI、ArgoCD、Grafana、Harbor |
+| [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
 
 > 所有 client secret / cookie secret 都在 SealedSecret 中，本仓库不复制密文。
 > 示例中的 client ID 不是秘密；secret 已脱敏。
