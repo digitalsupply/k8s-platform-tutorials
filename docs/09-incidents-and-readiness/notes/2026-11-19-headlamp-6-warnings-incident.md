@@ -344,6 +344,83 @@ kubectl -n etcd-backup run ceph-check --rm -i --image=busybox:1.36 \
 
 ---
 
+## 五-1、Harbor 502 与 Deeptutor 拉取失败（2026-11-20）
+
+> **背景**：Harbor 持续返回 502，镜像拉取失败，deeptutor 的 initContainer `ImagePullBackOff`，登录页打不开看不到 GitLab 登录。
+
+### 排查过程
+
+1. **确认 Harbor 端点状态**：`/api/v2.0/systeminfo`、`/api/v2.0/health`、`/v2/`、`/c/oidc/login` 全部 502；
+2. **登录 Harbor 主机**（`ssh hao@192.168.67.202`，`sudo -i` 提权），执行 `docker compose ps`：
+   ```
+   harbor-core   Up 41 minutes (healthy)
+   harbor-db     Up 41 minutes (healthy)
+   registry      Up 41 minutes (healthy)
+   nginx         Up 7 hours (healthy)
+   ```
+   **所有容器都是 healthy！** 问题不在容器运行状态。
+3. **查看 nginx 错误日志**：
+   ```
+   connect() failed (111: Connection refused) while connecting to upstream
+   upstream: "http://172.18.0.5:8080/..."
+   ```
+   nginx 连接 `172.18.0.5:8080` 被拒绝。
+4. **检查容器实际 IP**：
+   ```
+   harbor-core IP = 172.18.0.3   ← 当前 IP
+   nginx 连接的    = 172.18.0.5   ← 旧 IP
+   ```
+5. **检查 nginx 配置**：upstream 用的是服务名 `core:8080`（配置正确），但 nginx 缓存了启动时的 DNS 解析结果。
+
+### 根因
+
+```
+harbor-core 容器重启（IP 从 172.18.0.5 → 172.18.0.3）
+  → nginx upstream 缓存了旧 IP（172.18.0.5）
+    → nginx 连接旧 IP，Connection refused
+      → 所有请求 502（API、镜像仓库、OIDC 登录全部不可用）
+```
+
+**关键**：nginx 的 upstream 块默认在启动时解析 hostname 并缓存。容器重启后 IP 变化，nginx 不会自动更新，除非配置了 `resolver` 指令或重启 nginx。
+
+### 修复
+
+1. **重启 nginx（proxy）容器**，重新解析服务名：
+   ```bash
+   cd /root/harbor && docker compose restart proxy
+   ```
+2. **验证 Harbor 恢复**：
+   ```
+   /api/v2.0/systeminfo → 200
+   /api/v2.0/health → 200
+   /v2/ → 200
+   /c/oidc/login → 302（跳转 GitLab）
+   auth_mode = oidc_auth
+   ```
+
+### Deeptutor 修复
+
+Harbor 恢复后，deeptutor 的镜像拉取仍失败（Pod 还缓存着之前的错误状态）。deeptutor 侧之前已做好的准备：
+
+1. **创建 `harbor-auth` imagePullSecret**（从 cicd 命名空间复制 dockerconfigjson）；
+2. **deployment 添加 `imagePullSecrets`**：`[{"name":"harbor-auth"}]`。
+
+harbor 恢复后：
+
+```bash
+# 删除旧 Pod，触发重新拉取镜像
+kubectl -n deeptutor delete pod deeptutor-54c9754ccd-rtkfx
+# 新 Pod 1/1 Running，镜像拉取成功
+```
+
+### 关键教训
+
+- **容器 healthy 不代表服务可用**：nginx 的 upstream DNS 缓存会导致后端 IP 变化后持续 502，即使所有容器都在运行。
+- **排查 502 先查 nginx 日志**：`connect() failed (111: Connection refused)` + upstream IP 是最直接的线索。
+- **harbor-core 重启后注意 IP 变化**：docker-compose 重启容器可能分配新 IP，nginx 需要同步重启。
+
+---
+
 ## 六、关键教训
 
 1. **EPERM 连接问题要查服务 endpoints**：连 ClusterIP 报 `Operation not permitted`，优先检查服务是否有 endpoints。Cilium 对无 endpoint 的 ClusterIP 返回 EPERM，这是 Cilium 的特征行为。
