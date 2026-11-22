@@ -168,17 +168,62 @@ root 在 `digitalsupply` 组 → 命中 `oidc_admin_group` → **Harbor 系统�
 
 ### 2. 与 ReverseProxy 模式的区别
 
-| 模式 | 流量路径 | 认证服务角色 | oauth2-proxy 参数 |
-|---|---|---|---|
-| **ForwardAuth** | 浏览器 → Traefik → 后端（认证服务只做校验，不代理流量） | 旁路校验 | `--forward-auth` |
-| **ReverseProxy** | 浏览器 → Traefik → oauth2-proxy → 后端（oauth2-proxy 先认证再代理） | 代理 + 认证 | `--reverse-proxy=true` |
+**两者都能保护后端**，区别在于**认证决策由谁执行、认证服务在流量路径中的位置**。
+
+**流量路径对比**：
+
+**ReverseProxy 模式**（oauth2-proxy 在路径中，做代理+认证）：
+```
+浏览器 ──请求──> Traefik ──> oauth2-proxy ──认证通过──> 后端 svc
+                         (未认证则拦截，不转发)
+```
+
+**ForwardAuth 模式**（oauth2-proxy 在路径外，只做旁路校验）：
+```
+浏览器 ──请求──> Traefik ──[先问 oauth2-proxy]──> 校验通过 ──> 后端 svc
+                          ↑                    (未通过则拦截)
+                     子请求（非主流量）
+```
+
+**保护能力对比**：
+
+| 维度 | ReverseProxy | ForwardAuth |
+|---|---|---|
+| **未认证请求** | oauth2-proxy 直接拦截，不到达后端 | Traefik 拦截，不到达后端 |
+| **认证决策者** | oauth2-proxy（自己判断） | Traefik（根据 oauth2-proxy 返回值判断） |
+| **后端感知** | 后端完全不感知认证，只收到已认证的请求 | 后端也不感知，收到 Traefik 转发的请求 |
+| **认证服务位置** | 在流量路径中（代理流量） | 在流量路径外（旁路校验） |
+| **跳转登录页** | oauth2-proxy 自己处理，返回 302 给浏览器 | Traefik 需把 401+Location 转成 302 给浏览器 |
+| **用户信息透传** | oauth2-proxy 透传 X-Auth-Request 头给后端 | Traefik 可透传头，但需额外配置 |
+
+**核心区别**：两者都能保护后端，但 **ReverseProxy 的认证逻辑封装在 oauth2-proxy 内部**，
+跳转、会话管理都由 oauth2-proxy 完成；**ForwardAuth 把认证决策交给 Traefik**，
+oauth2-proxy 只提供"放行/拦截"的校验结果。
 
 oauth2-proxy 两种模式都支持。本平台 5 个 UI 全部使用 **ReverseProxy 模式**。
 
-### 3. 历史教训
+### 3. 本集群为何用 ReverseProxy
 
-本平台最初试了 ForwardAuth，但 oauth2-proxy 未登录时返回 **401 + Location**，
-Traefik 的 ForwardAuth 中间件无法正确处理跳转，最终改成 **反向代理**：
+**直接原因**：ForwardAuth 模式下，oauth2-proxy 未登录时返回 `401 + Location`
+（Location 头指向登录页），但 **Traefik 的 ForwardAuth middleware 无法正确处理
+这个 401+Location 组合**，导致跳转登录页不工作——用户未登录时看不到登录页，
+直接被拦截。
+
+**ReverseProxy 模式下不存在这个问题**：oauth2-proxy 自己处理整个认证流程，
+包括未登录时的 302 跳转登录页，Traefik 只负责把请求交给它，不需要关心认证逻辑。
+
+**对比总结**：
+
+| 问题 | ForwardAuth | ReverseProxy |
+|---|---|---|
+| 未登录跳转 | Traefik 处理 401+Location，**容易出问题** | oauth2-proxy 直接返回 302，**可靠** |
+| 认证流程 | 分散在 Traefik + oauth2-proxy 两处 | 集中在 oauth2-proxy，**简单** |
+| 配置复杂度 | 需配置 ForwardAuth middleware + 认证端点 | Traefik 只需指向 oauth2-proxy Service，**简单** |
+
+**结论**：ReverseProxy 模式把认证逻辑收敛在 oauth2-proxy 内部，Traefik 只做"转发"
+这一件事，配置更简单、跳转更可靠。本集群 5 个 UI 全部采用此模式。
+
+**流量路径**：
 
 ```
 浏览器 -> Traefik -> oauth2-proxy-<host> -> 后端 UI
@@ -226,9 +271,56 @@ Traefik 只负责把请求交给它。
 
 ---
 
-## 五、本集群 Traefik middleware 清单
+## 五、Traefik Middleware 详解
 
-本集群 Traefik **有 16 个 middleware**，按类型分类：
+### 1. Middleware 是什么
+
+**Middleware 是 Traefik 的请求处理中间件**，作用于请求从**入口点（entrypoint）到后端服务
+（service）**之间的路径上，可以对请求进行**修改、校验、拦截、重定向**等操作。
+
+在 IngressRoute 中，middleware 通过 `middlewares` 字段引用，作用顺序为：
+**入口点 → middleware → service**。
+
+```
+请求 → 入口点(web/websecure) → [middleware 链] → 后端 Service
+```
+
+### 2. Middleware 的作用
+
+| 作用类型 | 说明 | 示例 |
+|---|---|---|
+| **拦截/重定向** | 不满足条件的请求直接拦截或跳转 | HTTPS 跳转、IP 白名单 |
+| **认证** | 验证请求者身份 | BasicAuth、ForwardAuth |
+| **修改请求** | 添加/删除/修改请求头或路径 | 添加 X-Forwarded-Proto、重写路径 |
+| **限流** | 限制请求频率 | RateLimit（本集群未用） |
+
+### 3. 如何查看
+
+```bash
+# 列出所有 middleware
+kubectl get middleware -A
+
+# 查看某个 middleware 的详细配置（含类型和参数）
+kubectl get middleware <namespace>/<name> -o yaml
+
+# 查看哪些 IngressRoute 引用了哪些 middleware
+kubectl get ingressroute -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}: {.spec.routes[*].middlewares[*].name}{"\n"}{end}'
+```
+
+### 4. 常见类型
+
+| 类型 | spec 字段 | 作用 |
+|---|---|---|
+| **HTTPS 跳转** | `redirectScheme` | HTTP → HTTPS 永久/临时跳转 |
+| **BasicAuth** | `basicAuth` | htpasswd 基础认证 |
+| **ForwardAuth** | `forwardAuth` | 转发前向认证服务校验 |
+| **Headers** | `headers` | 修改请求头 |
+| **IPAllow** | `ipAllowList` | IP 白名单 |
+| **路径重写** | `replacePathRegex` / `redirectRegex` | 路径重写/跳转 |
+
+### 5. 本集群 middleware 清单
+
+本集群 Traefik **有 16 个 middleware**，按类型分为 5 类：
 
 | 类型 | 数量 | middleware |
 |---|---|---|
@@ -238,7 +330,73 @@ Traefik 只负责把请求交给它。
 | **路径重写**（replacePathRegex/redirectRegex） | 2 | china-study-free/china-study-free-admin-root、traefik/traefik-root-redirect |
 | **IP 允许**（ipAllowList） | 1 | china-study-free/china-study-free-admin-allow |
 
-### 关键结论
+### 6. 各类 middleware 详解
+
+#### （1）HTTPS 跳转类（8 个）— 最常用
+
+**作用**：HTTP（80 入口）→ HTTPS（443 入口）永久跳转（301）。
+
+| middleware | 命名空间 | 原因 |
+|---|---|---|
+| `redirect-to-https` | argocd / monitoring | ArgoCD 和 Grafana 的 HTTP 入口跳转 |
+| `headlamp-https-redirect` | headlamp | Headlamp HTTP 入口跳转 |
+| `hubble-https-redirect` | kube-system | Hubble HTTP 入口跳转 |
+| `alloy-https-redirect` | logging | Alloy HTTP 入口跳转 |
+| `tekton-dashboard-https` | tekton-pipelines | Tekton HTTP 入口跳转 |
+| `traefik-https-redirect` | traefik | Traefik 自身 HTTP 入口跳转 |
+
+**原理**：浏览器访问 `http://xxx` → Traefik 检测到 web 入口 → middleware 返回 301 →
+浏览器跳转到 `https://xxx`。
+
+**为什么需要**：安全要求，所有对外服务必须走 HTTPS。每个需要 HTTPS 的业务都有一个
+对应的 HTTP 入口 IngressRoute，引用跳转 middleware。
+
+#### （2）BasicAuth 类（3 个）— 遗留配置，已失效
+
+**作用**：htpasswd 基础认证（用户名+密码）。
+
+| middleware | 命名空间 | 状态 |
+|---|---|---|
+| `hubble-ui-auth` | kube-system | **未被任何 IngressRoute 引用（遗留）** |
+| `alloy-ui-auth` | logging | **未被任何 IngressRoute 引用（遗留）** |
+| `tekton-dashboard-auth` | tekton-pipelines | **未被任何 IngressRoute 引用（遗留）** |
+
+**为什么存在**：这三个 middleware 是**切换到 oauth2-proxy 之前**的旧配置。当时 Hubble、
+Alloy、Tekton 用 Traefik BasicAuth 做认证，后来全部迁移到 oauth2-proxy（ReverseProxy 模式），
+这些 BasicAuth middleware 就没人引用了，但没清理。
+
+**当前状态**：已失效，不影响运行。如需清理可以删除。
+
+#### （3）转发头类（2 个）
+
+| middleware | 命名空间 | 配置 | 用途 |
+|---|---|---|---|
+| `argocd-forwarded-headers` | argocd | `X-Forwarded-Proto: https` | 让 ArgoCD 知道原始请求是 HTTPS，避免协议误判 |
+| `tekton-dashboard-strip-auth` | tekton-pipelines | `Authorization: ""` | 清空 Authorization 头，避免与 Tekton 自身的认证冲突 |
+
+**为什么需要**：
+- `argocd-forwarded-headers`：ArgoCD 需要知道客户端走的是 HTTPS，用于生成正确的回调地址和跳转链接。
+- `tekton-dashboard-strip-auth`：请求经过 Tekton Dashboard 时，可能带有其他认证头，需要清空避免冲突。
+
+#### （4）路径重写类（2 个）
+
+| middleware | 命名空间 | 配置 | 用途 |
+|---|---|---|---|
+| `china-study-free-admin-root` | china-study-free | `^/$` → `/admin/` | 根路径跳转到管理页面 |
+| `traefik-root-redirect` | traefik | `^https?://traefik.xyz/$` → `https://traefik.xyz/dashboard/` | Traefik 根路径跳转到 dashboard |
+
+**为什么需要**：这些服务的根路径本身不提供内容（返回 404），需要把根路径重写到实际页面。
+
+#### （5）IP 允许类（1 个）
+
+| middleware | 命名空间 | 配置 | 用途 |
+|---|---|---|---|
+| `china-study-free-admin-allow` | china-study-free | `10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16` | 管理后台仅允许内网 IP 访问 |
+
+**为什么需要**：china-study-free 的 admin 后台是内部管理功能，限制只有内网地址段可以访问，
+防止外网暴露。
+
+### 7. 关键结论
 
 1. **没有 ForwardAuth 类型的 middleware**。本集群所有 oauth2-proxy 认证的 UI
    （headlamp、hubble、alloy、tekton、traefik）都使用 **ReverseProxy 模式**，不使用 ForwardAuth。
@@ -252,6 +410,10 @@ Traefik 只负责把请求交给它。
 
 4. 5 个 oauth2-proxy 认证的 UI，其 websecure 入口 IngressRoute **均未引用任何 middleware**，
    直接指向 oauth2-proxy Service。
+
+5. **Middleware 核心理解**：Middleware 是 Traefik 的"请求过滤器/处理器"，在请求到达后端前介入。
+   本集群主要用它做 **HTTPS 跳转**（安全基线），认证则全部交给 oauth2-proxy（ReverseProxy 模式），
+   Traefik 自身不做认证。
 
 ---
 
