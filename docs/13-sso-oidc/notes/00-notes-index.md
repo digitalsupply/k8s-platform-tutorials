@@ -13,6 +13,7 @@
 | [06-argocd-helm-bootstrap.md](06-argocd-helm-bootstrap.md) | ArgoCD bootstrap 与 OIDC/RBAC |
 | [07-sealed-secrets.md](07-sealed-secrets.md) | Sealed Secrets 迁移记录 |
 | [08-gitlab-oauth-apps-oauth2-proxy.md](08-gitlab-oauth-apps-oauth2-proxy.md) | GitLab Admin 区 OAuth 应用管理（列含义/`oauth2-` 前缀）、OIDC 用户归属（root 证据）、三端原生 OIDC 配置、oauth2-proxy 的 K8s 形态（2026-11-18 实测补充） |
+| [09-oidc-identity-permissions-traefik-forwardauth.md](09-oidc-identity-permissions-traefik-forwardauth.md) | OIDC 身份（root）与各业务 dashboard 权限映射（Grafana/ArgoCD/Harbor/5 个 oauth2-proxy）、Traefik ForwardAuth 原理与 ReverseProxy 对比、Headlamp 访问路径、本集群 Traefik middleware 清单（2026-11-22 实测） |
 
 ## 阅读校正
 
