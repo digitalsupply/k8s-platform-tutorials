@@ -706,7 +706,7 @@ Keycloak 用 `preferred_username` 作为用户名，才能和 Ceph 用户对上�
 
 > **另外**：Ceph Dashboard 只允许**已存在**的用户登录。
 > 首次使用某个 SSO 用户前，要先创建同名 dashboard 用户：
-> `ceph dashboard ac-user-create <username> -r administrator`
+> `ceph -i <pwd文件> dashboard ac-user-create <username> administrator`
 > 否则登录后会被重定向到 `#/sso/404`。
 
 ### 坑 21：Ceph mgr 运行在 Docker 容器内
@@ -780,6 +780,47 @@ curl -s -o /dev/null -w '%{redirect_url}\n' \
 
 把 `redirect_uri` 参数原样填进 GitLab 应用即可。
 
+### 坑 23：`#/sso/404` 与 Keycloak 之间死循环——Ceph 里没有对应的 dashboard 用户
+
+**现象**：登录后页面在下面两个 URL 之间反复跳转，停不下来：
+
+```
+https://10.0.0.41:8443/#/sso/404
+http://10.0.0.121:32669/realms/ceph-sso/protocol/saml?SAMLRequest=...&RelayState=...
+```
+
+**原因**：Ceph 的 SAML 控制器**只做认证，不做授权**。
+拿到断言、从 `uid` 属性解析出用户名后，它会执行
+`mgr.ACCESS_CTRL_DB.get_user(username)`；用户不存在就抛 `UserDoesNotExist`，
+前端重定向到 `#/sso/404`。而 SSO 已经启用，页面再次触发
+`/auth/saml2/login`，Keycloak 里有会话 → 立刻重新签发断言 → 又是 404 → 死循环。
+
+**解决**：为断言里的用户名（本例是 GitLab 用户 `root`）预先创建 Ceph dashboard 用户：
+
+```bash
+printf 'CephSsoOnly@2026' > /tmp/root_pwd
+ceph -i /tmp/root_pwd dashboard ac-user-create root administrator
+
+# 确认
+ceph dashboard ac-user-show root
+# → {"username":"root","roles":["administrator"],"enabled":true,...}
+```
+
+**三个容易踩的细节**：
+
+1. **`-i` 是 ceph 命令的全局选项，必须写在 `dashboard` 之前**：
+   `ceph -i <file> dashboard ac-user-create ...`。
+   写成 `ceph dashboard ac-user-create root -i <file>` 会报
+   `Input file not specified`；
+2. **`-i` 指向的文件必须非空**（代码里有 `@CLICheckNonemptyFileInput`），
+   空文件同样报 `Input file not specified`。SSO 用户用不到密码，
+   写个占位密码即可，登录走 SSO 不会用到；
+3. **角色是位置参数，不是 `-r administrator`**。
+   命令格式：`ac-user-create <username> [<rolename>] [<name>] [<email>]`。
+
+> 建完用户后**刷新浏览器**（或清掉 dashboard 的 cookie）再登录，循环即被打破。
+> 后续用其他 GitLab 账号登录时，同样要先建同名 Ceph 用户。
+
 ## 四、注意事项
 
 1. **Keycloak 生产环境用 PostgreSQL**：dev 模式的 H2 内存数据库不持久化，
@@ -813,7 +854,7 @@ curl -s -o /dev/null -w '%{redirect_url}\n' \
     否则元数据里生成 `127.0.0.1`，SAML 跳转必然失败。
 
 11. **Ceph 用户要先存在**：SSO 只做认证，不做授权。
-    `ceph dashboard ac-user-create <username> -r administrator` 必须先建好，
+    `ceph -i <pwd文件> dashboard ac-user-create <username> administrator` 必须先建好，
     用户名要和 Keycloak 断言里的 `uid` 一致。
 
 12. **SAML 断言大小**：开启断言加密后，Keycloak 会把整个 Assertion 加密，
@@ -840,12 +881,13 @@ curl -s -o /dev/null -w '%{redirect_url}\n' \
 | Keycloak 端 SAML 签名/加密 | ✅ 完成 | 客户端要求签名 + 加密断言 |
 | **Ceph ← Keycloak 登录链路** | ✅ **验证通过** | Keycloak 本地用户 → SAML → Ceph 拿到 access_token |
 | **Keycloak ← GitLab 登录链路** | ✅ **已修复** | OAuth 回调地址改为 `10.0.0.121/ceph-sso`，scopes 正确，密钥已核对 |
-| 浏览器端完整人工验证 | ⏸ 待人工确认 | 需要一个 GitLab 用户 + 同名 Ceph dashboard 用户 |
+| **Ceph dashboard 用户 `root`** | ✅ **完成** | 为 GitLab 用户 `root` 创建 administrator 账号，解决 `#/sso/404` 死循环 |
+| 浏览器端完整人工验证 | ⏸ 待人工确认 | 刷新浏览器重试一次，确认能进入 Dashboard |
 
 **后续工作**：
-1. 用真实 GitLab 账号走一遍浏览器登录，确认 `uid` 映射与 Ceph 用户一致
-2. 为 GitLab 用户预先创建 Ceph dashboard 用户
-   （`ceph dashboard ac-user-create <gitlab-username> -r administrator`）
+1. 刷新浏览器（或清掉 dashboard cookie）重试 GitLab 登录，确认能进入 Dashboard
+2. 其他 GitLab 账号首次登录前，同样要先建同名 Ceph 用户：
+   `ceph -i <pwd文件> dashboard ac-user-create <username> administrator`
 3. 生产化：Keycloak 改用 `start`（非 dev 模式）+ HTTPS + 正式域名，
    `KC_HOSTNAME` 指向正式域名
 4. 证书轮换：SP 证书过期前重新生成并更新 Keycloak 客户端与 Ceph 配置
