@@ -730,6 +730,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [09-oidc-identity-permissions-traefik-forwardauth.md](notes/09-oidc-identity-permissions-traefik-forwardauth.md) | OIDC 身份与权限映射、Traefik ForwardAuth 原理 |
 | [10-keycloak-realm-concepts-integration.md](notes/10-keycloak-realm-concepts-integration.md) | Keycloak realm 概念、登录全流程、各系统对比、**各对接类型的 GitLab 侧/平台侧配置与账号映射（RBAC）**、注意事项 |
 | [11-keycloak-admin-token-cluster.md](notes/11-keycloak-admin-token-cluster.md) | `$ADMIN_TOKEN` 定义、集群获取步骤、Admin REST API 使用与排错 |
+| [12-keycloak-ceph-sso-account-and-topology.md](notes/12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` 账号来源/区别、Keycloak 上下游角色、GitLab 客户端与 Ceph IdP 对接说明 |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
