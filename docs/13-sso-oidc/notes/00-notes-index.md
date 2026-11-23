@@ -14,7 +14,7 @@
 | [07-sealed-secrets.md](07-sealed-secrets.md) | Sealed Secrets 迁移记录 |
 | [08-gitlab-oauth-apps-oauth2-proxy.md](08-gitlab-oauth-apps-oauth2-proxy.md) | GitLab Admin 区 OAuth 应用管理（列含义/`oauth2-` 前缀）、OIDC 用户归属（root 证据）、三端原生 OIDC 配置、oauth2-proxy 的 K8s 形态（2026-11-18 实测补充） |
 | [09-oidc-identity-permissions-traefik-forwardauth.md](09-oidc-identity-permissions-traefik-forwardauth.md) | OIDC 身份（root）与各业务 dashboard 权限映射（Grafana/ArgoCD/Harbor/5 个 oauth2-proxy）、Traefik ForwardAuth 原理与 ReverseProxy 对比、Headlamp 访问路径、本集群 Traefik middleware 清单（2026-11-22 实测） |
-| [10-keycloak-realm-concepts-integration.md](10-keycloak-realm-concepts-integration.md) | Keycloak 的 realm 概念与隔离范围、核心对象与 SAML/OIDC 登录全流程、本环境真实结构（realm/client/IdP/GitLab 9 个 OAuth 应用）、Keycloak↔GitLab↔Ceph 手动对接步骤、Keycloak 与 GitLab/ArgoCD/Grafana/oauth2-proxy/Ceph 的区别（2026-11-23 实测） |
+| [10-keycloak-realm-concepts-integration.md](10-keycloak-realm-concepts-integration.md) | Keycloak 的 realm 概念与隔离范围、核心对象与 SAML/OIDC 登录全流程、本环境真实结构（realm/client/IdP/GitLab 9 个 OAuth 应用）、Keycloak↔GitLab↔Ceph 手动对接步骤、Keycloak 与 GitLab/ArgoCD/Grafana/oauth2-proxy/Ceph 的区别、**各对接类型的 GitLab 侧与平台侧配置步骤、GitLab root 在各平台的账号映射与 RBAC 配置、注意事项**（2026-11-23 实测） |
 
 ## 阅读校正
 

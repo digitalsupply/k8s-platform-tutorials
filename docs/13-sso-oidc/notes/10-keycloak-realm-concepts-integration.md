@@ -5,7 +5,9 @@
 > Ceph Reef 18.2.8（Dashboard `https://10.0.0.41:8443`，只支持 SAML 2.0）；
 > 平台既有 OIDC 系统：ArgoCD、Grafana、Harbor、Traefik/Headlamp/Alloy/Hubble/Tekton（oauth2-proxy）
 >
-> **性质**：概念解释 + 原理流程 + 各系统对比 + 本环境手动设置步骤。
+> **性质**：概念解释 + 原理流程 + 各系统对比 + **各对接类型的 GitLab 侧/平台侧配置步骤 + 账号映射与 RBAC** + 本环境手动设置步骤。
+> 账号映射的实测基础：GitLab 用户 `root`（id=1，email `gitlab_admin_526ef4@example.com`，
+> 组 `[deeptutor, digitalsupply]`）在 ArgoCD / Grafana / Harbor / Keycloak / Ceph / oauth2-proxy 各侧的落点。
 > 与 [01-sso-overview.md](01-sso-overview.md)（总体方案）、[04-keycloak-basicauth-forwardauth.md](04-keycloak-basicauth-forwardauth.md)（Keycloak 与 basicAuth 的区别）、
 > [08-gitlab-oauth-apps-oauth2-proxy.md](08-gitlab-oauth-apps-oauth2-proxy.md)（oauth2-proxy）、
 > [09-oidc-identity-permissions-traefik-forwardauth.md](09-oidc-identity-permissions-traefik-forwardauth.md)（身份与权限映射）互补。
@@ -463,7 +465,512 @@ GitLab 是**身份源头**，平台里每接入一个系统就建一个 OAuth �
 
 ---
 
-## 七、手动设置完整步骤（结合本环境，可照抄）
+## 七、不同对接类型的配置与账号映射（GitLab 侧 / ArgoCD 侧 / Keycloak 侧 / oauth2-proxy 侧）
+
+> 本环境实测账号映射基础数据（GitLab，2026-11-23）：
+
+```
+GitLab 用户 root（id=1）
+  name      = lei hao
+  email     = gitlab_admin_526ef4@example.com
+  groups    = [deeptutor, digitalsupply]
+
+GitLab 组 digitalsupply（id=2）
+  members   = [root, group_2_bot_35e9209087a1fe4fbd59b1682cceb642]
+```
+
+下面所有映射都基于这一条身份记录。
+
+### 7.1 账号映射的总原则
+
+GitLab 是**唯一身份源**，各平台不自己建用户，而是从 OIDC 返回的 **claims** 里取身份。
+OIDC 里与"我是谁"相关的标准 claim：
+
+| Claim | 含义 | 本环境 root 的值 |
+|---|---|---|
+| `sub` | 用户唯一标识（稳定，但可读性差） | `1`（GitLab 用户 id） |
+| `preferred_username` | 用户名 | `root` |
+| `email` | 邮箱 | `gitlab_admin_526ef4@example.com` |
+| `name` | 姓名 | `lei hao` |
+| `groups` | 所属组（需 GitLab 侧开启/应用申请） | `["deeptutor","digitalsupply"]` |
+
+映射分三个维度，**不同平台用的维度不一样**，这是配置时最容易搞错的地方：
+
+| 维度 | 说明 | 本环境用到的平台 |
+|---|---|---|
+| **用户标识** | 用 `preferred_username` / `email` / `sub` 区分是谁 | 全部平台 |
+| **组** | 用 `groups` 做批量授权 | ArgoCD、Grafana、Harbor |
+| **角色** | 由平台按规则把身份翻译成自己的角色 | ArgoCD（role:admin）、Grafana（GrafanaAdmin）、Ceph（administrator） |
+
+**三种接入类型的映射差异**：
+
+| 接入类型 | 平台从哪个 claim 取身份 | 授权在哪一层配 | 本环境 root 的授权结果 |
+|---|---|---|---|
+| **原生 OIDC**（ArgoCD、Grafana） | `groups` / `email` / `nickname`，按平台规则翻译 | 平台自己的 RBAC（rbac-cm / role_attribute_path） | ArgoCD `role:admin`；Grafana `GrafanaAdmin` |
+| **oauth2-proxy**（oauth2-headlamp、oauth2-traefik） | 默认取 `email` 作为用户标识，透传 `X-Auth-Request-*` 头 | **后端自己做**（本环境后端不校验） | 无授权，登录即全访问 |
+| **Keycloak 桥接**（Ceph） | `preferred_username → Keycloak username → SAML uid` | **Ceph dashboard 用户表** | Ceph `administrator` |
+
+**一条完整映射链**（root 的旅程）：
+
+```
+GitLab root
+   │  OIDC claims: sub=1, preferred_username=root, email=gitlab_admin_526ef4@example.com,
+   │                groups=[deeptutor, digitalsupply], name=lei hao
+   │
+   ├─→ ArgoCD     groups 里的 digitalsupply → policy.csv g, digitalsupply → role:admin
+   ├─→ Grafana    nickname=root / groups 含 digitalsupply → role_attribute_path → GrafanaAdmin
+   ├─→ oauth2-proxy(headlamp)  email → X-Auth-Request-User，无授权
+   ├─→ Keycloak   preferred_username=root → 本地用户 root（仅认证，无角色）
+   │      └─→ Ceph  uid=root → dashboard 用户 root → administrator
+   └─→ Harbor     groups 含 digitalsupply → admin（oidc_admin_group=digitalsupply）
+```
+
+### 7.2 GitLab 侧：为每种对接类型建 OAuth 应用
+
+**通用规则**（适用于所有对接类型）：
+
+| 规则 | 说明 |
+|---|---|
+| **一个对接方一个应用** | 回调地址各不相同，共用一个应用会导致 redirect_uri 冲突 |
+| **redirect_uri 精确匹配** | 协议、主机、端口、路径一个字符都不能差，GitLab **登录后才校验** |
+| **scopes 至少 `openid profile email`** | 少 `profile`/`email` 就取不到用户名和邮箱 |
+| **需要 groups 就申请 group 权限** | GitLab 的 id_token 默认带 `groups`，但应用要申请到相应 scope |
+| **confidential=true** | 机密客户端，secret 用 Secret/SealedSecret 保存，不写进仓库 |
+| **organization_id 必填** | GitLab 19.5 的 `oauth_applications` 有 `CHECK (organization_id IS NOT NULL)` |
+
+**现有 9 个应用与用途对照**：
+
+| # | 应用名 | redirect_uri | 使用方 | 接入类型 |
+|---|---|---|---|---|
+| 1 | `grafana` | `https://grafana.k8s.local/login/generic_oauth` | Grafana | 原生 OIDC |
+| 2 | `argocd` | `https://argocd.devops.com/auth/callback` | ArgoCD | 原生 OIDC |
+| 3 | `harbor` | `https://192.168.67.202:8443/c/oidc/callback` | Harbor | 原生 OIDC |
+| 4 | `oauth2-headlamp` | `https://headlamp.devops.com/oauth2/callback` | oauth2-proxy | 反向代理 |
+| 5 | `oauth2-traefik` | `https://traefik.xyz/oauth2/callback` | oauth2-proxy | 反向代理 |
+| 6 | `oauth2-alloy` | `https://alloy.xyz/oauth2/callback` | oauth2-proxy | 反向代理 |
+| 7 | `oauth2-hubble` | `https://hubble.xyz/oauth2/callback` | oauth2-proxy | 反向代理 |
+| 8 | `oauth2-tekton` | `https://tekton.xyz/oauth2/callback` | oauth2-proxy | 反向代理 |
+| 9 | `keycloak` | `http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint` | Keycloak | 协议桥接 |
+
+**建应用的三种方式**：
+
+1. **Admin UI**：GitLab → Admin Area → Applications → New application（适合少量、手动场景）
+2. **API**（推荐，可脚本化、可纳入 GitOps）：
+
+```bash
+# 仓库里已有脚本：docs/13-sso-oidc/scripts/gitlab-create-oauth-app.sh
+export GITLAB_TOKEN='<admin api token>'
+export GITLAB_URL='http://192.168.67.201'
+APP_NAME=oauth2-headlamp
+REDIRECT_URI=https://headlamp.devops.com/oauth2/callback
+SCOPES='openid profile email'
+
+curl -X POST "http://192.168.67.201/api/v4/applications" \
+  -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --data-urlencode "name=${APP_NAME}" \
+  --data-urlencode "redirect_uri=${REDIRECT_URI}" \
+  --data-urlencode "scopes=${SCOPES}" \
+  --data-urlencode "confidential=true"
+# secret 只返回一次，立刻写入 Secret / SealedSecret
+```
+
+3. **gitlab-rails runner**（API 权限不足、或需要指定 `organization_id` 时）：
+
+```ruby
+# /tmp/create_oauth.rb
+require 'oauth2'
+oauth = OAuth2::Client.new(
+  "http://192.168.67.201/oauth/token",
+  "http://192.168.67.201/oauth/authorize",
+  client_id: "x", client_secret: "y"
+)
+# 或直接走内部模型/SQL，务必带上 organization_id
+```
+
+> 应用的 **client secret 只返回一次**，丢失后只能删掉重建（会中断在用的服务）。
+> 建议创建后立刻加密存进 K8s Secret，仓库里只放 client_id。
+
+**验证 GitLab 侧配置**：
+
+```bash
+# OIDC 发现（GitLab 是否暴露 OIDC）
+curl -s http://192.168.67.201/.well-known/openid-configuration | python3 -m json.tool | head -20
+
+# 授权端点是否接受该应用（未登录会 302 到 /users/sign_in，说明 client_id/redirect_uri 被接受）
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -G \
+  "http://192.168.67.201/oauth/authorize" \
+  --data-urlencode "client_id=<client_id>" \
+  --data-urlencode "redirect_uri=<redirect_uri>" \
+  --data-urlencode "response_type=code" --data-urlencode "scope=openid profile email"
+```
+
+### 7.3 ArgoCD：OIDC 配置 + RBAC（GitLab root → role:admin）
+
+#### 7.3.1 GitLab 侧
+
+建 `argocd` 应用：redirect_uri = `https://argocd.devops.com/auth/callback`，
+scopes = `openid profile email`，confidential。
+
+client_id：`7cde3dbfe3800036588275af741b36e60d882b18acda08cf25bc9637200038fe`
+client secret：存进 argocd 命名空间的 Secret `argocd-oauth`（key `client-secret`）
+
+#### 7.3.2 ArgoCD 侧：`argocd-cm` 的 OIDC 配置（真实值）
+
+```yaml
+# kubectl -n argocd edit cm argocd-cm
+data:
+  oidc.config: |
+    name: GitLab
+    issuer: http://192.168.67.201
+    clientID: 7cde3dbfe3800036588275af741b36e60d882b18acda08cf25bc9637200038fe
+    clientSecret: $argocd-oauth:client-secret     # 引用 Secret，不写明文
+    requestedScopes: ["openid", "profile", "email"]
+    requestedIDTokenClaims:
+      groups:
+        essential: true                            # 强制 GitLab 在 id_token 里返回 groups
+    enablePKCEAuthentication: true
+```
+
+要点：
+
+- `issuer` 必须与 GitLab 的 `/.well-known/openid-configuration` 里的 `issuer` **完全一致**；
+- `requestedIDTokenClaims.groups.essential: true` 是 **RBAC 能按组授权的前提**，
+  GitLab 没返回 `groups` 时，`policy.csv` 里所有 `g,` 规则都不生效；
+- `clientSecret` 用 `$argocd-oauth:client-secret` 引用，格式是 `$<secret名>:<key名>`。
+
+#### 7.3.3 ArgoCD 侧：`argocd-rbac-cm`（真实值）
+
+```yaml
+# kubectl -n argocd edit cm argocd-rbac-cm
+data:
+  policy.csv: |
+    g, digitalsupply, role:admin
+    g, gitlab_admin_526ef4@example.com, role:admin
+  policy.default: role:readonly
+  policy.matchMode: glob
+  scopes: '[groups, email]'
+```
+
+**逐行解释**：
+
+| 行 | 含义 |
+|---|---|
+| `g, digitalsupply, role:admin` | **group 规则**：`g` 前缀表示匹配身份的 `groups`，组 `digitalsupply` 的成员给 `role:admin`。root 在 GitLab 属于 `digitalsupply`，所以拿到 admin |
+| `g, gitlab_admin_526ef4@example.com, role:admin` | 同样是 `g` 规则，但匹配的是 `scopes` 里声明的 **email**：ArgoCD 把 email 也当作一个"组名"来匹配。这是给 root 的**显式兜底授权** |
+| `policy.default: role:readonly` | 不匹配任何规则的人只给只读 |
+| `policy.matchMode: glob` | 规则值支持 glob（`*`、`?`） |
+| `scopes: '[groups, email]'` | **声明从哪些 claim 里取匹配主体**。只有把 `email` 加进来，上面那条 email 形式的规则才会被匹配 |
+
+> `scopes` 是关键：不写 `email`，`g, gitlab_admin_526ef4@example.com` 这行**不会生效**。
+> `g` = group，`u` = user，`p` = project；第一列写什么，取决于 `scopes` 里有哪些来源。
+
+#### 7.3.4 手动步骤
+
+```bash
+# 1) GitLab 建应用（见 7.2），记录 client_id / secret
+
+# 2) 把 secret 存进 argocd 命名空间
+kubectl -n argocd create secret generic argocd-oauth \
+  --from-literal=client-secret='<client_secret>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+# 生产环境用 SealedSecret，避免明文进仓库
+
+# 3) 配置 OIDC
+kubectl -n argocd edit cm argocd-cm
+#   → 在 data 里填 oidc.config（见 7.3.2）
+
+# 4) 配置 RBAC
+kubectl -n argocd edit cm argocd-rbac-cm
+#   → 按 7.3.3 填写 policy.csv / policy.default / matchMode / scopes
+
+# 5) 重启 argocd-server 让 OIDC 配置生效（RBAC 变更可热加载）
+kubectl -n argocd rollout restart deploy/argocd-server
+kubectl -n argocd rollout status deploy/argocd-server
+```
+
+#### 7.3.5 验证
+
+```bash
+# 看当前登录用户是谁、属于哪些组
+argocd account get-current-user
+# 或
+argocd admin account get-user gitlab_admin_526ef4@example.com
+
+# 检查 RBAC 解析结果
+argocd admin RBAC get
+
+# 用 API 看身份映射（需要先拿到 session token）
+curl -s "https://argocd.devops.com/api/v1/account" -H "Authorization: bearer <token>" | python3 -m json.tool
+```
+
+**验证要点**：登录后 `get-current-user` 应显示 `gitlab_admin_526ef4@example.com`，
+`RBAC get` 应能看到它命中 `role:admin`；若只拿到 readonly，
+优先检查 `scopes` 是否包含 `email`、`requestedIDTokenClaims.groups` 是否生效。
+
+### 7.4 Keycloak：账号映射与 RBAC（GitLab root → Ceph administrator）
+
+#### 7.4.1 映射链（四跳，每一跳都是一个坑点）
+
+```
+① GitLab id_token   preferred_username = root
+② Keycloak broker   按 syncMode=IMPORT，用 preferred_username 建/更新本地用户
+                    → realm ceph-sso 里的用户 username = root
+③ Keycloak 断言      protocol mapper「uid」把 username 映射成 SAML 属性 uid=root
+④ Ceph Dashboard    从 uid 取用户名，查 dashboard 用户表
+                    → 必须存在用户 root，且角色是 administrator
+```
+
+**本环境实测**：Keycloak 侧 **没有做任何授权**——
+`ceph-sso` realm 的角色只有 `default-roles-ceph-sso`、`offline_access`、`uma_authorization`
+（全是默认角色），`root` 用户没有 realm 角色，也没有组。
+**授权发生在 Ceph 侧**（dashboard 用户的角色）。
+
+#### 7.4.2 Ceph 侧授权配置（实际生效的）
+
+```bash
+# 建用户（SSO 用户也必须先存在，否则 #/sso/404 死循环）
+printf 'CephSsoOnly@2026' > /tmp/root_pwd
+ceph -i /tmp/root_pwd dashboard ac-user-create root administrator
+
+# 改角色
+ceph dashboard ac-user-set-roles root administrator
+
+# 确认
+ceph dashboard ac-user-show root
+# → {"username":"root","roles":["administrator"],"enabled":true}
+```
+
+#### 7.4.3 如果想让 Keycloak 侧也做授权（本环境未启用，供扩展）
+
+Keycloak 可以通过 **realm 角色 / 组 + protocol mapper** 把角色写进断言或 token：
+
+1. 在 realm 建角色：`POST /admin/realms/ceph-sso/roles` → `{"name":"ceph-admin"}`
+2. 把角色分配给用户：`POST /admin/realms/ceph-sso/users/{root-id}/role-mappings/realm` → `[{"id":..,"name":"ceph-admin"}]`
+3. 给 SAML client 加 **角色映射 mapper**（`saml-role-list-mapper`）：
+   - `attribute.name` = `roles`（下发给断言的属性名）
+   - `single.attribute.value` / `single.attribute.name` 按需配置
+4. 或用 **client scope** 挂 mapper，让多个 client 复用同一套角色映射
+5. Ceph 侧可改用自定义属性名（`ceph dashboard sso setup saml2 ... <idp_username_attribute>` 只改用户名属性，
+   角色仍需在 Ceph 内维护——Ceph 目前不读 SAML 角色属性）
+
+> 结论：**当前架构下 Keycloak 只做认证和协议转换，授权统一在各业务系统自己的用户表里**
+> （Ceph 用 dashboard 用户，ArgoCD 用 rbac-cm，Grafana 用 role_attribute_path）。
+> 这也是"认证集中、授权分散"的常见做法，避免把业务权限模型搬进 IdP。
+
+#### 7.4.4 手动步骤与验证
+
+```bash
+# 1) GitLab 建 keycloak 应用（见 7.2）：redirect_uri 必须是
+#    http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint
+
+# 2) Keycloak 导入 realm + IdP（见第四节），设置 KC_HOSTNAME
+
+# 3) 建 SAML client + uid mapper（见第五节），移除 role_list scope
+
+# 4) Ceph 建用户（见 7.4.2）
+
+# 5) 验证 Keycloak 侧的用户映射
+curl -s "http://10.0.0.121:32669/admin/realms/ceph-sso/users?username=root&exact=true" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -m json.tool
+
+# 6) 验证断言里的属性（临时把 saml.encrypt 关掉后抓 SAMLResponse 解码）
+#    应能看到 <saml:Attribute Name="uid">root</saml:Attribute>
+
+# 7) 端到端验证（见 Ceph 那篇文档的步骤 6）
+```
+
+### 7.5 oauth2-proxy（oauth2-headlamp / oauth2-traefik）
+
+#### 7.5.1 GitLab 侧
+
+建应用：名字 `oauth2-headlamp`，
+redirect_uri = `https://headlamp.devops.com/oauth2/callback`，
+scopes = `openid profile email`。
+
+client_id：`0217d40851fad8c6fa09f1ff3464d5fae1531b93802f6a56501bd24644f5b4cc`
+
+#### 7.5.2 oauth2-proxy 侧配置（真实值）
+
+Deployment 关键 `args`：
+
+```yaml
+args:
+  - --provider=oidc
+  - --oidc-issuer-url=http://192.168.67.201
+  - --provider-display-name=GitLab
+  - --email-domain=*                                  # 内网放宽：不限制邮箱域名
+  - --insecure-oidc-allow-unverified-email=true       # 内网放宽：允许未验证邮箱
+  - --scope=openid profile email
+  - --code-challenge-method=S256
+  - --oidc-groups-claim=groups
+  - --redirect-url=https://headlamp.devops.com/oauth2/callback
+  - --cookie-secure=true
+  - --cookie-samesite=lax
+  - --cookie-expire=24h
+  - --reverse-proxy=true                              # 反向代理模式
+  - --set-xauthrequest=true                          # 透传 X-Auth-Request-* 头给后端
+  - --skip-provider-button=true                      # 不显示"选择账号"，直接走 GitLab
+  - --http-address=0.0.0.0:4180
+  - --upstream=http://headlamp.headlamp.svc.cluster.local:80
+  - --silence-ping-logging=true
+env:
+  - name: OAUTH2_PROXY_CLIENT_ID
+    value: 0217d40851fad8c6fa09f1ff3464d5fae1531b93802f6a56501bd24644f5b4cc
+  - name: OAUTH2_PROXY_CLIENT_SECRET
+    valueFrom: {secretKeyRef: {name: oauth2-headlamp, key: client-secret}}
+  - name: OAUTH2_PROXY_COOKIE_SECRET
+    valueFrom: {secretKeyRef: {name: oauth2-headlamp, key: cookie-secret}}
+```
+
+IngressRoute（Traefik）把外部域名指向 oauth2-proxy 的 4180：
+
+```yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: headlamp
+spec:
+  entryPoints: [websecure]
+  routes:
+  - kind: Rule
+    match: Host(`headlamp.devops.com`)
+    services:
+      name: oauth2-proxy-headlamp     # 或对应 Service
+      port: 4180
+```
+
+#### 7.5.3 账号映射
+
+- oauth2-proxy **不做授权**，它只认证 + 管会话 cookie；
+- 身份通过 **`X-Auth-Request-*` 请求头**透传给后端（需要 `--set-xauthrequest=true`）：
+
+| 头 | 来源 | 本环境 root 的值 |
+|---|---|---|
+| `X-Auth-Request-User` | `--oidc-email-claim`（默认 `email`；旧名 `--user-id-claim` 已弃用） | `gitlab_admin_526ef4@example.com` |
+| `X-Auth-Request-Email` | email claim | `gitlab_admin_526ef4@example.com` |
+| `X-Auth-Request-Groups` | `--oidc-groups-claim`（本环境设为 `groups`） | `deeptutor,digitalsupply` |
+| `X-Auth-Request-Preferred-Username` | 用户名 | `root` |
+
+- 想让 `X-Auth-Request-User` 用用户名而不是邮箱，加 `--oidc-email-claim=preferred_username`；
+- **后端必须自己读取这些头做授权**。本环境的 Headlamp/Traefik/Alloy/Hubble/Tekton
+  都没有做细粒度校验，**登录即全访问**（见 09 号文档的权限映射表）。
+
+#### 7.5.4 手动步骤
+
+```bash
+# 1) GitLab 建应用（见 7.2），记录 client_id / secret
+
+# 2) 建 Secret（client secret + cookie secret）
+kubectl -n oauth2-proxy create secret generic oauth2-headlamp \
+  --from-literal=client-secret='<client_secret>' \
+  --from-literal=cookie-secret='<随机长串，如 openssl rand -base64 48>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 3) 部署 oauth2-proxy（Deployment + Service，见 7.5.2）
+#    Service 端口 4180，selector 匹配 oauth2-proxy-headlamp
+
+# 4) 配置 Traefik IngressRoute，把 headlamp.devops.com 指向 oauth2-proxy 的 4180
+
+# 5) 验证
+kubectl -n oauth2-proxy get pods,svc
+# 未登录访问应返回 401 + Location 指向 GitLab 授权地址
+curl -sk -o /dev/null -w '%{http_code} %{redirect_url}\n' https://headlamp.devops.com/
+# → 401 https://192.168.67.201/oauth/authorize?...
+```
+
+**若要做授权**（本环境未做）：
+
+- 方案 A：后端自己读 `X-Auth-Request-Groups` 校验（需要在后端加代码）；
+- 方案 B：用 Traefik **ForwardAuth** 模式，让 Traefik 拿 oauth2-proxy 的判定结果做放行/拦截，
+  配合 GitLab 组做规则（见 09 号文档的 ForwardAuth 章节）；
+- 方案 C：oauth2-proxy 的 `--whitelist-domain` 只限制能登录的域名，**不是授权**，别误用。
+
+### 7.6 账号映射汇总（root 在各平台的最终结果）
+
+| 平台 | 取的 claim | 配置位置 | root 的结果 |
+|---|---|---|---|
+| ArgoCD | `groups` / `email` | `argocd-rbac-cm` | `role:admin` |
+| Grafana | `nickname` / `groups` | `role_attribute_path` | `GrafanaAdmin` |
+| Harbor | `groups` | Harbor `oidc_admin_group=digitalsupply` | admin |
+| Keycloak | `preferred_username` | realm IdP `syncMode=IMPORT` | 用户 `root`，无角色 |
+| Ceph Dashboard | SAML `uid` | `ceph dashboard ac-user-*` | 用户 `root` + `administrator` |
+| oauth2-proxy(headlamp/traefik) | `email`（默认） | `--oidc-email-claim` / `--oidc-groups-claim` | 透传头，无授权 |
+
+### 7.7 注意事项
+
+#### GitLab 侧
+
+1. **redirect_uri 必须逐字符一致**，GitLab **登录后才校验**：
+   未登录用 curl 测只会得到 302 到 `/users/sign_in`，看不出问题。
+   改了 Keycloak 的 `KC_HOSTNAME`、realm 名、IdP 别名后，GitLab 应用的回调地址必须同步改。
+2. **secret 只返回一次**，立即加密存进 K8s Secret / SealedSecret；
+   丢失只能删应用重建，会中断正在使用该应用的服务。
+3. **scopes 至少 `openid profile email`**：只有 `openid` 拿不到 `preferred_username`/`email`，
+   下游要么生成不可读的用户名，要么直接授权失败。
+4. **groups 不是默认全给**：需要组授权的平台（ArgoCD/Grafana/Harbor）要在应用里申请到组权限，
+   并确认 id_token 里确实返回了 `groups`（可用 `requestedIDTokenClaims.groups.essential: true` 强制）。
+5. **一个对接方一个应用**，不要共用：回调地址不同，共用必然报 redirect_uri 不合法。
+6. **GitLab 19.5 的 `oauth_applications` 有 `CHECK (organization_id IS NOT NULL)`**，
+   用 `gitlab-rails runner` 建应用时必须带上 `organization_id`。
+7. 改 GitLab 的 `external_url` 后，所有应用的 issuer 和回调地址都要同步。
+
+#### ArgoCD 侧
+
+1. **OIDC 配置改动必须重启 `argocd-server`** 才生效；RBAC（`argocd-rbac-cm`）是热加载的。
+2. **`scopes` 里没写 `email`，`g, <email>` 形式的规则不会生效**——这是最常见的"配了不生效"。
+3. **`requestedIDTokenClaims.groups.essential: true`** 是按组授权的前提；
+   GitLab 没返回 `groups` 时，所有 `g,` 规则都失效，用户只会落到 `policy.default`。
+4. `policy.csv` 第一列语义：`g`=组、`u`=用户、`p`=项目，**取决于 `scopes` 声明了哪些来源**。
+5. `clientSecret` 用 `$argocd-oauth:client-secret` 引用，**不要写明文**进 ConfigMap（ConfigMap 不是加密存储）。
+6. `policy.matchMode: glob` 时规则值支持 `*`，注意别写成过宽的 `*` 导致所有人拿到 admin。
+7. 验证用 `argocd admin account get-user <身份>` / `argocd admin RBAC get`，
+   不要只凭"能登录"判断授权正确。
+
+#### Keycloak 侧
+
+1. **映射链四跳，任何一跳断掉都表现为登录异常**，排查要逐跳验证：
+   GitLab claims → Keycloak 用户 → SAML 属性 → Ceph 用户。
+2. **Keycloak 默认只认证不授权**：本环境 realm 里没有自定义角色/组，
+   授权完全在业务系统。若要在 Keycloak 侧做授权，必须额外配角色 + role mapper + client scope。
+3. **用户名是最关键的一环**：`preferred_username` 决定 Keycloak 用户名，
+   再决定 SAML `uid`，最终决定 Ceph 里要建哪个用户。
+   改映射前先确认下游用户表里有没有同名用户。
+4. **realm 名、IdP 别名一旦变更，GitLab 应用的 redirect_uri 必须同步**
+   （回调地址里含 realm 和别名）。
+5. `syncMode`：`IMPORT` 首次登录建用户；`JIT` 每次登录同步属性；
+   需要用户属性变更实时生效时用 `JIT`，但要确认下游能接受。
+6. `defaultScope` 要包含 `profile email`，否则取不到用户名/邮箱。
+
+#### oauth2-proxy 侧
+
+1. **oauth2-proxy 只认证、不授权**，别把它当 RBAC 用；
+   要授权必须由后端或 Traefik ForwardAuth 实现。
+2. **要透传身份必须开 `--set-xauthrequest=true`**，否则后端拿不到任何用户信息。
+3. **`--oidc-email-claim` 默认是 `email`**（旧名 `--user-id-claim` 已弃用）：
+   用户标识会是邮箱而不是用户名，需要用户名时显式设 `--oidc-email-claim=preferred_username`。
+4. **`cookie-secret` 必须是随机长串**（如 `openssl rand -base64 48`），
+   泄露等于可以伪造会话；轮换会踢掉所有在线用户。
+5. **`--email-domain=*` 和 `--insecure-oidc-allow-unverified-email=true` 是内网简化配置**，
+   公网/对互联网暴露的服务不要用，改用域名白名单 + GitLab 侧成员权限控制。
+6. `--whitelist-domain` 只限制"谁能用这个域名登录"，**不是授权**。
+7. `--skip-provider-button=true` 适合单 IdP 场景；将来接多个 IdP 时要去掉，否则用户无法选择。
+
+#### 通用
+
+1. **先确认平台从哪个 claim 取身份**，再配授权——
+   ArgoCD 用 groups/email、Grafana 用 nickname/groups、Keycloak 用 preferred_username、
+   oauth2-proxy 默认用 email，配置前先看该平台的文档，别照抄。
+2. **测试顺序**：先验证 OIDC discovery 和授权跳转（未登录 302），
+   再验证用户映射（登录后身份是否正确），最后验证授权（角色是否符合预期）。
+   顺序反了会浪费大量时间。
+3. **授权变更与身份变更要分开验证**：能登录 ≠ 授权正确，
+   要用平台的查询命令确认实际角色。
+4. **任何一方改 host/域名，三方都要同步**：GitLab 应用的 redirect_uri、
+   平台侧的 issuer/回调地址、浏览器访问的地址。
+5. **不要把 secret 写进仓库**：ConfigMap、YAML 文件都是明文，
+   用 SealedSecret / External Secrets / K8s Secret 管理。
+
+## 八、手动设置完整步骤（结合本环境，可照抄）
 
 ### 步骤 0：确认现状
 
@@ -602,7 +1109,7 @@ curl -sk -o /dev/null -w '%{http_code} %{redirect_url}\n' https://10.0.0.41:8443
 
 ---
 
-## 八、概念速查与常见坑
+## 九、概念速查与常见坑
 
 ### 1. 速查表
 
