@@ -192,6 +192,42 @@ Ceph Dashboard 的 SSO 只有 SAML 协议入口，GitLab 对外提供的是 OIDC
 | 持久化 | PostgreSQL：`pg16-ceph-rw.cnpg-system.svc.cluster.local:5432/keycloak`，用户 `keycloak` |
 | 关键环境变量 | `KC_HOSTNAME=http://10.0.0.121:32669`（决定元数据里的 URL） |
 
+#### 部署没有走 GitOps（实测确认）
+
+**Keycloak 是手工 `kubectl` 部署的，不在 ArgoCD 管理范围内。**证据：
+
+| 检查项 | 结果 |
+|---|---|
+| ArgoCD 应用列表 | 共 **43** 个应用，**没有任何 keycloak 相关的应用** |
+| Deployment / Service 的 `argocd.argoproj.io/tracking-id` 标签 | **不存在** |
+| Helm 的 `meta.helm.sh/release-name` 注解 | **不存在** |
+| `platform-gitops` 仓库 `platform/sso/` 目录 | 只有 `oauth2-proxy` 的清单和文档，**没有 Keycloak 部署清单** |
+| `keycloak-admin-secret` | 手工创建的 `Opaque` Secret，**不是 SealedSecret** |
+| 资源创建时间 | `2026-11-22T14:40:19Z`，与手工部署时间吻合 |
+
+**原因**：当时 Helm 仓库 `charts.keycloak.org` **DNS 不可达**（内网环境），
+所以放弃 Helm，改用裸 `Deployment` + `NodePort` 直接 `kubectl apply`。
+（镜像源也从 `quay.io` 换成了 `docker.io`，见 Ceph 那篇文档的坑 1。）
+
+**带来的问题**：
+
+- 后续所有调整（加 PostgreSQL、设 `KC_HOSTNAME`、建 SAML client、导入 realm）
+  都是 `kubectl patch` / Admin API 操作，**不在 Git 里**；
+- 没有版本记录、无法审计、无法回滚，重建集群要全部重做一遍；
+- 与集群里其他 43 个由 ArgoCD 管理的应用**不一致**。
+
+**补进 GitOps 的做法**（本集群的约定）：
+
+1. 在 `platform-gitops` 仓库新增 `platform/sso/keycloak/`，写入：
+   `Namespace`、`SealedSecret`（管理员密码、DB 密码）、`Deployment`、`Service`；
+2. 在 `clusters/prod/applications/` 新增 `platform-keycloak.yaml`
+   （`app-of-apps` 会自动创建 Application，格式参照 `platform-sso-oauth2-proxy.yaml`）；
+3. 资源已存在，用 `argocd app adopt` 让 ArgoCD **接管**而不是重建
+   （否则 `prune: true` 会先删掉再创建，导致短暂中断）；
+4. **注意**：GitOps 只能管**部署**（Deployment/Service/Secret），
+   **管不到 realm 内容**（realm、client、IdP 配置都在 PostgreSQL 的运行期数据里）。
+   要声明式管理 realm，需要额外做 realm 导入（initContainer 或 Admin API 脚本）。
+
 ### 2. `ceph-sso` realm 的内容
 
 | 对象 | 值 | 说明 |
