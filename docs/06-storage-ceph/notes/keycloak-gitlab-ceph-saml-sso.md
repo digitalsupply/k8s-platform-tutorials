@@ -821,6 +821,72 @@ ceph dashboard ac-user-show root
 > 建完用户后**刷新浏览器**（或清掉 dashboard 的 cookie）再登录，循环即被打破。
 > 后续用其他 GitLab 账号登录时，同样要先建同名 Ceph 用户。
 
+### 坑 24：SAML 跳转后的登录框要填 **Keycloak** 的账号，不是 Ceph 的
+
+**现象**：访问 Dashboard 后跳到
+`http://10.0.0.121:32669/realms/ceph-sso/protocol/saml?SAMLRequest=...`，
+页面出现账号密码框，不知道该填谁的。
+
+**结论**：填 **Keycloak `ceph-sso` realm 里的用户**。
+**不是 Ceph 的账号，也不是 Keycloak 管理台的账号。**
+
+| 账号 | 归属 | 能不能填这个框 |
+|---|---|---|
+| Ceph dashboard 账号（`root` 等） | Ceph 用户表 | ❌ SAML 是断言式认证，Ceph 侧不接收密码 |
+| Keycloak 管理台 `admin` | Keycloak **master** realm | ❌ 不在 `ceph-sso` realm |
+| Keycloak `ceph-sso` realm 用户 | Keycloak 业务 realm | ✅ 就是它 |
+
+**原理**：Ceph 只负责**授权**——校验断言、从 `uid` 取用户名、查自己的用户表。
+**密码完全不参与**，所以没有"填 Ceph 密码"这一步。
+
+**本环境的实际账号**：
+
+- `ceph-sso` realm 的本地用户只有测试账号 `admin`（用于端到端验证）；
+- 业务用户 `root` 是 **GitLab 经 broker 进来的，没有本地密码**，
+  只能点页面上的 **"Or sign in with GitLab"** 用 GitLab 账号登录。
+
+> 想跳过本地表单、直接走 GitLab：把 browser 流程里的
+> **Identity Provider Redirector 改成 REQUIRED**、
+> **Username Password Form 改成 DISABLED**（Keycloak 管理台 → Realm → Authentication → Flows → browser）。
+> 详细步骤见 [10-keycloak-realm-concepts-integration.md 第 10.2 节](../../13-sso-oidc/notes/10-keycloak-realm-concepts-integration.md)。
+
+### 坑 25：退出后又被自动登录——SLO 链路没走完
+
+**现象**：点 Dashboard 的 logout 退出后，页面又自动跳回 Dashboard（已登录状态）。
+
+**先澄清机制**：Ceph 的退出**会**走 SAML 单点登出（SLO），本环境实测链路是通的：
+
+```
+POST /api/auth/logout → {"redirect_url": "auth/saml2/slo"}
+GET  /auth/saml2/slo   → 303 到 Keycloak（带 LogoutRequest）
+Keycloak 处理          → 销毁会话，302 回 /auth/saml2/logout?SAMLResponse=...
+Ceph /auth/saml2/logout → 303 到 /#/login
+```
+
+实测结果：走完这条链路后，Keycloak 的 `KEYCLOAK_IDENTITY` / `KEYCLOAK_SESSION`
+cookie 被清除，再次访问 `/auth/saml2/login` 会**重新要求认证**，不再自动登录。
+
+**所以出现自动登录，通常是下面几种原因**：
+
+1. **SLO 链路没走完**：退出时地址栏要经过
+   `10.0.0.41 → 10.0.0.121 → 10.0.0.41`。中途关页面、点"后退"、
+   或跨站跳转被浏览器拦截，Keycloak 的会话就没销毁。
+2. **浏览器第三方 Cookie 策略**：Keycloak 的会话 cookie 属于 `10.0.0.121`，
+   而页面在 `10.0.0.41`，属跨站 cookie，部分浏览器/隐私模式会限制其写入与清除。
+3. **存在多个会话**：SLO 只销毁 LogoutRequest 里 NameID 对应的那个会话，
+   其他账号的会话可能仍在。
+4. **退出的位置不对**：从 GitLab 或 Keycloak 页面退出，只清那一侧的会话。
+5. **`#/login` 会自动再触发登录**：退出后落在 `#/login`，页面发现没有 token
+   就立刻跳 `/auth/saml2/login`；只要 Keycloak 会话还在，这一跳就是"瞬间自动登录"。
+
+**彻底退出的办法**：
+
+- 退出时**盯着地址栏**，确认从 `10.0.0.121` 跳回 `10.0.0.41` 并停在 `#/login`；
+- 手动**删除 `10.0.0.121` 站点的 cookie**（重点是 `KEYCLOAK_IDENTITY`、`KEYCLOAK_SESSION`）；
+- 注意 **GitLab 的会话是独立的**，退出 Ceph 不会退出 GitLab。
+  若 Keycloak 已配置成自动跳 GitLab，而 GitLab 仍登录，下次登录会静默完成——
+  这是标准 SSO 行为，不是 bug。
+
 ## 四、注意事项
 
 1. **Keycloak 生产环境用 PostgreSQL**：dev 模式的 H2 内存数据库不持久化，
