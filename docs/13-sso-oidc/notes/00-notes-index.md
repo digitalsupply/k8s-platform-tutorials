@@ -17,6 +17,7 @@
 | [10-keycloak-realm-concepts-integration.md](10-keycloak-realm-concepts-integration.md) | Keycloak 的 realm 概念与隔离范围、核心对象与 SAML/OIDC 登录全流程、本环境真实结构（realm/client/IdP/GitLab 9 个 OAuth 应用）、Keycloak↔GitLab↔Ceph 手动对接步骤、Keycloak 与 GitLab/ArgoCD/Grafana/oauth2-proxy/Ceph 的区别、各对接类型的 GitLab 侧与平台侧配置步骤、GitLab root 在各平台的账号映射与 RBAC 配置、**登录页账号归属、认证流程（表单 vs GitLab 按钮）、SAML SLO 退出机制与"自动登录"成因**、注意事项（2026-11-23 实测） |
 | [11-keycloak-admin-token-cluster.md](11-keycloak-admin-token-cluster.md) | Keycloak `$ADMIN_TOKEN` 定义与集群获取/使用指南 |
 | [12-keycloak-ceph-sso-account-and-topology.md](12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` admin/root 账号、Keycloak 上下游与 GitLab/Ceph 对接角色说明 |
+| [13-keycloak-admin-console-guide.md](13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解（结合实际环境） |
 
 ## 阅读校正
 
