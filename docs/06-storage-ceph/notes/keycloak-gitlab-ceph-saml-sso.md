@@ -358,9 +358,25 @@ psql -U postgres -d keycloak -c "GRANT ALL ON SCHEMA public TO keycloak;"
 **现象**：切换到 PostgreSQL 后，SAML IdP 元数据端点
 `/realms/ceph-sso/protocol/saml/metadata` 等仍返回 **404**。
 
-**结论**：SAML 端点 404 **不是数据库问题**（H2 和 PostgreSQL 都一样）。
-是 Keycloak 26 的 SAML 协议端点配置问题，需要进一步排查 Keycloak 26 的
-SAML 协议注册机制。这是当前最大的阻塞点。
+**深入排查**：
+1. **SAML jar 存在**：容器内确认有 `keycloak-saml-core-26.3.4.jar` 和
+   `keycloak-saml-core-public-26.3.4.jar`，SAML 模块已打包；
+2. **`protocols` 字段无效**：通过 admin API 更新 realm 添加 `protocols: ["openid-connect","saml"]`
+   返回 400（`Unrecognized field "protocols"`）；导入 JSON 包含 `protocols` 字段也失败
+   （`unable to read contents from stream`）；
+3. **所有 SAML 端点路径 404**：探测了 `/protocol/saml/metadata`、
+   `/protocol/saml/idp/metadata`、`/protocol/saml/idp/login`、
+   `/protocol/saml/clients/ceph-dashboard/metadata` 等，全部 404；
+   `/protocol/saml` 返回 400（端点存在但需要参数）；
+4. **`--features=saml` 无效**：SAML 是核心协议，不是 feature flag。
+
+**结论**：SAML 端点 404 **不是数据库问题**（H2 和 PostgreSQL 都一样），
+**不是 SAML 模块缺失**（jar 存在），**不是配置问题**（protocols 字段无效）。
+是 Keycloak 26 的 **SAML 协议端点注册机制**问题——SAML IdP 端点未注册到
+Quarkus 路由中，导致所有 SAML 端点不可用。
+
+**这是当前最大的阻塞点**，需要进一步排查 Keycloak 26 的 SAML 协议注册机制
+（可能需要升级方案或不同的 Keycloak 版本/部署方式）。
 
 **当前状态**：Keycloak 已成功使用 PostgreSQL（`jdbc-postgresql` 驱动已安装），
 realm 和 SAML client 均已创建，但 SAML IdP 元数据端点不可用，
