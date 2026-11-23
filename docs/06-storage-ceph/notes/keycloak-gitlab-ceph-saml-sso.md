@@ -124,7 +124,20 @@ spec:
 
 Keycloak 对接 GitLab OIDC，需要在 GitLab 创建 OAuth 应用，记录 client_id 和 client_secret。
 
-**redirect URI**：`http://<K8s节点IP>:<NodePort>/realms/ceph-sso/broker/gitlab/endpoint`
+**redirect URI**（必须逐字符一致）：
+
+```
+http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint
+```
+
+格式是 `http://<Keycloak外部地址>/realms/<realm>/broker/<IdP别名>/endpoint`。
+其中主机/端口来自 `KC_HOSTNAME`，`realm` 和 `IdP 别名` 来自 Keycloak 配置。
+
+**scopes**：`openid profile email`（只有 `openid` 拿不到用户名和邮箱）。
+
+> GitLab 不支持回调地址通配符，也不接受"登录后再校验失败"的模糊匹配。
+> 应用建好之后如果改了 `KC_HOSTNAME` 或 realm 名，**必须同步更新这里**，
+> 否则登录时会报 `The redirect URI included is not valid`（见坑 22）。
 
 ### 步骤 4：Keycloak 配置
 
@@ -705,6 +718,68 @@ Keycloak 用 `preferred_username` 作为用户名，才能和 Ceph 用户对上�
 
 **解决**：在 mgr 容器内验证和操作：`docker exec <mgr-container> python3 ...`
 
+### 坑 22：GitLab OAuth 回调地址必须逐字符精确匹配（`redirect URI included is not valid`）
+
+**现象**：在 Keycloak 页面点 "GitLab" 登录，GitLab 返回：
+
+```
+An error has occurred
+The redirect URI included is not valid.
+```
+
+**原因**：GitLab 的 OAuth 应用回调地址必须与 Keycloak 发来的 `redirect_uri`
+**完全一致**（协议、主机、端口、路径，一个字符都不能差），不支持通配符。
+
+本例中应用注册的是创建时的旧地址：
+
+| 项 | 值 |
+|---|---|
+| GitLab 里注册的 | `http://10.0.0.61:32669/realms/master/broker/gitlab/endpoint` |
+| Keycloak 实际发送的 | `http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint` |
+
+主机（`10.0.0.61` → `10.0.0.121`）和 realm（`master` → `ceph-sso`）都不对。
+应用是在设置 `KC_HOSTNAME`、realm 改名之前创建的，所以留下了旧值。
+
+**排查技巧**：GitLab 会**先要求登录、登录后才校验** `redirect_uri`，
+所以用 curl 未登录访问 `/oauth/authorize` 只会得到 302 到 `/users/sign_in`，
+看不出问题。要直接查库：
+
+```ruby
+# /tmp/q.rb，然后 sudo gitlab-rails runner /tmp/q.rb
+rows = ActiveRecord::Base.connection.select_all(
+  "select id,name,uid,redirect_uri,scopes,confidential from oauth_applications"
+).to_a
+rows.each { |r| puts r.inspect }
+```
+
+**解决**：把 `redirect_uri` 改成 Keycloak 实际发送的地址。Admin UI 有时不允许
+编辑回调地址，可直接改库（改完立即生效，无需重启）：
+
+```ruby
+# /tmp/fix.rb
+uid = "<OAuth 应用的 uid>"
+new_uri = "http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint"
+ActiveRecord::Base.connection.execute(
+  ActiveRecord::Base.sanitize_sql(
+    ["update oauth_applications set redirect_uri = ? where uid = ?", new_uri, uid]
+  )
+)
+```
+
+> 注意：GitLab 19.5 的 `oauth_applications` 表**没有** `OAuthApplication` 这个
+> Ruby 模型常量（会报 `uninitialized constant OAuthApplication`），
+> 直接用 `ActiveRecord::Base.connection` 执行 SQL。
+
+**校验回调地址是否正确的简单办法**：看 Keycloak 实际发出去的 URL：
+
+```bash
+curl -s -o /dev/null -w '%{redirect_url}\n' \
+  'http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/login?...'
+# 或浏览器 F12 看 /oauth/authorize?...&redirect_uri=xxx
+```
+
+把 `redirect_uri` 参数原样填进 GitLab 应用即可。
+
 ## 四、注意事项
 
 1. **Keycloak 生产环境用 PostgreSQL**：dev 模式的 H2 内存数据库不持久化，
@@ -745,6 +820,11 @@ Keycloak 用 `preferred_username` 作为用户名，才能和 Ceph 用户对上�
     调试时看不到属性。需要排错时临时把 `saml.encrypt` 设为 `false`
     （同时 Ceph 侧不能要求加密），定位完再改回来。
 
+13. **GitLab OAuth 回调地址要精确匹配**：改 `KC_HOSTNAME`、改 realm 名、
+    改 IdP 别名后，GitLab 应用的 `redirect_uri` 必须同步更新，
+    否则登录时报 `The redirect URI included is not valid`。
+    GitLab 是**登录后才校验**，未登录用 curl 测不出来（见坑 22）。
+
 ## 五、当前状态与后续工作
 
 | 步骤 | 状态 | 说明 |
@@ -759,7 +839,7 @@ Keycloak 用 `preferred_username` 作为用户名，才能和 Ceph 用户对上�
 | Ceph Dashboard SAML 配置 | ✅ 完成 | `ceph dashboard sso setup saml2`（含 SP 证书） |
 | Keycloak 端 SAML 签名/加密 | ✅ 完成 | 客户端要求签名 + 加密断言 |
 | **Ceph ← Keycloak 登录链路** | ✅ **验证通过** | Keycloak 本地用户 → SAML → Ceph 拿到 access_token |
-| Keycloak ← GitLab 登录链路 | ✅ 重定向验证 | 跳到 GitLab `/oauth/authorize`，scope 正确；完整登录需 GitLab 账号 |
+| **Keycloak ← GitLab 登录链路** | ✅ **已修复** | OAuth 回调地址改为 `10.0.0.121/ceph-sso`，scopes 正确，密钥已核对 |
 | 浏览器端完整人工验证 | ⏸ 待人工确认 | 需要一个 GitLab 用户 + 同名 Ceph dashboard 用户 |
 
 **后续工作**：
