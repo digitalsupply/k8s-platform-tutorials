@@ -3,9 +3,10 @@
 > **场景**：Ceph Dashboard（Reef 18.2.8）只支持 SAML 2.0，不支持 OIDC。
 > GitLab 是 OIDC IdP，不是 SAML IdP。用 **Keycloak 做协议转换桥梁**：
 > GitLab（OIDC IdP）→ Keycloak（OIDC 客户端 + SAML IdP）→ Ceph Dashboard（SAML SP）。
-> **日期**：2026-11-22
+> **日期**：2026-11-22（2026-11-23 完成 SAML 链路打通）
 > **环境**：GitLab CE 19.5.0（192.168.67.201）；Keycloak 26.3.4（K8s 集群内）；
 > Ceph Reef 18.2.8（ceph-01/02/03，10.0.0.31/41/51）
+> **结果**：Ceph Dashboard ← Keycloak SAML 登录链路已端到端验证通过
 
 ---
 
@@ -92,6 +93,11 @@ spec:
           value: "keycloak"
         - name: KC_DB_PASSWORD
           value: "Keycloak@Db123"
+        # 外部访问地址（元数据里的 entityID/SSO URL 都基于它生成）
+        - name: KC_HOSTNAME
+          value: "http://10.0.0.121:32669"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
         ports:
         - containerPort: 8080
 ```
@@ -156,13 +162,51 @@ Keycloak 对接 GitLab OIDC，需要在 GitLab 创建 OAuth 应用，记录 clie
 
 ```json
 {
-  "clientId": "ceph-dashboard",
+  "clientId": "https://10.0.0.41:8443/auth/saml2/metadata",
   "name": "Ceph Dashboard",
   "enabled": true,
   "protocol": "saml",
-  "publicClient": false
+  "publicClient": false,
+  "frontchannelLogout": true,
+  "redirectUris": ["https://10.0.0.41:8443/auth/saml2*"],
+  "attributes": {
+    "saml.client.signature": "true",
+    "saml.signing.certificate": "<SP 证书 Base64，去掉 PEM 头尾>",
+    "saml.encryption.certificate": "<SP 证书 Base64，去掉 PEM 头尾>",
+    "saml.encrypt": "true",
+    "saml.server.signature": "true",
+    "saml.assertion.signature": "true",
+    "saml.authnstatement": "true",
+    "saml_name_id_format": "username",
+    "saml.force.post.binding": "true",
+    "saml_assertion_consumer_url_post": "https://10.0.0.41:8443/auth/saml2",
+    "saml_assertion_consumer_url_redirect": "https://10.0.0.41:8443/auth/saml2",
+    "saml_single_logout_service_url_redirect": "https://10.0.0.41:8443/auth/saml2/logout"
+  },
+  "protocolMappers": [
+    {
+      "name": "uid",
+      "protocol": "saml",
+      "protocolMapper": "saml-user-attribute-mapper",
+      "config": {
+        "user.attribute": "username",
+        "attribute.name": "uid",
+        "attribute.nameformat": "Basic",
+        "friendly.name": "uid",
+        "jsonType.label": "String"
+      }
+    }
+  ]
 }
 ```
+
+几个关键点：
+
+- **`clientId` 必须等于 Ceph 的 SP EntityID**：
+  `<dashboard_base_url>/auth/saml2/metadata`。不是随便起个名字。
+- **`uid` 属性映射**：Ceph 默认从断言的 `uid` 属性取用户名
+  （`idp_username_attribute`），所以要把 Keycloak 的 `username` 映射成 `uid`。
+- **`role_list` scope 必须移除**（见坑 17），否则断言里有重复的 `Role` 属性。
 
 通过 Admin API 创建：`POST /admin/realms/ceph-sso/clients`
 
@@ -171,19 +215,123 @@ Keycloak 对接 GitLab OIDC，需要在 GitLab 创建 OAuth 应用，记录 clie
    - IdP SSO URL
    - IdP 签名证书
 
-   标准路径：`GET /realms/ceph-sso/protocol/saml/metadata`
+   **正确路径**（Keycloak 26 实测）：
+
+   ```bash
+   GET /realms/ceph-sso/protocol/saml/descriptor
+   ```
+
+   > 注意：不是 `/protocol/saml/metadata`，也不是 `/protocol/saml/idp/metadata`。
+   > 后两者在 Keycloak 26 中均返回 404（见坑 6）。
 
 ### 步骤 5：Ceph Dashboard 配置 SAML
 
-在 Ceph mgr 上配置 Dashboard SAML SSO：
+Ceph Dashboard 的 SAML 配置不是 `ceph config set mgr ...`，而是专用命令
+`ceph dashboard sso setup saml2`：
 
 ```bash
-# 在 active mgr 容器内执行
-ceph config set mgr dashboard_saml_entity_id <Keycloak IdP Entity ID>
-ceph config set mgr dashboard_saml_sso_url <Keycloak IdP SSO URL>
-ceph config set mgr dashboard_saml_cert <Keycloak IdP 证书>
-ceph config set mgr dashboard_saml_enable true
+# 在能执行 ceph 命令的节点（ceph-01）上执行
+ceph dashboard sso setup saml2 \
+  https://10.0.0.41:8443 \
+  http://10.0.0.121:32669/realms/ceph-sso/protocol/saml/descriptor \
+  uid \
+  '' \
+  /tmp/saml_sp.crt \
+  /tmp/saml_sp.key
 ```
+
+参数顺序：
+
+```
+ceph dashboard sso setup saml2 <ceph_dashboard_base_url> <idp_metadata> \
+  [<idp_username_attribute>] [<idp_entity_id>] [<sp_x_509_cert>] [<sp_private_key>]
+```
+
+- `ceph_dashboard_base_url`：Dashboard 的外部访问地址，Ceph 用它拼出
+  SP EntityID（`<base>/auth/saml2/metadata`）和 ACS（`<base>/auth/saml2`）
+- `idp_metadata`：IdP 元数据 URL、`file://` 路径或 XML 文本
+- `idp_username_attribute`：从断言里取用户名的属性名（默认 `uid`）
+- `sp_x_509_cert` / `sp_private_key`：SP 证书和私钥文件路径。
+  **必须两个都给或都不给**：不给时 Ceph 不签 AuthnRequest，也不要求断言签名/加密；
+  给定时 Ceph 会签 AuthnRequest，并要求断言签名 + 加密。
+
+> **重要**：这两个路径由 **mgr 进程**读取（不是 ceph CLI 读取）。
+> 文件必须存在于 **mgr 容器内**，且 mgr 运行用户（`ceph`）可读。
+
+验证：
+
+```bash
+ceph dashboard sso show saml2
+curl -sk -o /dev/null -w '%{http_code}\n' https://10.0.0.41:8443/auth/saml2/login
+# 303 → 跳转到 Keycloak
+```
+
+### 步骤 6：端到端验证
+
+不打开浏览器也能验证整条 SAML 链路（Keycloak 本地用户 → Ceph）。
+用一个带 Cookie 的 Python 脚本走完 4 步：
+
+```python
+import urllib.request, urllib.parse, http.cookiejar, ssl, re, html
+
+ctx = ssl.create_default_context(); ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+cj = http.cookiejar.CookieJar()
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a): return None
+
+op = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx),
+                                 urllib.request.HTTPCookieProcessor(cj), NoRedirect)
+
+def req(url, data=None):
+    body = urllib.parse.urlencode(data).encode() if data else None
+    r = urllib.request.Request(url, data=body)
+    try:
+        x = op.open(r, timeout=20)
+        return x.getcode(), x.headers, x.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers, e.read().decode()
+
+# 1. Ceph → Keycloak（拿 SAMLRequest 重定向）
+_, h, _ = req("https://10.0.0.41:8443/auth/saml2/login")
+loc = h["Location"]
+
+# 2. 打开 Keycloak 登录页，解析表单
+_, _, page = req(loc)
+action = re.search(r'<form[^>]*action="([^"]+)"', page).group(1)
+
+# 3. 提交用户名密码，拿 SAMLResponse
+_, _, page = req(html.unescape(action), {"username": "admin", "password": "Ceph@Admin123"})
+fields = dict(re.findall(r'name="([^"]+)" value="([^"]*)"', page))
+acs = html.unescape(re.search(r'<form[^>]*action="([^"]+)"', page).group(1))
+
+# 4. POST 到 Ceph ACS
+code, h, _ = req(acs, {"SAMLResponse": fields["SAMLResponse"],
+                       "RelayState": fields.get("RelayState", "")})
+print(code, h.get("Location"))
+```
+
+实测结果：
+
+```
+1. ceph login: 303 -> keycloak
+2. keycloak login page: 200 form
+3. post credentials: 200 (含 SAMLResponse)
+4. ceph ACS: 303 -> https://10.0.0.41:8443/#/login?access_token=eyJhbGciOiJIUzI1NiIs...
+   ✅ 登录成功，拿到 access_token
+```
+
+GitLab 侧（broker）验证：在 Keycloak 授权 URL 后加 `&kc_idp_hint=gitlab`，
+会依次跳转：
+
+```
+302 /realms/ceph-sso/broker/gitlab/login
+302 http://192.168.67.201/oauth/authorize?scope=openid+profile+email&state=...
+```
+
+说明 OIDC 上游配置、GitLab OAuth 应用回调地址、scope 都正确。
+最后一步需要真实 GitLab 账号在浏览器里输入密码。
 
 ## 三、踩坑点（详细）
 
@@ -238,25 +386,43 @@ ceph config set mgr dashboard_saml_enable true
 - 修改 Deployment 参数前需重新导入 realm 和创建 client
 - 或用 initContainer 在启动时自动导入
 
-### 坑 6：Keycloak 26 的 SAML 元数据端点 404（待解决）
+### 坑 6：Keycloak 26 的 SAML 元数据端点不是 `/metadata`（已解决）
 
-**现象**：`/realms/ceph-sso/protocol/saml/metadata`、`/realms/ceph-sso/protocol/saml/idp/metadata`
-等 SAML IdP 端点全部返回 **404**。即使 realm 存在、SAML client 存在（protocol=saml），端点仍 404。
+**现象**：`/realms/ceph-sso/protocol/saml/metadata`、
+`/realms/ceph-sso/protocol/saml/idp/metadata` 等路径全部返回 **404**，
+导致一度误判为"Keycloak 26 的 SAML 端点未注册"。
 
-**排查**：
-- `/realms/ceph-sso/protocol/saml` 返回 **400**（端点存在，需要参数）
-- `--features=saml` 不是有效 feature（SAML 是核心协议，不是 feature）
-- protocol-mappings、protocols/saml 等 admin API 端点也 404
+**真实原因**：**路径写错了**。Keycloak 的 SAML IdP 元数据端点是：
 
-**结论**：Keycloak 26 的 SAML IdP 元数据端点路径可能已变更，或需要额外配置才能启用。
-**这是当前最大的阻塞点，需要进一步排查 Keycloak 26 的 SAML 协议配置。**
+```
+GET /realms/{realm}/protocol/saml/descriptor
+```
 
-**备选方案**：手动构造 SAML IdP 配置：
-- Entity ID：`http://<keycloak-host>:<port>/realms/ceph-sso`
-- SSO URL：`http://<keycloak-host>:<port>/realms/ceph-sso/protocol/saml/idp/login`
-- 证书：从 JWKS 端点 `/realms/ceph-sso/protocol/openid-connect/certs` 获取
+实测：
 
-（但 SSO URL 端点也返回 404，需要确认 SAML 协议是否实际可用）
+| 路径 | 结果 |
+|---|---|
+| `/realms/ceph-sso/protocol/saml/descriptor` | **200**（3.4 KB XML） |
+| `/realms/ceph-sso/protocol/saml/metadata` | 404 |
+| `/realms/ceph-sso/protocol/saml/idp/metadata` | 404 |
+| `/realms/ceph-sso/protocol/saml/idp/descriptor` | 404 |
+| `/realms/ceph-sso/protocol/saml` | 400（存在，需要 SAMLRequest 参数） |
+
+`descriptor` 返回的就是标准 `md:EntityDescriptor`，包含：
+
+```xml
+<md:EntityDescriptor entityID="http://10.0.0.121:32669/realms/ceph-sso">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="true" ...>
+    <md:KeyDescriptor use="signing">...</md:KeyDescriptor>
+    <md:SingleSignOnService Binding="...HTTP-Redirect"
+        Location=".../realms/ceph-sso/protocol/saml"/>
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>
+```
+
+**教训**：Keycloak 的 OIDC 用 `/.well-known/openid-configuration`，
+SAML 用 `/protocol/saml/descriptor`。**不要凭直觉猜 `/metadata`**，
+直接看官方文档或用 `descriptor`。
 
 ### 坑 7：GitLab OAuth 应用创建需要 organization_id
 
@@ -302,7 +468,7 @@ docker exec <mgr-container> python3 -c "from onelogin.saml2.auth import OneLogin
 # → OK
 ```
 
-### 坑 12：PostgreSQL 主库变更，socket 连接连到备库（只读）
+### 坑 11：PostgreSQL 主库变更，socket 连接连到备库（只读）
 
 **现象**：通过 `kubectl exec pg16-ceph-3` 执行 `CREATE DATABASE keycloak` 报
 `cannot execute CREATE DATABASE in a read-only transaction`。
@@ -316,7 +482,7 @@ socket 连接连到 pg16-ceph-3（备库），自然只读。
 
 **解决**：连到当前主库 `pg16-ceph-4` 执行 DDL。创建数据库和用户后验证通过。
 
-### 坑 13：schema 权限不足（permission denied for schema public）
+### 坑 12：schema 权限不足（permission denied for schema public）
 
 **现象**：Keycloak 连接 PostgreSQL 后，Liquibase 迁移报
 `ERROR: permission denied for schema public`，Pod 反复重启。
@@ -333,7 +499,7 @@ psql -U postgres -d keycloak -c "GRANT ALL ON SCHEMA public TO keycloak;"
 > **注意**：`GRANT ALL ON SCHEMA public` 必须指定正确的数据库。
 > 在 `postgres` 数据库上执行不会对 `keycloak` 数据库生效。
 
-### 坑 14：跨命名空间 FQDN 解析
+### 坑 13：跨命名空间 FQDN 解析
 
 **现象**：Keycloak（`keycloak` 命名空间）连接 PostgreSQL（`cnpg-system` 命名空间）报
 `java.net.UnknownHostException: pg16-ceph-rw`。
@@ -343,7 +509,7 @@ psql -U postgres -d keycloak -c "GRANT ALL ON SCHEMA public TO keycloak;"
 
 **解决**：使用 FQDN：`pg16-ceph-rw.cnpg-system.svc.cluster.local`
 
-### 坑 15：KC_DB_URL 被错误设成密码值
+### 坑 14：KC_DB_URL 被错误设成密码值
 
 **现象**：Keycloak 启动报 `Driver does not support the provided URL: Keycloak@Db123`。
 
@@ -353,36 +519,184 @@ psql -U postgres -d keycloak -c "GRANT ALL ON SCHEMA public TO keycloak;"
 **解决**：检查 Deployment 环境变量数组的索引，逐一确认每个变量的值，
 用正确的索引 patch。
 
-### 坑 16：SAML 元数据端点在 PostgreSQL 下仍 404
+### 坑 15：`sp_cert_not_found_and_required`——IdP 元数据覆盖了 Ceph 的安全默认值
 
-**现象**：切换到 PostgreSQL 后，SAML IdP 元数据端点
-`/realms/ceph-sso/protocol/saml/metadata` 等仍返回 **404**。
+**现象**：SAML 配置完成后访问 `https://10.0.0.41:8443/auth/saml2/login` 返回：
 
-**深入排查**：
-1. **SAML jar 存在**：容器内确认有 `keycloak-saml-core-26.3.4.jar` 和
-   `keycloak-saml-core-public-26.3.4.jar`，SAML 模块已打包；
-2. **`protocols` 字段无效**：通过 admin API 更新 realm 添加 `protocols: ["openid-connect","saml"]`
-   返回 400（`Unrecognized field "protocols"`）；导入 JSON 包含 `protocols` 字段也失败
-   （`unable to read contents from stream`）；
-3. **所有 SAML 端点路径 404**：探测了 `/protocol/saml/metadata`、
-   `/protocol/saml/idp/metadata`、`/protocol/saml/idp/login`、
-   `/protocol/saml/clients/ceph-dashboard/metadata` 等，全部 404；
-   `/protocol/saml` 返回 400（端点存在但需要参数）；
-4. **`--features=saml` 无效**：SAML 是核心协议，不是 feature flag。
+```json
+{"status": "400 Bad Request", "detail": "Single Sign-On is not configured."}
+```
 
-**结论**：SAML 端点 404 **不是数据库问题**（H2 和 PostgreSQL 都一样），
-**不是 SAML 模块缺失**（jar 存在），**不是配置问题**（protocols 字段无效）。
-是 Keycloak 26 的 **SAML 协议端点注册机制**问题——SAML IdP 端点未注册到
-Quarkus 路由中，导致所有 SAML 端点不可用。
+在 mgr 容器里直接实例化 python3-saml 才能看到真实原因：
 
-**这是当前最大的阻塞点**，需要进一步排查 Keycloak 26 的 SAML 协议注册机制
-（可能需要升级方案或不同的 Keycloak 版本/部署方式）。
+```
+OneLogin_Saml2_Error: Invalid dict settings: sp_cert_not_found_and_required
+```
 
-**当前状态**：Keycloak 已成功使用 PostgreSQL（`jdbc-postgresql` 驱动已安装），
-realm 和 SAML client 均已创建，但 SAML IdP 元数据端点不可用，
-Ceph Dashboard SAML 配置无法完成。
+**原因链**（这是整件事最隐蔽的坑）：
 
-### 坑 11：Ceph mgr 运行在 Docker 容器内
+1. Ceph 配置 SAML 时，自己算出 `security.authnRequestsSigned = has_sp_cert`
+   （没给 SP 证书就是 `false`）；
+2. 但 Keycloak 的 IdP 元数据里声明了 `WantAuthnRequestsSigned="true"`；
+3. python3-saml 的 `OneLogin_Saml2_IdPMetadataParser.parse()` 会把这一条解析成
+   `security.authnRequestsSigned = True`；
+4. Ceph 用 `merge_settings()` 做深合并，**元数据的值优先级更高**，覆盖了 Ceph 自己的 `false`；
+5. python3-saml 认为"要求签 AuthnRequest 但没有 SP 私钥" → 直接拒绝加载配置。
+
+验证方法：
+
+```python
+from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser as P
+print(P.parse(xml)["security"])   # {'authnRequestsSigned': True}
+```
+
+**解决**：给 Ceph 提供 SP 证书和私钥，让"签名"这个要求成立。
+生成自签证书（10 年）：
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout /tmp/saml_sp.key -out /tmp/saml_sp.crt \
+  -days 3650 -subj '/CN=ceph-dashboard'
+```
+
+然后 `ceph dashboard sso setup saml2 ... /tmp/saml_sp.crt /tmp/saml_sp.key`。
+
+**副作用**：Ceph 同时把 `wantAssertionsSigned`、`wantAssertionsEncrypted`、
+`nameIdEncrypted` 全部打开，Keycloak 侧必须配合（见坑 16）。
+
+### 坑 16：给了 SP 证书后，Keycloak 必须开启签名校验 + 断言加密
+
+**现象**：登录 POST 回 ACS 后返回：
+
+```json
+{"is_authenticated": false, "errors": ["invalid_response"],
+ "reason": "The assertion of the Response is not encrypted and the SP requires it"}
+```
+
+**原因**：有 SP 证书时 Ceph 生成的安全配置是：
+
+```json
+{"nameIdEncrypted": true, "authnRequestsSigned": true,
+ "logoutRequestSigned": true, "logoutResponseSigned": true,
+ "signMetadata": true, "wantMessagesSigned": true,
+ "wantAssertionsSigned": true, "wantAssertionsEncrypted": true}
+```
+
+Keycloak 客户端默认不加密断言，也不要求请求签名。
+
+**解决**：把 SP 证书填进 Keycloak 客户端，并打开签名/加密：
+
+| Keycloak 客户端属性 | 值 | 作用 |
+|---|---|---|
+| `saml.client.signature` | `true` | 要求 AuthnRequest 签名 |
+| `saml.signing.certificate` | SP 证书（去掉 PEM 头尾） | 校验 AuthnRequest 签名 |
+| `saml.encryption.certificate` | SP 证书（去掉 PEM 头尾） | 加密断言 |
+| `saml.encrypt` | `true` | 加密断言 |
+| `saml.server.signature` | `true` | 签名 Response |
+| `saml.assertion.signature` | `true` | 签名 Assertion |
+
+用 Admin API 更新（`PUT /admin/realms/ceph-sso/clients/{id}`）即可，
+证书要用**去掉 `-----BEGIN/END CERTIFICATE-----` 的单行 Base64**。
+
+> 如果不想用加密，就不要给 Ceph 传 SP 证书。两者必须一致，
+> 不能"给了 SP 证书但 Keycloak 不加密"。
+
+### 坑 17：默认 `role_list` scope 导致 `duplicated Name`
+
+**现象**：ACS 返回 500，mgr 日志：
+
+```
+OneLogin_Saml2_ValidationError: Found an Attribute element with duplicated Name
+```
+
+**原因**：Keycloak 的 SAML 客户端默认绑定 `role_list` client scope，
+它会给**每个角色输出一个 `<saml:Attribute Name="Role">`**。
+测试用户属于 6 个角色 → 断言里 6 个同名 `Role` 属性。
+python3-saml 认为同名 Attribute 非法，直接抛异常。
+
+**解决**：把 `role_list` 从客户端的 default client scopes 移除：
+
+```bash
+# 先查 scope id
+GET /admin/realms/ceph-sso/clients/{clientId}/default-client-scopes
+# 再删除
+DELETE /admin/realms/ceph-sso/clients/{clientId}/default-client-scopes/{scopeId}
+```
+
+Ceph Dashboard 不需要角色属性，移除后断言里只剩 `uid`，问题消失。
+
+### 坑 18：不设 `KC_HOSTNAME`，元数据里全是 `127.0.0.1`
+
+**现象**：通过 port-forward 访问时，`descriptor` 里的
+`entityID="http://127.0.0.1:8090/realms/ceph-sso"`，SSO URL 也是 127.0.0.1。
+Ceph 配好后浏览器会跳转到 `127.0.0.1`，登录必然失败。
+
+**原因**：Keycloak 用请求的 Host 头生成元数据里的 URL。
+
+**解决**：Keycloak 26 设置 `KC_HOSTNAME` 为**完整外部 URL**：
+
+```yaml
+- name: KC_HOSTNAME
+  value: "http://10.0.0.121:32669"
+- name: KC_HOSTNAME_STRICT
+  value: "false"
+```
+
+改完后 `descriptor` 的 entityID 变成
+`http://10.0.0.121:32669/realms/ceph-sso`，Ceph 侧要重新执行一次
+`ceph dashboard sso setup saml2`（元数据 URL 变了）。
+
+### 坑 19：SP 证书文件要"两处都在"，且 mgr 用户可读
+
+**现象 1**：
+
+```
+/tmp/saml_sp.crt not valid: cannot create file in /tmp/saml_sp.crt
+```
+
+ceph CLI 侧对 `CephFilepath` 参数做本地校验，路径必须存在于**执行 ceph 命令的节点**。
+
+**现象 2**：
+
+```
+PermissionError: [Errno 13] Permission denied: '/tmp/saml_sp.key'
+```
+
+即使 CLI 校验通过，真正读文件的是 **mgr 进程**（容器内、以 `ceph` 用户运行）。
+`/tmp/saml_sp.key` 是 root 600，读不了。
+
+**解决**：
+
+1. 同一路径的文件在 **ceph CLI 节点**和 **mgr 容器内**都存在；
+2. `chmod 644`（或改成 ceph 用户可读）。
+
+```bash
+docker cp /tmp/saml_sp.crt <mgr>:/tmp/saml_sp.crt
+docker cp /tmp/saml_sp.key <mgr>:/tmp/saml_sp.key
+docker exec <mgr> chmod 644 /tmp/saml_sp.key /tmp/saml_sp.crt
+```
+
+### 坑 20：GitLab 上游 `defaultScope` 只有 `openid`，拿不到用户名
+
+**现象**：`kc_idp_hint=gitlab` 跳转到 GitLab 时 `scope=openid`。
+只有 `openid` 时，Keycloak 从 GitLab 拿不到 `preferred_username`/`email`，
+broker 会生成 `gitlab.<sub>` 之类的用户名，Ceph 侧找不到同名用户。
+
+**解决**：把 IdP 的 `config.defaultScope` 改为：
+
+```
+openid profile email
+```
+
+修改后 GitLab 授权 URL 变为 `scope=openid profile email`，
+Keycloak 用 `preferred_username` 作为用户名，才能和 Ceph 用户对上。
+
+> **另外**：Ceph Dashboard 只允许**已存在**的用户登录。
+> 首次使用某个 SSO 用户前，要先创建同名 dashboard 用户：
+> `ceph dashboard ac-user-create <username> -r administrator`
+> 否则登录后会被重定向到 `#/sso/404`。
+
+### 坑 21：Ceph mgr 运行在 Docker 容器内
 
 **现象**：宿主机上 `python3 -c "import saml2"` 失败，但 yum 显示 python3-saml 已安装。
 
@@ -409,30 +723,49 @@ Ceph Dashboard SAML 配置无法完成。
 6. **GitLab OAuth 应用**：GitLab 19.5 要求 `organization_id` 不为 NULL，
    创建时必须指定。
 
-7. **Ceph Dashboard SAML**：需要 IdP 的 Entity ID、SSO URL、签名证书。
-   SAML 协议端点在 Keycloak 26 中需要确认可用性（当前 404，待解决）。
+7. **Ceph Dashboard SAML**：IdP 元数据用 `/realms/{realm}/protocol/saml/descriptor`。
+   SP 证书与 Keycloak 客户端的签名/加密开关必须成对配置：
+   要么都不开，要么都开。
 
 8. **Ceph mgr 容器**：Ceph 用 Docker 容器部署，SAML 相关操作在 mgr 容器内执行，
    不是宿主机。
 
 9. **网络可达性**：Ceph 集群（10.0.0.x）需能访问 Keycloak 的 NodePort。
    Keycloak 需能访问 GitLab（192.168.67.201）。
+   浏览器（终端用户）需要同时能访问 Ceph Dashboard、Keycloak 和 GitLab。
+
+10. **Keycloak `KC_HOSTNAME` 必须是外部可访问的完整 URL**，
+    否则元数据里生成 `127.0.0.1`，SAML 跳转必然失败。
+
+11. **Ceph 用户要先存在**：SSO 只做认证，不做授权。
+    `ceph dashboard ac-user-create <username> -r administrator` 必须先建好，
+    用户名要和 Keycloak 断言里的 `uid` 一致。
+
+12. **SAML 断言大小**：开启断言加密后，Keycloak 会把整个 Assertion 加密，
+    调试时看不到属性。需要排错时临时把 `saml.encrypt` 设为 `false`
+    （同时 Ceph 侧不能要求加密），定位完再改回来。
 
 ## 五、当前状态与后续工作
 
 | 步骤 | 状态 | 说明 |
 |---|---|---|
-| Ceph mgr python3-saml | ✅ 完成 | 已在 mgr 容器内确认可用 |
-| Keycloak 部署 | ✅ 完成 | docker.io 镜像，NodePort 暴露 |
-| **Keycloak 使用 PostgreSQL** | ✅ **完成** | 从 H2 内存数据库迁移到 cnpg-system/pg16-ceph，数据持久化 |
+| Ceph mgr python3-saml | ✅ 完成 | 已在 mgr 容器内确认可用（`onelogin.saml2`） |
+| Keycloak 部署 | ✅ 完成 | docker.io 镜像，NodePort `32669` |
+| Keycloak 使用 PostgreSQL | ✅ 完成 | cnpg-system/pg16-ceph，数据持久化 |
 | GitLab OAuth 应用 | ✅ 完成 | 用 gitlab-rails runner 创建，指定 organization_id |
 | Keycloak realm 导入 | ✅ 完成 | ceph-sso realm，含 GitLab OIDC 上游 |
-| SAML client 创建 | ✅ 完成 | ceph-dashboard，protocol=saml |
-| **SAML IdP 元数据获取** | ❌ **阻塞** | Keycloak 26 SAML 端点 404（H2/PostgreSQL 都一样，非数据库问题） |
-| Ceph Dashboard SAML 配置 | ⏸ 待执行 | 依赖 SAML 元数据获取 |
-| SAML 登录验证 | ⏸ 待执行 | 依赖 Ceph Dashboard 配置 |
+| SAML client 创建 | ✅ 完成 | clientId = SP EntityID，含 `uid` 属性映射 |
+| SAML IdP 元数据获取 | ✅ 完成 | `/realms/ceph-sso/protocol/saml/descriptor` |
+| Ceph Dashboard SAML 配置 | ✅ 完成 | `ceph dashboard sso setup saml2`（含 SP 证书） |
+| Keycloak 端 SAML 签名/加密 | ✅ 完成 | 客户端要求签名 + 加密断言 |
+| **Ceph ← Keycloak 登录链路** | ✅ **验证通过** | Keycloak 本地用户 → SAML → Ceph 拿到 access_token |
+| Keycloak ← GitLab 登录链路 | ✅ 重定向验证 | 跳到 GitLab `/oauth/authorize`，scope 正确；完整登录需 GitLab 账号 |
+| 浏览器端完整人工验证 | ⏸ 待人工确认 | 需要一个 GitLab 用户 + 同名 Ceph dashboard 用户 |
 
 **后续工作**：
-1. 排查 Keycloak 26 SAML 协议端点 404 的原因（SAML 协议注册机制）
-2. 获取 SAML IdP 元数据后，配置 Ceph Dashboard SAML SSO
-3. 验证完整登录链路：Ceph Dashboard → Keycloak → GitLab → 登录成功
+1. 用真实 GitLab 账号走一遍浏览器登录，确认 `uid` 映射与 Ceph 用户一致
+2. 为 GitLab 用户预先创建 Ceph dashboard 用户
+   （`ceph dashboard ac-user-create <gitlab-username> -r administrator`）
+3. 生产化：Keycloak 改用 `start`（非 dev 模式）+ HTTPS + 正式域名，
+   `KC_HOSTNAME` 指向正式域名
+4. 证书轮换：SP 证书过期前重新生成并更新 Keycloak 客户端与 Ceph 配置
