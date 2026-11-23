@@ -83,6 +83,15 @@ spec:
             secretKeyRef: {name: keycloak-admin-secret, key: keycloak-admin-password}
         - name: KC_HEALTH_ENABLED
           value: "true"
+        # PostgreSQL（cnpg-system/pg16-ceph 集群）
+        - name: KC_DB
+          value: "postgres"
+        - name: KC_DB_URL
+          value: "jdbc:postgresql://pg16-ceph-rw.cnpg-system.svc.cluster.local:5432/keycloak"
+        - name: KC_DB_USERNAME
+          value: "keycloak"
+        - name: KC_DB_PASSWORD
+          value: "Keycloak@Db123"
         ports:
         - containerPort: 8080
 ```
@@ -293,6 +302,70 @@ docker exec <mgr-container> python3 -c "from onelogin.saml2.auth import OneLogin
 # → OK
 ```
 
+### 坑 12：PostgreSQL 主库变更，socket 连接连到备库（只读）
+
+**现象**：通过 `kubectl exec pg16-ceph-3` 执行 `CREATE DATABASE keycloak` 报
+`cannot execute CREATE DATABASE in a read-only transaction`。
+
+**原因**：CNPG 集群的主库发生了切换。排查时发现：
+- `pg16-ceph-3`：`pg_is_in_recovery() = t`（**备库**，只读）
+- `pg16-ceph-4`：`pg_is_in_recovery() = f`（**主库**，可写）
+
+之前手动提升 pg16-ceph-3 为主库，但 CNPG 控制器后来将主库切换回 pg16-ceph-4。
+socket 连接连到 pg16-ceph-3（备库），自然只读。
+
+**解决**：连到当前主库 `pg16-ceph-4` 执行 DDL。创建数据库和用户后验证通过。
+
+### 坑 13：schema 权限不足（permission denied for schema public）
+
+**现象**：Keycloak 连接 PostgreSQL 后，Liquibase 迁移报
+`ERROR: permission denied for schema public`，Pod 反复重启。
+
+**原因**：`keycloak` 数据库用户只有数据库级权限，没有 `public` schema 的 CREATE 权限。
+PostgreSQL 中 schema 权限与数据库权限是分开的。
+
+**解决**：在 `keycloak` 数据库的 `public` schema 上授权：
+```sql
+-- 注意：必须在 keycloak 数据库执行，不是 postgres 数据库
+psql -U postgres -d keycloak -c "GRANT ALL ON SCHEMA public TO keycloak;"
+```
+
+> **注意**：`GRANT ALL ON SCHEMA public` 必须指定正确的数据库。
+> 在 `postgres` 数据库上执行不会对 `keycloak` 数据库生效。
+
+### 坑 14：跨命名空间 FQDN 解析
+
+**现象**：Keycloak（`keycloak` 命名空间）连接 PostgreSQL（`cnpg-system` 命名空间）报
+`java.net.UnknownHostException: pg16-ceph-rw`。
+
+**原因**：Keycloak Pod 的 DNS 搜索域是 `keycloak.svc.cluster.local`、`svc.cluster.local`、
+`cluster.local`，无法解析 `cnpg-system` 命名空间的短域名 `pg16-ceph-rw`。
+
+**解决**：使用 FQDN：`pg16-ceph-rw.cnpg-system.svc.cluster.local`
+
+### 坑 15：KC_DB_URL 被错误设成密码值
+
+**现象**：Keycloak 启动报 `Driver does not support the provided URL: Keycloak@Db123`。
+
+**原因**：用 `kubectl patch` 修改环境变量时，JSON patch 的索引指向错误，
+`KC_DB_URL` 的值被替换成了 `KC_DB_PASSWORD` 的值。
+
+**解决**：检查 Deployment 环境变量数组的索引，逐一确认每个变量的值，
+用正确的索引 patch。
+
+### 坑 16：SAML 元数据端点在 PostgreSQL 下仍 404
+
+**现象**：切换到 PostgreSQL 后，SAML IdP 元数据端点
+`/realms/ceph-sso/protocol/saml/metadata` 等仍返回 **404**。
+
+**结论**：SAML 端点 404 **不是数据库问题**（H2 和 PostgreSQL 都一样）。
+是 Keycloak 26 的 SAML 协议端点配置问题，需要进一步排查 Keycloak 26 的
+SAML 协议注册机制。这是当前最大的阻塞点。
+
+**当前状态**：Keycloak 已成功使用 PostgreSQL（`jdbc-postgresql` 驱动已安装），
+realm 和 SAML client 均已创建，但 SAML IdP 元数据端点不可用，
+Ceph Dashboard SAML 配置无法完成。
+
 ### 坑 11：Ceph mgr 运行在 Docker 容器内
 
 **现象**：宿主机上 `python3 -c "import saml2"` 失败，但 yum 显示 python3-saml 已安装。
@@ -335,14 +408,15 @@ docker exec <mgr-container> python3 -c "from onelogin.saml2.auth import OneLogin
 |---|---|---|
 | Ceph mgr python3-saml | ✅ 完成 | 已在 mgr 容器内确认可用 |
 | Keycloak 部署 | ✅ 完成 | docker.io 镜像，NodePort 暴露 |
+| **Keycloak 使用 PostgreSQL** | ✅ **完成** | 从 H2 内存数据库迁移到 cnpg-system/pg16-ceph，数据持久化 |
 | GitLab OAuth 应用 | ✅ 完成 | 用 gitlab-rails runner 创建，指定 organization_id |
 | Keycloak realm 导入 | ✅ 完成 | ceph-sso realm，含 GitLab OIDC 上游 |
 | SAML client 创建 | ✅ 完成 | ceph-dashboard，protocol=saml |
-| SAML IdP 元数据获取 | ❌ **阻塞** | Keycloak 26 SAML 端点 404，待排查 |
+| **SAML IdP 元数据获取** | ❌ **阻塞** | Keycloak 26 SAML 端点 404（H2/PostgreSQL 都一样，非数据库问题） |
 | Ceph Dashboard SAML 配置 | ⏸ 待执行 | 依赖 SAML 元数据获取 |
 | SAML 登录验证 | ⏸ 待执行 | 依赖 Ceph Dashboard 配置 |
 
 **后续工作**：
-1. 排查 Keycloak 26 SAML 协议端点 404 的原因（可能需要配置 SAML 协议或升级方案）
+1. 排查 Keycloak 26 SAML 协议端点 404 的原因（SAML 协议注册机制）
 2. 获取 SAML IdP 元数据后，配置 Ceph Dashboard SAML SSO
 3. 验证完整登录链路：Ceph Dashboard → Keycloak → GitLab → 登录成功
