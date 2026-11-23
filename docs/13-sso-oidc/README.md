@@ -726,6 +726,9 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [05-grafana-sso.md](notes/05-grafana-sso.md) | Grafana 三种 SSO 方案与完整命令 |
 | [06-argocd-helm-bootstrap.md](notes/06-argocd-helm-bootstrap.md) | ArgoCD Helm bootstrap、OIDC/RBAC 与关键坑 |
 | [07-sealed-secrets.md](notes/07-sealed-secrets.md) | Sealed Secrets 方案与迁移记录（含历史备份路径说明） |
+| [08-gitlab-oauth-apps-oauth2-proxy.md](notes/08-gitlab-oauth-apps-oauth2-proxy.md) | GitLab Admin 区 OAuth 应用管理、oauth2-proxy 的 K8s 形态 |
+| [09-oidc-identity-permissions-traefik-forwardauth.md](notes/09-oidc-identity-permissions-traefik-forwardauth.md) | OIDC 身份与权限映射、Traefik ForwardAuth 原理 |
+| [10-keycloak-realm-concepts-integration.md](notes/10-keycloak-realm-concepts-integration.md) | Keycloak realm 概念、登录全流程、与 GitLab/ArgoCD/Grafana/oauth2-proxy/Ceph 的区别、手动对接步骤 |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
