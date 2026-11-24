@@ -86,7 +86,9 @@ Cilium Agent（DaemonSet，每节点一个）
 
 它是从实验环境逐步长出来的：组件齐全、GitOps 化程度高，但资源配额、副本数、备份、审计等
 生产基线并没有同步补齐。`production-readiness-gaps-20261109.md` 把差距拆成 P0/P1/P2，
-其中 etcd 备份已经在 2026-11-09 补上（CronJob `etcd-backup/etcd-snapshot`，每小时一次）。
+其中 etcd 备份已经在 2026-11-09 补上（CronJob `etcd-backup/etcd-snapshot`），
+2026-11-24 由**每小时一次**调整为**每天 03:25、滚动保留 3 天**，调整原因与容量占用见
+[Ceph 容量告警排查](../06-storage-ceph/notes/ceph-capacity-nearfull-audit-20261124.md)。
 
 ## 踩坑点
 

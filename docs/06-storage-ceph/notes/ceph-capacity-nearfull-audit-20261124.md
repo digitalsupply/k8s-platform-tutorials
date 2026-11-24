@@ -360,7 +360,47 @@ curl -s localhost:9093/api/v2/alerts | jq -r '.[] | [.labels.alertname, .labels.
 3. **统一对象桶生命周期与配额**：给 `etcd-backups`、`pg-backups`、`loki-chunks` 都配置明确的 `max_size`/`max_objects` 配额，防止单桶无限增长拖垮整个集群。
 4. **备份策略评审**：etcd、PG、Loki、Tempo 的备份目标与保留期统一评估，避免都挤在同一块 180GiB 的 RGW 数据池上。
 
-## 7. 验证方式
+## 7. 实际执行与结果（2026-11-24）
+
+第 6 节的建议已在当天执行，告警已消除。
+
+### 7.1 etcd 备份改为每天一次、滚动 3 天
+
+- `platform-gitops` 提交 **`6e8b116`**，CronJob `etcd-backup/etcd-snapshot`：
+  - 频率：`25 3 * * *`（**每天 03:25**，Asia/Shanghai）；
+  - 脚本：只生成 `daily/etcd-YYYYMMDD.db`，上传到 `s3://etcd-backups/daily/`；
+  - 本地暂存：删除 2 天前的文件（保留最近 3 份）。
+- ArgoCD `platform-etcd-backup` 已同步到 revision `6e8b116`（Synced/Healthy）。
+- 手动触发一次验证：快照 159MB，成功上传 `daily/etcd-20261124.db`，bucket 保持 3 份。
+
+### 7.2 对象侧生命周期
+
+- `etcd-backups` bucket lifecycle：`daily/` **3 天**过期、`hourly/` **1 天**过期（历史前缀兜底清理）。
+- 手动清理历史对象：删除全部 `hourly/*`、早于 3 天的 `daily/*` 以及测试文件，
+  bucket 从 153 个对象 / 21.6 GiB 降到 3 个对象 / 454 MiB。
+
+### 7.3 关键坑：删除对象不会立刻释放空间
+
+删除 RGW 对象后，`ceph df` 占用并没有立刻下降。原因是：
+`aws s3 cp` 上传 159MB 快照时使用了 **multipart upload**，删除对象后，
+multipart 的 **part 与 shadow 对象**作为“泄漏孤儿”留在数据池里，
+`radosgw-admin orphans find` 能查到（本次共 **4678 个**，约 **21.6 GiB 逻辑**）。
+
+这些孤儿本应由 RGW 垃圾回收处理，但本次 `radosgw-admin gc list` 为空、`gc process` 未生效，
+于是直接对孤儿对象执行 `rados rm`（`orphans find` 已确认它们无索引引用，可安全删除），
+删除后空间才真正释放。**排查占用没降时，先查 orphans，不要误判为删除失败。**
+
+### 7.4 结果
+
+| 指标 | 处理前 | 处理后 |
+|---|---|---|
+| Ceph 健康 | `HEALTH_WARN`（1 nearfull osd + 15 nearfull pools） | **`HEALTH_OK`** |
+| 裸容量占用 | 131 GiB / 180 GiB = **72.76%** | 78 GiB / 180 GiB = **43.3%** |
+| `osd.2` 使用率 | 86.4%（触发 nearfull） | 54.96% |
+| `CephClusterWarning` 告警 | active | 已清除 |
+| `etcd-backups` 桶 | 153 个对象 / 21.6 GiB | 3 个对象 / 454 MiB |
+
+## 8. 验证方式
 
 处理后按下面顺序确认告警消除：
 
@@ -376,16 +416,19 @@ radosgw-admin bucket stats --bucket=etcd-backups | jq '.usage["rgw.main"]'
 curl -s localhost:9093/api/v2/alerts | jq -r '.[].labels.alertname' | sort -u
 ```
 
-## 8. 注意事项
+## 9. 注意事项
 
-1. **不要直接 `rados rm` 或 `rbd rm` 清理**：先确认对象/镜像没有在用（如 etcd 快照是否被恢复流程依赖、PVC 是否仍被 StatefulSet 引用）。
+1. **不要直接 `rados rm` 或 `rbd rm` 清理**：先确认对象/镜像没有在用（如 etcd 快照是否被恢复流程依赖、PVC 是否仍被 StatefulSet 引用）；
+   只有在 `radosgw-admin orphans find` 确认“泄漏孤儿、无索引引用”时才可直接 `rados rm`。
 2. **生命周期删除有延迟**：RGW 生命周期处理器每天跑一次，改完规则后不会立刻释放空间；紧急时需要手动触发或直接删对象。
 3. **改阈值是掩盖不是解决**：`nearfull_ratio` 调高后告警消失，但写满风险仍在，且会破坏“预留恢复空间”的意义。
 4. **副本是占用放大器**：3 副本下任何逻辑数据的膨胀都按 3 倍计入裸容量，评估“删多少”时要除以 3。
 5. **集群小、容错空间小**：6 OSD / 3 主机，坏一块盘就少 30GiB 并触发降级；容量必须留足恢复余量。
-6. `KubeProxyDown` 是与 Ceph 无关的另一条告警，本次未处理。
+6. **`aws s3 cp` 会走 multipart**：大文件上传后若删除，可能留下 part/shadow 孤儿，占用要按 3 副本计；
+   后续可考虑上传后主动 `s3 cp --no-progress` 之外的清理，或定期跑 `orphans find` 巡检。
+7. `KubeProxyDown` 是与 Ceph 无关的另一条告警，本次未处理。
 
-## 9. 相关文档
+## 10. 相关文档
 
 | 文档 | 内容 |
 |---|---|
