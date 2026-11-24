@@ -357,6 +357,7 @@ fstrim -av
 | [cnpg-upgrade-postmortem-2026-11-08.md](notes/cnpg-upgrade-postmortem-2026-11-08.md) | CNPG 1.22 → 1.30.1、rp_filter、barman plugin、switchover |
 | [ceph-disk-optimization-2026-11-05.md](notes/ceph-disk-optimization-2026-11-05.md) | 镜像/Pod/GC/Harbor/Tekton/PVE discard 两轮磁盘清理 |
 | [ceph-capacity-nearfull-audit-20261124.md](notes/ceph-capacity-nearfull-audit-20261124.md) | `OSD_NEARFULL`/`POOL_NEARFULL` 告警排查：72% 占用拆解、空间占用排名、`etcd-backups` 增长根因与处理建议（2026-11-24） |
+| [ceph-storage-pressure-postmortem-20261124.md](notes/ceph-storage-pressure-postmortem-20261124.md) | Ceph 存储压力复盘：背景、原因、解决方案，以及“删除对象空间不降”关键坑的原因与处理（2026-11-24） |
 
 > XFS 不能缩、LVM 缩容顺序、`wipefs`/`mkfs` dry-run 实测见
 > [09 三个不可逆](../09-incidents-and-readiness/10-three-irreversibles.md)。
@@ -368,12 +369,16 @@ fstrim -av
 | [scripts/find_orphan_pv.py](scripts/find_orphan_pv.py) | 只读识别 Released/Failed 且无对应 PVC 的 PV |
 | [scripts/inspect-released-pv.sh](scripts/inspect-released-pv.sh) | 只读核对 PV、claimRef、RBD image、watchers |
 | [scripts/rbd-du.sh](scripts/rbd-du.sh) | 批量统计 RBD 实际占用 |
+| [scripts/cleanup-etcd-backups.sh](scripts/cleanup-etcd-backups.sh) | 清理 `etcd-backups` 桶历史快照（hourly、早于 N 天的 daily、测试对象） |
+| [scripts/ceph-orphan-cleanup.sh](scripts/ceph-orphan-cleanup.sh) | 排查并清理 RGW 泄漏孤儿（multipart part/shadow），修复“删除对象空间不降” |
 | [scripts/recover-test.sh](scripts/recover-test.sh) | 从 S3 下载 base backup 并校验 tar/关键文件 |
 | [scripts/pitr-verify.sh](scripts/pitr-verify.sh) | PITR 可达性验证 |
 | [assets/ceph-audit/](assets/ceph-audit/) | Ceph 主机审计原始材料 |
 | [assets/ceph-status.txt](assets/ceph-status.txt) | 当前 `ceph -s` 快照 |
 | [assets/ceph-osd-tree.txt](assets/ceph-osd-tree.txt) | 当前 OSD 树 |
 | [assets/ceph-capacity-nearfull-20261124/](assets/ceph-capacity-nearfull-20261124/) | 容量告警排查原始输出（`ceph -s`/`df`/OSD 分布/PG 分布/RGW 桶/RBD du/etcd 生命周期） |
+| [assets/etcd-backup-daily-cronjob.yaml](assets/etcd-backup-daily-cronjob.yaml) | etcd 备份 CronJob 最终版（每天 03:25、滚动 3 天，来自 `platform-gitops`） |
+| [assets/etcd-backups-lifecycle.json](assets/etcd-backups-lifecycle.json) | `etcd-backups` bucket lifecycle（`daily/` 3 天、`hourly/` 1 天） |
 | [assets/pv-list.yaml](assets/pv-list.yaml) | 当前 PV 全量清单 |
 | [scripts/ceph_csi_inventory.py](scripts/ceph_csi_inventory.py) | 只读盘点 Operator/Driver/CephConnection/ClientProfile/PV/PVC |
 | [assets/ceph-csi-operator/](assets/ceph-csi-operator/) | 升级前备份、Helm values、imageset、StorageClass、实时 CR |
