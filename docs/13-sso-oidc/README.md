@@ -754,7 +754,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [11-keycloak-admin-token-cluster.md](notes/11-keycloak-admin-token-cluster.md) | `$ADMIN_TOKEN` 定义、集群获取步骤、Admin REST API 使用与排错 |
 | [12-keycloak-ceph-sso-account-and-topology.md](notes/12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` 账号来源/区别、Keycloak 上下游角色、GitLab 客户端与 Ceph IdP 对接说明 |
 | [13-keycloak-admin-console-guide.md](notes/13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解，结合本环境实际配置 |
-| [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
+| [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比；含“原生接入能否解决登录即全权限”及选择 oauth2-proxy 的原因 |
 | [15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md) | `bigdev`/`smallops` 双用户全链路权限矩阵、GitLab `groups` claim 修复、各 UI 实测与回滚（2026-11-24） |
 | [16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据、GitLab 权限、8 个业务 UI 的权限映射与关键配置汇总（2026-11-24） |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |

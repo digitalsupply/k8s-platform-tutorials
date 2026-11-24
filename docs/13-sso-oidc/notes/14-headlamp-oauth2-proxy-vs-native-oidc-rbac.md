@@ -304,3 +304,67 @@ kubectl auth can-i '*' '*' --as=system:serviceaccount:headlamp:headlamp
 ```
 
 风险提示：当前仍是 oauth2-proxy 边缘认证 + 共享 Headlamp SA。任何能通过 oauth2-proxy 进入 Headlamp 的用户，都会获得该 SA 的 `cluster-admin` 权限，无法按用户区分 K8s RBAC 审计。建议后续评估 per-user OIDC RBAC（需 apiserver HTTPS OIDC issuer）。
+
+## 8. 原生接入能否解决“登录即全权限”？与当初选择 oauth2-proxy 的原因
+
+> 本节回答两个问题：
+> 1. Headlamp **原生接入 GitLab**，能否解决当前“任何 GitLab 用户登录 Headlamp 后都等同 `cluster-admin`”的问题；
+> 2. 当初为什么**放弃原生接入、改用 oauth2-proxy**。
+
+### 8.1 原生接入能否解决该问题：能，但有硬前提
+
+**结论：可以解决，但不是“只给 Headlamp 加 OIDC 参数”就能解决，必须同时满足三个条件。**
+
+当前 oauth2-proxy 模式下的“登录即全权限”来自两个叠加：
+
+1. Headlamp 所有请求都用 ServiceAccount `headlamp/headlamp` 的身份访问 K8s API；
+2. 该 SA 被绑到 `cluster-admin`（见 [第 7 节 方案 A](#7-2026-11-24-实施记录方案-a)）。
+
+于是“通过认证进入 Headlamp”的每个人，在 K8s 侧都等价于同一个 `cluster-admin`，无法按人/按组做 K8s RBAC 审计。
+
+原生接入要真正解决这个问题，必须形成**用户 OIDC 身份 → K8s RBAC** 的闭环：
+
+| 必要环节 | 作用 | 本环境现状 |
+|---|---|---|
+| Headlamp 原生 OIDC | 在 UI 层完成 GitLab 登录，拿到用户身份/token | 未启用（当前用 oauth2-proxy） |
+| apiserver OIDC 信任 | 让 kube-apiserver 认可 GitLab 签发的 token，并把 token 映射成 K8s 身份（`user`/`group`） | **未配置**：apiserver 无 `--oidc-*` 参数 |
+| K8s RBAC 绑定 | 把 OIDC 用户/组绑到对应 Role/ClusterRoleBinding，默认只读、按需提权 | 需要新建/调整 |
+
+**关键点：只给 Headlamp 加 `-oidc-*` 参数、而不配 apiserver OIDC，登录用户仍然会走 Headlamp SA 的权限**——只是把“认证层”从 oauth2-proxy 挪到了 Headlamp，K8s 侧依然是共享 SA。真正消除“共享高权限身份”的是 **apiserver OIDC + RBAC**。
+
+因此：
+
+- ✅ 原生接入 **配合** apiserver OIDC + 按用户/组 RBAC，可以解决“登录即全权限”，做到按身份授权与审计；
+- ❌ 只做 Headlamp 原生 OIDC 而不配 apiserver，解决不了；
+- ❌ 即使原生接入，如果仍把所有登录用户/所有组都绑到 `cluster-admin`，问题依旧——**收敛授权范围**才是关键，而不是接入方式本身。
+
+> 补充：本环境 GitLab 是 **HTTP issuer**（`http://192.168.67.201`）。apiserver 的 OIDC 客户端要求 **HTTPS issuer**（HTTP 不被接受或属于不安全配置），这是原生方案在本环境落地的直接阻塞点。
+
+### 8.2 当初放弃原生接入、选择 oauth2-proxy 的原因
+
+1. **GitLab 是 HTTP issuer，无法满足 apiserver OIDC 要求**
+   apiserver 的 `--oidc-issuer-url` 要求 HTTPS。当前 GitLab 只有 `http://192.168.67.201`、无 TLS。在不先给 GitLab 上 HTTPS 的前提下，用户 OIDC 身份直通 K8s API 的闭环无法安全建立。
+
+2. **apiserver 未配置 OIDC，改控制面代价高**
+   需要给 kube-apiserver 增加 `--oidc-*` 参数并滚动重启控制面，属于高风险、需要维护窗口的变更；当时没有控制面改造的必要性与窗口。
+
+3. **需求是“SSO 登录 + 按组控制谁能进”，不是 per-user K8s RBAC**
+   当时要的是：登录统一走 GitLab，且只放行 `digitalsupply` 等组。oauth2-proxy 的 `--allowed-group` 在边缘即可完成“谁能进”的收敛，不需要改 apiserver。
+
+4. **与其他 UI 的接入方式统一**
+   Grafana、ArgoCD、Harbor、Traefik、Hubble、Alloy、Tekton 已经按“原生 OIDC 或 oauth2-proxy”接入 GitLab。Headlamp 也用 oauth2-proxy，认证入口、GitLab consent 流程、cookie 策略保持一致，减少差异化维护。
+
+5. **Headlamp 原生 OIDC 参数/回调路径需要验证**
+   Headlamp `v0.46.0` 的 OIDC 参数与回调路径存在版本差异，需要单独验证；oauth2-proxy 是成熟、稳定的反向代理，回调与 OIDC 行为更可控。
+
+6. **边缘准入即可满足当时的授权模型**
+   oauth2-proxy 在认证层做 `--allowed-group` 过滤，不匹配直接 403、不转发给上游；配合 Headlamp SA 的最小角色（或按需绑定），即可满足“组级准入 + 最小权限”目标，无需引入控制面 OIDC 的复杂度。
+
+### 8.3 小结
+
+| 问题 | 回答 |
+|---|---|
+| 原生接入能否解决“登录即全权限”？ | **能，但必须同时配 apiserver OIDC + 按用户/组 RBAC**；只配 Headlamp OIDC 不能；若继续全员绑 `cluster-admin` 也无效 |
+| 为什么选 oauth2-proxy？ | GitLab HTTP issuer 无法满足 apiserver OIDC；控制面未配 OIDC、改造代价高；需求是组级准入；与其它 UI 接入方式统一；oauth2-proxy 边缘过滤简单可控 |
+
+**后续若要解决 per-user K8s RBAC，路径是**：先给 GitLab 上 HTTPS（或引入 Keycloak 等 HTTPS IdP），再配 apiserver `--oidc-*`，最后按 OIDC 用户/组绑定 RBAC，并把 Headlamp 切换为原生 OIDC、下线 `oauth2-proxy-headlamp`。
