@@ -44,3 +44,15 @@ instances:
     clientID: 65d70294ac5fe9e81ee1702a60dc3f6290cf2af3920f7a941ccf05d220ca9a91
     secretName: oauth2-traefik
     upstream: http://traefik-api.traefik.svc.cluster.local:9000
+    # 2026-11-24：只允许 GitLab digitalsupply 组成员进入
+    allowedGroups:
+      - digitalsupply
+
+  - name: headlamp
+    host: headlamp.devops.com
+    clientID: 0217d40851fad8c6fa09f1ff3464d5fae1531b93802f6a56501bd24644f5b4cc
+    secretName: oauth2-headlamp
+    upstream: http://headlamp.headlamp.svc.cluster.local:80
+    # 2026-11-24：只允许 GitLab digitalsupply 组成员进入
+    allowedGroups:
+      - digitalsupply

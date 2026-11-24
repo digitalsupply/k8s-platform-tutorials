@@ -411,6 +411,24 @@ GitLab 在这里是 **OIDC 的 IdP**（OAuth2 provider，Grafana/ArgoCD/Harbor �
 
 当前环境缺 Keycloak、缺 Ceph admin keyring，所以本轮只记录阻塞原因，不做强改。
 
+> 后续进展：Keycloak `ceph-sso` realm 与 Ceph SAML 已在 2026-11-23 完成对接，
+> 2026-11-24 又用 `bigdev`/`smallops` 验证了差异化授权，
+> 详见 [12](notes/12-keycloak-ceph-sso-account-and-topology.md) 与
+> [15](notes/15-multi-user-permission-matrix-bigdev-smallops.md)。
+
+### 8. 多用户权限矩阵（2026-11-24 补充）
+
+此前所有 UI 都只用 `root` 验证过，看不出“组不同 → 权限不同”。本轮新增：
+
+- GitLab：`bigdev`（`digitalsupply`）、`smallops`（`deeptutor`）；
+- GitLab ID Token 补上 `groups`（默认只在 userinfo 里）；
+- 结果：Grafana（GrafanaAdmin vs Viewer）、ArgoCD（admin vs readonly）、
+  Harbor（管理员 vs 普通用户）、Traefik/Headlamp（放行 vs 403）、
+  Ceph（administrator vs read-only）。
+
+完整命令、实测输出、回滚与注意事项见
+[notes/15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md)。
+
 ## 架构
 
 ```text
@@ -733,14 +751,15 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [12-keycloak-ceph-sso-account-and-topology.md](notes/12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` 账号来源/区别、Keycloak 上下游角色、GitLab 客户端与 Ceph IdP 对接说明 |
 | [13-keycloak-admin-console-guide.md](notes/13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解，结合本环境实际配置 |
 | [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
+| [15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md) | `bigdev`/`smallops` 双用户全链路权限矩阵、GitLab `groups` claim 修复、各 UI 实测与回滚（2026-11-24） |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
 
 | 资产 | 说明 |
 |---|---|
-| [assets/oauth2-proxy/values.yaml](assets/oauth2-proxy/values.yaml) | 5 个 oauth2-proxy 实例、host、clientID、upstream |
-| [assets/oauth2-proxy/deployment.yaml](assets/oauth2-proxy/deployment.yaml) | Helm 模板：oauth2-proxy Deployment |
+| [assets/oauth2-proxy/values.yaml](assets/oauth2-proxy/values.yaml) | 5 个 oauth2-proxy 实例、host、clientID、upstream、allowedGroups |
+| [assets/oauth2-proxy/deployment.yaml](assets/oauth2-proxy/deployment.yaml) | Helm 模板：oauth2-proxy Deployment（含 `--allowed-group` 渲染） |
 | [assets/oauth2-proxy/ingressroutes.yaml](assets/oauth2-proxy/ingressroutes.yaml) | `/oauth2/*` 回调路由模板 |
 | [assets/oauth2-proxy/service.yaml](assets/oauth2-proxy/service.yaml) | 每个实例的 ClusterIP Service |
 | [assets/oauth2-proxy/argocd-application.yaml](assets/oauth2-proxy/argocd-application.yaml) | ArgoCD Application（sync-wave 20） |
@@ -749,6 +768,8 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
 | [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
+| [assets/sso-perm-matrix-test.py](assets/sso-perm-matrix-test.py) | 双用户权限矩阵真实登录验证（Grafana/ArgoCD/Harbor/Traefik/Headlamp） |
+| [assets/keycloak-broker-provision-test.py](assets/keycloak-broker-provision-test.py) | 验证 Keycloak `ceph-sso` 自动导入与 broker 登录 |
 
 > 所有 client secret / cookie secret 都在 SealedSecret 中，本仓库不复制密文。
 > 示例中的 client ID 不是秘密；secret 已脱敏。
