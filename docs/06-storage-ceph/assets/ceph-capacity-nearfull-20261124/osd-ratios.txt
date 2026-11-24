@@ -1,0 +1,4 @@
+# osd dump ratios
+full_ratio 0.95
+backfillfull_ratio 0.9
+nearfull_ratio 0.85

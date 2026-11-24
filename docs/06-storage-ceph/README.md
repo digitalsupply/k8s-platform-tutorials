@@ -356,6 +356,7 @@ fstrim -av
 | [cnpg-operator-how-it-works-2026-11-09.md](notes/cnpg-operator-how-it-works-2026-11-09.md) | CNPG Operator、Instance Manager、Plugin、reconcile 全过程 |
 | [cnpg-upgrade-postmortem-2026-11-08.md](notes/cnpg-upgrade-postmortem-2026-11-08.md) | CNPG 1.22 → 1.30.1、rp_filter、barman plugin、switchover |
 | [ceph-disk-optimization-2026-11-05.md](notes/ceph-disk-optimization-2026-11-05.md) | 镜像/Pod/GC/Harbor/Tekton/PVE discard 两轮磁盘清理 |
+| [ceph-capacity-nearfull-audit-20261124.md](notes/ceph-capacity-nearfull-audit-20261124.md) | `OSD_NEARFULL`/`POOL_NEARFULL` 告警排查：72% 占用拆解、空间占用排名、`etcd-backups` 增长根因与处理建议（2026-11-24） |
 
 > XFS 不能缩、LVM 缩容顺序、`wipefs`/`mkfs` dry-run 实测见
 > [09 三个不可逆](../09-incidents-and-readiness/10-three-irreversibles.md)。
@@ -372,6 +373,7 @@ fstrim -av
 | [assets/ceph-audit/](assets/ceph-audit/) | Ceph 主机审计原始材料 |
 | [assets/ceph-status.txt](assets/ceph-status.txt) | 当前 `ceph -s` 快照 |
 | [assets/ceph-osd-tree.txt](assets/ceph-osd-tree.txt) | 当前 OSD 树 |
+| [assets/ceph-capacity-nearfull-20261124/](assets/ceph-capacity-nearfull-20261124/) | 容量告警排查原始输出（`ceph -s`/`df`/OSD 分布/PG 分布/RGW 桶/RBD du/etcd 生命周期） |
 | [assets/pv-list.yaml](assets/pv-list.yaml) | 当前 PV 全量清单 |
 | [scripts/ceph_csi_inventory.py](scripts/ceph_csi_inventory.py) | 只读盘点 Operator/Driver/CephConnection/ClientProfile/PV/PVC |
 | [assets/ceph-csi-operator/](assets/ceph-csi-operator/) | 升级前备份、Helm values、imageset、StorageClass、实时 CR |

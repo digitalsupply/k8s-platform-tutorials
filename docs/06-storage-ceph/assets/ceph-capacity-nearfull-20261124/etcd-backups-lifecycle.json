@@ -1,0 +1,82 @@
+{
+    "prefix_map": {
+        "daily/": {
+            "status": true,
+            "dm_expiration": false,
+            "expiration": 90,
+            "noncur_expiration": 0,
+            "mp_expiration": 0,
+            "transitions": {},
+            "noncur_transitions": {}
+        },
+        "hourly/": {
+            "status": true,
+            "dm_expiration": false,
+            "expiration": 30,
+            "noncur_expiration": 0,
+            "mp_expiration": 0,
+            "transitions": {},
+            "noncur_transitions": {}
+        }
+    },
+    "rule_map": [
+        {
+            "id": "expire-daily-90d",
+            "rule": {
+                "id": "expire-daily-90d",
+                "prefix": "",
+                "status": "Enabled",
+                "expiration": {
+                    "days": "90",
+                    "date": ""
+                },
+                "noncur_expiration": {
+                    "days": "",
+                    "date": ""
+                },
+                "mp_expiration": {
+                    "days": "",
+                    "date": ""
+                },
+                "filter": {
+                    "prefix": "daily/",
+                    "obj_tags": {
+                        "tagset": {}
+                    }
+                },
+                "transitions": {},
+                "noncur_transitions": {},
+                "dm_expiration": false
+            }
+        },
+        {
+            "id": "expire-hourly-30d",
+            "rule": {
+                "id": "expire-hourly-30d",
+                "prefix": "",
+                "status": "Enabled",
+                "expiration": {
+                    "days": "30",
+                    "date": ""
+                },
+                "noncur_expiration": {
+                    "days": "",
+                    "date": ""
+                },
+                "mp_expiration": {
+                    "days": "",
+                    "date": ""
+                },
+                "filter": {
+                    "prefix": "hourly/",
+                    "obj_tags": {
+                        "tagset": {}
+                    }
+                },
+                "transitions": {},
+                "noncur_transitions": {},
+                "dm_expiration": false
+            }
+        }
+    ]
+}

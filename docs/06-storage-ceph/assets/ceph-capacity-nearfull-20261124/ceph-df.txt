@@ -1,0 +1,22 @@
+--- RAW STORAGE ---
+CLASS     SIZE   AVAIL     USED  RAW USED  %RAW USED
+hdd    180 GiB  49 GiB  131 GiB   131 GiB      72.74
+TOTAL  180 GiB  49 GiB  131 GiB   131 GiB      72.74
+ 
+--- POOLS ---
+POOL                        ID  PGS   STORED  OBJECTS     USED  %USED  MAX AVAIL
+.mgr                         1    1  1.2 MiB        2  3.6 MiB   0.02    5.0 GiB
+cephfs_metadata             13   16   57 KiB       22  255 KiB      0    5.0 GiB
+cephfs_data                 14   64   10 MiB        3   30 MiB   0.20    5.0 GiB
+.rgw.root                   34   32  5.7 KiB       20  228 KiB      0    5.0 GiB
+default.rgw.log             35   32    182 B        2   24 KiB      0    5.0 GiB
+default.rgw.control         36   32      0 B        8      0 B      0    5.0 GiB
+default.rgw.meta            37   32      0 B        0      0 B      0    5.0 GiB
+my-zone.rgw.log             38   32   54 KiB      338  2.4 MiB   0.02    5.0 GiB
+my-zone.rgw.control         39   32      0 B        8      0 B      0    5.0 GiB
+my-zone.rgw.meta            40   32  6.4 KiB       37  360 KiB      0    5.0 GiB
+my-zone.rgw.buckets.index   41   32  2.5 MiB       77  7.4 MiB   0.05    5.0 GiB
+my-zone.rgw.buckets.data    42   32   22 GiB   14.94k   67 GiB  81.78    5.0 GiB
+rbd                         43   32     19 B        2   12 KiB      0    5.0 GiB
+k8s-rbd                     44   32   20 GiB    6.13k   59 GiB  79.89    5.0 GiB
+my-zone.rgw.buckets.non-ec  45   32   45 KiB        0  136 KiB      0    5.0 GiB

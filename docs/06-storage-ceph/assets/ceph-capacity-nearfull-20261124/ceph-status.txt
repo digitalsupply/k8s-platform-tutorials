@@ -1,0 +1,45 @@
+# ceph -s
+  cluster:
+    id:     594e535e-d82c-11f0-afa7-bc24112b746f
+    health: HEALTH_WARN
+            1 nearfull osd(s)
+            15 pool(s) nearfull
+ 
+  services:
+    mon: 3 daemons, quorum ceph-02,ceph-03,ceph-01 (age 4d)
+    mgr: ceph-02.wzbtbx(active, since 4d), standbys: ceph-01.egryfx
+    mds: 1/1 daemons up, 2 standby
+    osd: 6 osds: 6 up (since 4d), 6 in (since 11M)
+    rgw: 2 daemons active (2 hosts, 1 zones)
+ 
+  data:
+    volumes: 1/1 healthy
+    pools:   15 pools, 465 pgs
+    objects: 21.59k objects, 43 GiB
+    usage:   131 GiB used, 49 GiB / 180 GiB avail
+    pgs:     465 active+clean
+ 
+  io:
+    client:   767 B/s rd, 102 KiB/s wr, 0 op/s rd, 11 op/s wr
+ 
+
+# ceph health detail
+HEALTH_WARN 1 nearfull osd(s); 15 pool(s) nearfull
+[WRN] OSD_NEARFULL: 1 nearfull osd(s)
+    osd.2 is near full
+[WRN] POOL_NEARFULL: 15 pool(s) nearfull
+    pool '.mgr' is nearfull
+    pool 'cephfs_metadata' is nearfull
+    pool 'cephfs_data' is nearfull
+    pool '.rgw.root' is nearfull
+    pool 'default.rgw.log' is nearfull
+    pool 'default.rgw.control' is nearfull
+    pool 'default.rgw.meta' is nearfull
+    pool 'my-zone.rgw.log' is nearfull
+    pool 'my-zone.rgw.control' is nearfull
+    pool 'my-zone.rgw.meta' is nearfull
+    pool 'my-zone.rgw.buckets.index' is nearfull
+    pool 'my-zone.rgw.buckets.data' is nearfull
+    pool 'rbd' is nearfull
+    pool 'k8s-rbd' is nearfull
+    pool 'my-zone.rgw.buckets.non-ec' is nearfull
