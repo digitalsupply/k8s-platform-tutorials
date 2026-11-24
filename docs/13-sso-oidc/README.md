@@ -732,6 +732,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [11-keycloak-admin-token-cluster.md](notes/11-keycloak-admin-token-cluster.md) | `$ADMIN_TOKEN` 定义、集群获取步骤、Admin REST API 使用与排错 |
 | [12-keycloak-ceph-sso-account-and-topology.md](notes/12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` 账号来源/区别、Keycloak 上下游角色、GitLab 客户端与 Ceph IdP 对接说明 |
 | [13-keycloak-admin-console-guide.md](notes/13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解，结合本环境实际配置 |
+| [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产

@@ -18,6 +18,7 @@
 | [11-keycloak-admin-token-cluster.md](11-keycloak-admin-token-cluster.md) | Keycloak `$ADMIN_TOKEN` 定义与集群获取/使用指南 |
 | [12-keycloak-ceph-sso-account-and-topology.md](12-keycloak-ceph-sso-account-and-topology.md) | `ceph-sso` admin/root 账号、Keycloak 上下游与 GitLab/Ceph 对接角色说明 |
 | [13-keycloak-admin-console-guide.md](13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解（结合实际环境） |
+| [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
 
 ## 阅读校正
 
