@@ -271,3 +271,36 @@ roleRef:
 - [ ] 保留 break-glass 访问（本地 kubeconfig / 管理员通道）
 - [ ] 验证登录、登出、token 过期、组映射、审计日志
 - [ ] 下线旧 oauth2-proxy-headlamp 实例前确认无流量依赖
+
+## 7. 2026-11-24 实施记录（方案 A）
+
+按确认执行了**方案 A：保持 oauth2-proxy 模式，仅将 Headlamp SA 绑定 cluster-admin**。
+
+```bash
+kubectl apply -f - <<'YAML'
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-cluster-admin
+  labels:
+    app.kubernetes.io/part-of: headlamp
+    app.kubernetes.io/managed-by: opencode
+subjects:
+  - kind: ServiceAccount
+    name: headlamp
+    namespace: headlamp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+YAML
+```
+
+验证：
+
+```bash
+kubectl auth can-i '*' '*' --as=system:serviceaccount:headlamp:headlamp
+# yes
+```
+
+风险提示：当前仍是 oauth2-proxy 边缘认证 + 共享 Headlamp SA。任何能通过 oauth2-proxy 进入 Headlamp 的用户，都会获得该 SA 的 `cluster-admin` 权限，无法按用户区分 K8s RBAC 审计。建议后续评估 per-user OIDC RBAC（需 apiserver HTTPS OIDC issuer）。
