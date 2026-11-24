@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""SSO 权限矩阵端到端验证（bigdev / smallops）。
+"""SSO 权限矩阵端到端验证（root / bigdev / smallops）。
 
 用真实的 GitLab 账号走完整的 Authorization Code 登录，再调用各系统的
-"我是谁 / 我能做什么" 接口，证明两个用户的权限不同。
+"我是谁 / 我能做什么" 接口，证明不同组用户的权限不同。
+
+覆盖 8 个 UI：Grafana、ArgoCD、Harbor、Traefik、Headlamp、Hubble、Alloy、Tekton。
 
 环境变量：
-  SSO_TEST_PASSWORD   必填，测试账号密码
+  SSO_TEST_PASSWORD   必填，默认测试账号密码
+  SSO_USERS           默认 bigdev,smallops；可加 root
+  SSO_PASSWORD_<USER> 可选，给某个用户单独指定密码（如 SSO_PASSWORD_ROOT）
   GITLAB_URL          默认 http://192.168.67.201
   INGRESS_VIP         默认 10.0.0.252（Traefik VIP）
   HARBOR_URL          默认 https://192.168.67.202:8443
@@ -16,8 +20,8 @@
 说明：
   - 只访问业务 UI 和 GitLab，不修改任何集群对象；
   - 通过 patch socket.getaddrinfo 把 grafana.k8s.local / traefik.xyz /
-    argocd.devops.com / headlamp.devops.com 指到 INGRESS_VIP，
-    不需要改 /etc/hosts；
+    argocd.devops.com / headlamp.devops.com / hubble.xyz / alloy.xyz /
+    tekton.xyz 指到 INGRESS_VIP，不需要改 /etc/hosts；
   - 退出码 0 表示全部符合预期，1 表示有失败/不符合项。
 """
 import json
@@ -35,8 +39,11 @@ VIP = os.environ.get("INGRESS_VIP", "10.0.0.252")
 GITLAB = os.environ.get("GITLAB_URL", "http://192.168.67.201")
 HARBOR = os.environ.get("HARBOR_URL", "https://192.168.67.202:8443")
 PASSWORD = os.environ.get("SSO_TEST_PASSWORD", "")
-USERS = ["bigdev", "smallops"]
-HOSTS = {"grafana.k8s.local", "traefik.xyz", "argocd.devops.com", "headlamp.devops.com"}
+USERS = [u.strip() for u in os.environ.get("SSO_USERS", "bigdev,smallops").split(",") if u.strip()]
+HOSTS = {
+    "grafana.k8s.local", "traefik.xyz", "argocd.devops.com", "headlamp.devops.com",
+    "hubble.xyz", "alloy.xyz", "tekton.xyz",
+}
 
 _orig_gai = socket.getaddrinfo
 
@@ -48,6 +55,10 @@ def _patched_gai(host, port, *args, **kwargs):
 
 
 socket.getaddrinfo = _patched_gai
+
+
+def password_for(user):
+    return os.environ.get(f"SSO_PASSWORD_{user.upper()}") or PASSWORD
 
 
 def new_session():
@@ -67,7 +78,7 @@ def gitlab_login(s, user):
         data={
             "authenticity_token": m.group(1),
             "user[login]": user,
-            "user[password]": PASSWORD,
+            "user[password]": password_for(user),
             "user[remember_me]": "0",
         },
         allow_redirects=False,
@@ -125,6 +136,16 @@ def authorize(s, url):
         if m:
             return m.group(1).replace("&amp;", "&")
     raise RuntimeError("could not complete GitLab authorize flow")
+
+
+# 每个实例允许的 GitLab 组；root 在 digitalsupply + deeptutor 两个组里
+OAUTH2_APPS = [
+    ("traefik (oauth2-proxy)", "https://traefik.xyz/dashboard/", {"bigdev", "root"}),
+    ("headlamp (oauth2-proxy)", "https://headlamp.devops.com/", {"bigdev", "root"}),
+    ("hubble (oauth2-proxy)", "https://hubble.xyz/", {"bigdev", "smallops", "root"}),
+    ("alloy (oauth2-proxy)", "https://alloy.xyz/", {"bigdev", "smallops", "root"}),
+    ("tekton (oauth2-proxy)", "https://tekton.xyz/", {"bigdev", "smallops", "root"}),
+]
 
 
 def add(result, user, app, status, detail):
@@ -245,7 +266,7 @@ def test_oauth2_proxy(user, result, app, start_url, expect):
 
 
 def main():
-    if not PASSWORD:
+    if not PASSWORD and not any(os.environ.get(f"SSO_PASSWORD_{u.upper()}") for u in USERS):
         print("SSO_TEST_PASSWORD is required", file=sys.stderr)
         return 2
     result = []
@@ -255,10 +276,8 @@ def main():
                 fn(user, result)
             except Exception as exc:  # noqa: BLE001
                 add(result, user, fn.__name__.replace("test_", ""), "ERROR", repr(exc))
-        for app, url, expect in (
-            ("traefik (oauth2-proxy)", "https://traefik.xyz/dashboard/", "allowed" if user == "bigdev" else "denied"),
-            ("headlamp (oauth2-proxy)", "https://headlamp.devops.com/", "allowed" if user == "bigdev" else "denied"),
-        ):
+        for app, url, allowed in OAUTH2_APPS:
+            expect = "allowed" if user in allowed else "denied"
             try:
                 test_oauth2_proxy(user, result, app, url, expect)
             except Exception as exc:  # noqa: BLE001

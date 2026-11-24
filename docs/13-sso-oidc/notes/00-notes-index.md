@@ -20,6 +20,7 @@
 | [13-keycloak-admin-console-guide.md](13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解（结合实际环境） |
 | [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
 | [15-multi-user-permission-matrix-bigdev-smallops.md](15-multi-user-permission-matrix-bigdev-smallops.md) | 新建 `bigdev`/`smallops` 并打通全链路差异化授权：GitLab 组、ID Token `groups`、Grafana/ArgoCD/Harbor/oauth2-proxy/Ceph 的权限矩阵与实测（2026-11-24） |
+| [16-account-permission-mapping-root-bigdev-smallops.md](16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据来源、GitLab 权限、8 个业务 UI 的实际权限与关键配置汇总（2026-11-24） |
 
 ## 阅读校正
 

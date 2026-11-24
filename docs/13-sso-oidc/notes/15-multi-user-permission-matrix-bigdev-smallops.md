@@ -15,7 +15,7 @@
 | Harbor | 原生 OIDC | `oidc_admin_group=digitalsupply`，用户在组内即系统管理员 | **管理员** | **普通用户** | `admin_role_in_auth`：`true` / `false`；列全部用户 200 / 403 |
 | Traefik Dashboard | oauth2-proxy | `--allowed-group=digitalsupply` | **允许** | **403** | 真实登录后 `/dashboard/`：200 / 403 |
 | Headlamp | oauth2-proxy | `--allowed-group=digitalsupply` | **允许** | **403** | 真实登录后 `/`：200 / 403 |
-| Hubble / Alloy / Tekton | oauth2-proxy | 未配置 `--allowed-group`，任何 GitLab 登录用户可进 | 允许 | 允许 | 设计如此：保留给运维观测，不在此处做组隔离 |
+| Hubble / Alloy / Tekton | oauth2-proxy | `--allowed-group=digitalsupply` + `--allowed-group=deeptutor` | 允许 | 允许 | 真实登录后 200；不在两个平台组内的 GitLab 用户 403 |
 | Ceph Dashboard | Keycloak `ceph-sso` SAML | Ceph 本地用户角色 | **administrator** | **read-only** | `ceph dashboard ac-user-show` |
 | Keycloak `ceph-sso` | GitLab broker（OIDC） | 只负责认证；无业务授权 | 可登录、自动导入 | 可登录、自动导入 | broker 登录回跳带 `code`，federated identity 为 `gitlab/userId=5/6` |
 
@@ -186,7 +186,7 @@ Harbor 配置（`/api/v2.0/configurations`）：
 - 其他用户自动 onboard（`oidc_auto_onboard=true`），默认只能看到公开项目/自己创建的项目；
 - Harbor 在**登录时**读取组，移出组后需要重新登录/刷新会话才降权。
 
-### 3.4 oauth2-proxy：Traefik / Headlamp
+### 3.4 oauth2-proxy：全部 5 个实例按组收敛
 
 `platform-gitops` 仓库 `platform/sso/oauth2-proxy/values.yaml` 增加按实例的组白名单：
 
@@ -202,6 +202,15 @@ Harbor 配置（`/api/v2.0/configurations`）：
     ...
     allowedGroups:
       - digitalsupply
+
+  - name: hubble
+    host: hubble.xyz
+    ...
+    allowedGroups:
+      - digitalsupply
+      - deeptutor
+
+  # alloy、tekton 与 hubble 相同：两个组都放行
 ```
 
 模板 `templates/deployment.yaml` 渲染为：
@@ -217,7 +226,8 @@ Harbor 配置（`/api/v2.0/configurations`）：
 
 ```text
 platform-gitops commit 4ce5c25  sso(oauth2-proxy): restrict traefik/headlamp to digitalsupply
-ArgoCD Application platform-sso-oauth2-proxy revision 4ce5c25, Synced/Healthy
+platform-gitops commit 725cb0a  sso(oauth2-proxy): gate hubble/alloy/tekton by digitalsupply+deeptutor
+ArgoCD Application platform-sso-oauth2-proxy revision 725cb0a, Synced/Healthy
 ```
 
 线上参数核对：
@@ -225,13 +235,14 @@ ArgoCD Application platform-sso-oauth2-proxy revision 4ce5c25, Synced/Healthy
 ```text
 oauth2-proxy-traefik   --allowed-group=digitalsupply
 oauth2-proxy-headlamp  --allowed-group=digitalsupply
-oauth2-proxy-hubble    （无）
-oauth2-proxy-alloy     （无）
-oauth2-proxy-tekton    （无）
+oauth2-proxy-hubble    --allowed-group=digitalsupply --allowed-group=deeptutor
+oauth2-proxy-alloy     --allowed-group=digitalsupply --allowed-group=deeptutor
+oauth2-proxy-tekton    --allowed-group=digitalsupply --allowed-group=deeptutor
 ```
 
 行为：OIDC 回调成功后 oauth2-proxy 校验 `groups`，不匹配直接返回 403，
-不会把请求转发给上游。`smallops` 因此在 Traefik/Headlamp 上被挡在认证层。
+不会把请求转发给上游。`smallops` 因此在 Traefik/Headlamp 上被挡在认证层；
+Hubble/Alloy/Tekton 则放行两个平台组，其他 GitLab 用户（例如未来新增的第三方账号）一律 403。
 
 > Headlamp 仍存在“通过认证即共享 SA 权限”的问题：
 > `ClusterRoleBinding/headlamp-cluster-admin` 把 `headlamp/headlamp` SA 绑到 `cluster-admin`，
@@ -308,6 +319,13 @@ Ceph Dashboard (10.0.0.41:8443)
   "admin_role_in_auth":false,"list_users_http":403,"verdict":"non-admin"}}
 {"user":"smallops","app":"traefik (oauth2-proxy)","detail":{"callback_http":403,"verdict":"denied"}}
 {"user":"smallops","app":"headlamp (oauth2-proxy)","detail":{"callback_http":403,"verdict":"denied"}}
+
+{"user":"bigdev","app":"hubble (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
+{"user":"bigdev","app":"alloy (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
+{"user":"bigdev","app":"tekton (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
+{"user":"smallops","app":"hubble (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
+{"user":"smallops","app":"alloy (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
+{"user":"smallops","app":"tekton (oauth2-proxy)","detail":{"protected_http":200,"verdict":"allowed"}}
 ```
 
 说明：
@@ -336,7 +354,8 @@ KEYCLOAK_ADMIN_PASSWORD='<master admin 密码>' SSO_TEST_PASSWORD='<密码>' \
   python3 keycloak-broker-provision-test.py
 ```
 
-第一个脚本退出码 0 表示 10 项检查全部符合预期；第二个脚本退出码 0 表示两个用户都
+第一个脚本退出码 0 表示每个用户的 8 项检查（Grafana/ArgoCD/Harbor + 5 个 oauth2-proxy
+实例）全部符合预期；第二个脚本退出码 0 表示两个用户都
 完成带 `code` 的回跳（首次运行会自动导入用户，重复运行验证已有 federated identity 的登录）。
 
 ### 5.2 手工验收（浏览器无痕窗口）
@@ -351,7 +370,7 @@ KEYCLOAK_ADMIN_PASSWORD='<master admin 密码>' SSO_TEST_PASSWORD='<密码>' \
 6. **Headlamp**：`https://headlamp.devops.com` → `bigdev` 200，`smallops` 403；
 7. **Ceph**：`https://10.0.0.41:8443` → GitLab 登录后，`bigdev` 可进 Cluster/配置，
    `smallops` 仅只读页面；
-8. **Hubble / Alloy / Tekton**：两者都可进（未做组隔离）。
+8. **Hubble / Alloy / Tekton**：两者都可进（已收敛到 `digitalsupply` + `deeptutor` 两个组）。
 
 > 清理 cookie：每个 UI 用独立无痕窗口，避免 GitLab 会话复用导致“看起来直接进去了”。
 
@@ -400,8 +419,9 @@ ceph dashboard ac-user-show smallops | jq '{username,roles}'
    也是 Traefik/Headlamp 的放行组；重命名组会导致全部授权失效。
 4. **Headlamp 的集群管理员问题**：放行即等于 `cluster-admin`（共享 SA），
    只适合完全可信的组；要按人授权必须改原生 OIDC + apiserver OIDC（当前受 HTTP issuer 限制）。
-5. **Hubble / Alloy / Tekton 未做组隔离**：任何能登录 GitLab 的用户都能进；
-   如果要把这三个也收敛，给对应实例加 `allowedGroups` 即可，步骤与 Traefik 相同。
+5. **Hubble / Alloy / Tekton 已收敛到两个平台组**：`digitalsupply` 与 `deeptutor` 可进，
+   其他 GitLab 账号 403。若要进一步只留 `digitalsupply`，删掉 `deeptutor` 那一行即可
+   （步骤与 Traefik 相同，改 `values.yaml` 后 ArgoCD 自动同步）。
 6. **oauth2-proxy 每次登录都会弹 consent**：它请求里带 `approval_prompt=force`；
    如不想每次确认，可在 GitLab 把对应 OAuth Application 标为 trusted（会降低确认强度，自行权衡）。
 7. **Keycloak Review Profile 被关闭**：影响 `ceph-sso` realm 所有首次 broker 登录，

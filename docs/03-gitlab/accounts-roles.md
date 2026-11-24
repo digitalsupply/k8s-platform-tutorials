@@ -9,7 +9,8 @@ GitLab 是本环境的代码仓库和身份中心：
 - 容器 registry **未启用**；
 - 只有两个人工账号：`root` 和 `GitLabDuo`（另有 2 个组自动创建的机器人账号）；
   2026-11-24 为 SSO 权限演练新增 `bigdev`、`smallops` 两个普通账号
-  （分别属于 `digitalsupply` / `deeptutor`，见 [13-SSO 多用户权限矩阵](../13-sso-oidc/notes/15-multi-user-permission-matrix-bigdev-smallops.md)）；
+  （分别属于 `digitalsupply` / `deeptutor`，见 [13-SSO 多用户权限矩阵](../13-sso-oidc/notes/15-multi-user-permission-matrix-bigdev-smallops.md)
+  与 [账号与业务权限映射](../13-sso-oidc/notes/16-account-permission-mapping-root-bigdev-smallops.md)）；
 - 11 个项目、2 个组，全部 private；
 - 同时作为 Grafana、ArgoCD、Harbor 等系统的 OAuth/OIDC 提供方。
 

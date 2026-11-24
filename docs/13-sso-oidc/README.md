@@ -422,12 +422,16 @@ GitLab 在这里是 **OIDC 的 IdP**（OAuth2 provider，Grafana/ArgoCD/Harbor �
 
 - GitLab：`bigdev`（`digitalsupply`）、`smallops`（`deeptutor`）；
 - GitLab ID Token 补上 `groups`（默认只在 userinfo 里）；
+- **全部 8 个 SSO UI 都已按组收敛**：Traefik/Headlamp 只放行 `digitalsupply`，
+  Hubble/Alloy/Tekton 放行 `digitalsupply` + `deeptutor`，其他 GitLab 账号一律 403；
 - 结果：Grafana（GrafanaAdmin vs Viewer）、ArgoCD（admin vs readonly）、
   Harbor（管理员 vs 普通用户）、Traefik/Headlamp（放行 vs 403）、
-  Ceph（administrator vs read-only）。
+  Ceph（administrator vs read-only）；子树/可观测三件套两组均可进。
 
-完整命令、实测输出、回滚与注意事项见
-[notes/15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md)。
+实施过程、实测输出、回滚与注意事项见
+[notes/15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md)；
+`root`/`bigdev`/`smallops` 三个账号的凭据、GitLab 权限、业务侧权限和关键配置汇总见
+[notes/16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md)。
 
 ## 架构
 
@@ -752,6 +756,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [13-keycloak-admin-console-guide.md](notes/13-keycloak-admin-console-guide.md) | Keycloak Admin Console 菜单/功能详解，结合本环境实际配置 |
 | [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比 |
 | [15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md) | `bigdev`/`smallops` 双用户全链路权限矩阵、GitLab `groups` claim 修复、各 UI 实测与回滚（2026-11-24） |
+| [16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据、GitLab 权限、8 个业务 UI 的权限映射与关键配置汇总（2026-11-24） |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
@@ -768,7 +773,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
 | [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
-| [assets/sso-perm-matrix-test.py](assets/sso-perm-matrix-test.py) | 双用户权限矩阵真实登录验证（Grafana/ArgoCD/Harbor/Traefik/Headlamp） |
+| [assets/sso-perm-matrix-test.py](assets/sso-perm-matrix-test.py) | 三用户 × 8 系统权限矩阵真实登录验证（支持 `SSO_USERS` / `SSO_PASSWORD_<USER>`） |
 | [assets/keycloak-broker-provision-test.py](assets/keycloak-broker-provision-test.py) | 验证 Keycloak `ceph-sso` 自动导入与 broker 登录 |
 
 > 所有 client secret / cookie secret 都在 SealedSecret 中，本仓库不复制密文。
