@@ -132,7 +132,7 @@ root 在 `digitalsupply` 组 → 命中 `oidc_admin_group` → **Harbor 系统�
 | Grafana | root | **GrafanaAdmin** | role_attribute_path 表达式 |
 | ArgoCD | root | **role:admin** | policy.csv（groups + email） |
 | Harbor | root | **系统管理员** | oidc_admin_group |
-| Headlamp | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
+| Headlamp | root / bigdev / smallops | **按用户 RBAC**（见第五节） | Headlamp 查用户 RBAC + oauth2-proxy 认证 |
 | Hubble UI | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
 | Tekton Dashboard | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
 | Alloy UI | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
@@ -271,7 +271,124 @@ Traefik 只负责把请求交给它。
 
 ---
 
-## 五、Traefik Middleware 详解
+## 五、Headlamp 按用户 RBAC（2026-11-24 修复）
+
+### 1. 之前的隐患：所有登录用户共享 SA 的 cluster-admin
+
+Headlamp 部署时带了 `-unsafe-use-service-account-token` 参数，同时
+`headlamp` SA 绑定了 `ClusterRole/cluster-admin`。
+
+**这意味着：任何能通过 GitLab 登录 Headlamp 的人，都拥有集群完全控制权。**
+
+原因是 Headlamp 跑在 **in-cluster 模式**：它用自己命名空间里的 SA 去调
+k8s API。`-unsafe-use-service-account-token` 让 Headlamp **直接用 SA token
+转发所有请求，不做任何 RBAC 检查**。于是：
+
+- oauth2-proxy 只负责**认证**（证明"你是谁"）
+- **授权**完全由 `headlamp` SA 决定，所有用户共享同一份权限
+- `smallops`、`bigdev`、任何 GitLab 用户，权限都和 `root` 一样
+
+实测（用该 SA 身份跑 `kubectl auth can-i`）：
+
+```
+create/delete pods          → yes
+create/delete deployments   → yes
+create clusterrolebindings  → yes
+exec pods                   → yes
+get secrets -n kube-system  → yes
+get nodes/proxy             → yes
+```
+
+### 2. 修复：开启按用户 RBAC
+
+**核心是去掉 `-unsafe-use-service-account-token`**。去掉后 Headlamp 会：
+
+1. 从 `X-Forwarded-User` 头读取登录用户名（oauth2-proxy 设置）
+2. 用该身份查 `SelfSubjectRulesReview`，拿到这个用户被授权的动作
+3. **只有被授权的动作才转发到 k8s API**，未授权的直接拒绝
+
+然后按用户名建 k8s RBAC 绑定（**不需要创建 User 对象**，RBAC 按名字匹配）：
+
+| 用户 | 绑定 | 效果 |
+|---|---|---|
+| `root`（leihao） | `ClusterRole/cluster-admin` | 完全控制集群 |
+| `bigdev` | `ClusterRole/headlamp-bigdev` | 只读 + 工作负载读写 |
+| 其他用户 | 无绑定 | 无任何权限 |
+
+清单在 `platform-gitops` 仓库 `platform/headlamp/manifests/headlamp-user-rbac.yaml`，
+由 ArgoCD 应用 `platform-headlamp` 管理。
+
+### 3. bigdev 的权限边界
+
+`headlamp-bigdev` 只给**常见的开发动作**，明确排除高危能力：
+
+| 动作 | 结果 | 说明 |
+|---|---|---|
+| get/list/watch 各类资源 | ✅ | 含 secrets **只读**（排障需要） |
+| create/delete/update pods、deployments、services、configmaps | ✅ | 所有命名空间 |
+| get pods/log | ✅ | 看日志 |
+| **exec pods** | ❌ | 不能进容器执行命令 |
+| **create clusterrolebindings** | ❌ | 不能提权 |
+| **get nodes/proxy** | ❌ | 不能直连 kubelet |
+| **impersonate** | ❌ | 不能冒充其他身份 |
+| **secrets 写** | ❌ | 只能读 |
+
+> **踩坑**：一开始给 bigdev 授了 `get nodes`，实测 `get nodes/proxy`
+> 也跟着变成 `yes`（`nodes/proxy` 是 `nodes` 的子资源，父资源规则会带出来）。
+> RBAC **不支持减法**，只能把 `nodes` 整个去掉。如果确实需要看节点列表，
+> 要接受 `nodes/proxy` 一并放开的风险。
+
+### 4. 修复后的权限矩阵
+
+`kubectl auth can-i --as=<user>` 实测：
+
+| 动作 | root | bigdev | smallops |
+|---|---|---|---|
+| list pods | ✅ | ✅ | ❌ |
+| create pods | ✅ | ✅ | ❌ |
+| delete deployments | ✅ | ✅ | ❌ |
+| get secrets | ✅ | ✅ | ❌ |
+| create clusterrolebindings | ✅ | ❌ | ❌ |
+| exec pods | ✅ | ❌ | ❌ |
+| get nodes/proxy | ✅ | ❌ | ❌ |
+| impersonate users | ✅ | ❌ | ❌ |
+
+### 5. 残留风险与后续
+
+- **`headlamp` SA 仍然绑定 cluster-admin**。开启按用户 RBAC 后，SA 权限
+  只作为"转发凭据"，被 Headlamp 的逐用户检查挡住；但 SA token 本身仍是
+  集群最高权限凭据。如果哪天 Headlamp 的检查被绕过或出 bug，风险会暴露。
+  要彻底收干净，需要确认 Headlamp 是否支持**冒充（impersonation）**——
+  若支持，SA 只需 `impersonate` + `selfsubjectrulesreviews`，
+  由 apiserver 按用户 RBAC 强制，SA 就能降到最低权限。
+- **认证层也加了收敛**：`platform-gitops` 近期的提交把
+  `traefik/headlamp` 限制到 `digitalsupply` 组，`hubble/alloy/tekton`
+  限制到 `digitalsupply+deeptutor` 组。即使 RBAC 配错，能登录的人也更少。
+
+### 6. 验证方法
+
+```bash
+# k8s RBAC 层（确定性的，不依赖 Headlamp）
+kubectl auth can-i --as=root    create clusterrolebindings   # yes
+kubectl auth can-i --as=bigdev  create clusterrolebindings   # no
+kubectl auth can-i --as=smallops list pods                   # no
+
+# Headlamp 是否已去掉不安全参数
+kubectl -n headlamp get deploy headlamp \
+  -o jsonpath='{.spec.template.spec.containers[0].args}'
+# 输出里不应再有 -unsafe-use-service-account-token
+
+# ArgoCD 是否托管了用户级 RBAC
+kubectl -n argocd get app platform-headlamp \
+  -o jsonpath='{range .status.resources[*]}{.kind}{"/"}{.name}{"\n"}{end}'
+# 应含 ClusterRole/headlamp-bigdev、
+# ClusterRoleBinding/headlamp-root-cluster-admin、
+# ClusterRoleBinding/headlamp-bigdev-limited
+```
+
+---
+
+## 六、Traefik Middleware 详解
 
 ### 1. Middleware 是什么
 
@@ -417,7 +534,7 @@ Alloy、Tekton 用 Traefik BasicAuth 做认证，后来全部迁移到 oauth2-pr
 
 ---
 
-## 六、验证命令
+## 七、验证命令
 
 ```bash
 # === GitLab root 用户身份 ===
