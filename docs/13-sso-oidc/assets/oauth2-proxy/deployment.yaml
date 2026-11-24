@@ -38,6 +38,9 @@ spec:
             - "--scope=openid profile email"
             - --code-challenge-method=S256
             - --oidc-groups-claim=groups
+            {{- range .allowedGroups }}
+            - --allowed-group={{ . }}
+            {{- end }}
             - --redirect-url=https://{{ .host }}/oauth2/callback
             - --cookie-secure=true
             - --cookie-samesite=lax

@@ -1,0 +1,16 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-hourly-1d",
+      "Status": "Enabled",
+      "Filter": {"Prefix": "hourly/"},
+      "Expiration": {"Days": 1}
+    },
+    {
+      "ID": "expire-daily-3d",
+      "Status": "Enabled",
+      "Filter": {"Prefix": "daily/"},
+      "Expiration": {"Days": 3}
+    }
+  ]
+}

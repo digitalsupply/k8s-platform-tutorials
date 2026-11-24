@@ -1,0 +1,19 @@
+# pgdump top10
+   0.81 GiB  42.b                 acting=['osd.0', 'osd.1', 'osd.3']
+   0.78 GiB  42.6                 acting=['osd.2', 'osd.1', 'osd.0']
+   0.78 GiB  42.19                acting=['osd.5', 'osd.2', 'osd.4']
+   0.77 GiB  44.16                acting=['osd.3', 'osd.1', 'osd.5']
+   0.75 GiB  42.7                 acting=['osd.2', 'osd.1', 'osd.5']
+   0.75 GiB  42.8                 acting=['osd.3', 'osd.0', 'osd.1']
+   0.75 GiB  42.1b                acting=['osd.1', 'osd.3', 'osd.0']
+   0.74 GiB  42.10                acting=['osd.4', 'osd.2', 'osd.0']
+   0.74 GiB  42.c                 acting=['osd.5', 'osd.2', 'osd.4']
+   0.74 GiB  44.c                 acting=['osd.0', 'osd.4', 'osd.2']
+--- per-osd acting data ---
+osd.0:  23.58 GiB ( 18.1%)
+osd.1:  24.39 GiB ( 18.8%)
+osd.2:  26.18 GiB ( 20.2%)
+osd.3:  17.13 GiB ( 13.2%)
+osd.4:  18.92 GiB ( 14.6%)
+osd.5:  19.73 GiB ( 15.2%)
+total=129.93 GiB

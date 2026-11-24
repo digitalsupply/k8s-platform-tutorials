@@ -26,21 +26,45 @@ instances:
     clientID: 9876a0d08f77da5f2f4313eff0567c5a929f1808c7f7e201bdd8e70d9e07f2f0
     secretName: oauth2-hubble
     upstream: http://hubble-ui.kube-system.svc.cluster.local:80
+    # 2026-11-24：收敛到两个平台组，其他 GitLab 用户一律 403
+    allowedGroups:
+      - digitalsupply
+      - deeptutor
 
   - name: alloy
     host: alloy.xyz
     clientID: 20fc4475cbbe2899f7708a5c1dc66e769901cae806d8fd4112f70c6a559c7a68
     secretName: oauth2-alloy
     upstream: http://alloy.logging.svc.cluster.local:12345
+    # 2026-11-24：收敛到两个平台组，其他 GitLab 用户一律 403
+    allowedGroups:
+      - digitalsupply
+      - deeptutor
 
   - name: tekton
     host: tekton.xyz
     clientID: 89b4d5ace9b9478f5b6de2a426039aa5b542ded7eb1d78c9cfe59de33cf8dc6f
     secretName: oauth2-tekton
     upstream: http://tekton-dashboard.tekton-pipelines.svc.cluster.local:9097
+    # 2026-11-24：收敛到两个平台组，其他 GitLab 用户一律 403
+    allowedGroups:
+      - digitalsupply
+      - deeptutor
 
   - name: traefik
     host: traefik.xyz
     clientID: 65d70294ac5fe9e81ee1702a60dc3f6290cf2af3920f7a941ccf05d220ca9a91
     secretName: oauth2-traefik
     upstream: http://traefik-api.traefik.svc.cluster.local:9000
+    # 2026-11-24：只允许 GitLab digitalsupply 组成员进入
+    allowedGroups:
+      - digitalsupply
+
+  - name: headlamp
+    host: headlamp.devops.com
+    clientID: 0217d40851fad8c6fa09f1ff3464d5fae1531b93802f6a56501bd24644f5b4cc
+    secretName: oauth2-headlamp
+    upstream: http://headlamp.headlamp.svc.cluster.local:80
+    # 2026-11-24：只允许 GitLab digitalsupply 组成员进入
+    allowedGroups:
+      - digitalsupply
