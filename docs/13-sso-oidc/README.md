@@ -748,6 +748,14 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
 | [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
+| [scripts/README.md](scripts/README.md) | **SSO 脚本与配置清单总索引**（Keycloak↔Ceph、GitLab OAuth） |
+| [scripts/keycloak-ceph-sso/](scripts/keycloak-ceph-sso/) | Keycloak↔Ceph 脚本与载荷：`ceph-realm.json`、`ceph-saml-client.json`、`create-saml-client.py`、`e2e-saml-login.py`、`verify-sso-chain.py`、`test-slo-logout.py` |
+| [scripts/gitlab-oauth/](scripts/gitlab-oauth/) | GitLab 侧 Ruby 脚本：`query-oauth-apps.rb`、`fix-oauth-redirect-uri.rb`、`create-oauth-app.rb` |
 
 > 所有 client secret / cookie secret 都在 SealedSecret 中，本仓库不复制密文。
 > 示例中的 client ID 不是秘密；secret 已脱敏。
+>
+> **注意**：`scripts/keycloak-ceph-sso/ceph-realm.json` 里的 `clientSecret`
+> 是 GitLab OAuth 应用的真实 secret（Keycloak 导入 realm 时必须用真实值）。
+> 如果本仓库会同步到公开 GitHub，请先把它替换成占位值，
+> 真实值通过环境变量或密钥管理注入。

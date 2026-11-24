@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "realm": "ceph-sso",
+  "displayName": "Ceph SSO",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "identityProviders": [
+    {
+      "providerId": "oidc",
+      "alias": "gitlab",
+      "displayName": "GitLab",
+      "config": {
+        "issuer": "http://192.168.67.201",
+        "authorizationUrl": "http://192.168.67.201/oauth/authorize",
+        "tokenUrl": "http://192.168.67.201/oauth/token",
+        "userInfoUrl": "http://192.168.67.201/oauth/userinfo",
+        "clientId": "ead09e964d457039a35cdba98e67dd8cd853cc84489050594fc9ffbbb940ba96",
+        "clientSecret": "fc29dcf2c34e7a0f663e00f5c60926c16eb35d02b18746b2a9f801a629077d87426a905c27f71a0e68053b628ee2fbc7d92c14399142bf529fc1d0e0753289e6",
+        "authType": "client_secret_basic",
+        "loginFlow": "browser",
+        "disableUserInfo": "false",
+        "validateSignature": "false"
+      }
+    }
+  ]
+}

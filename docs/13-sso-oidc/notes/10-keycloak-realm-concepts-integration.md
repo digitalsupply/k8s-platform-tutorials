@@ -285,7 +285,7 @@ GitLab 是**身份源头**，平台里每接入一个系统就建一个 OAuth �
    # 用 master 的 admin 通过 Admin API 创建 realm（JSON 导入）
    curl -X POST http://10.0.0.121:32669/admin/realms \
      -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
-     --data @/tmp/ceph_realm.json
+     --data @../scripts/keycloak-ceph-sso/ceph-realm.json
    ```
 
    realm JSON 里 IdP 的关键字段：
@@ -618,15 +618,12 @@ curl -X POST "http://192.168.67.201/api/v4/applications" \
 
 3. **gitlab-rails runner**（API 权限不足、或需要指定 `organization_id` 时）：
 
-```ruby
-# /tmp/create_oauth.rb
-require 'oauth2'
-oauth = OAuth2::Client.new(
-  "http://192.168.67.201/oauth/token",
-  "http://192.168.67.201/oauth/authorize",
-  client_id: "x", client_secret: "y"
-)
-# 或直接走内部模型/SQL，务必带上 organization_id
+脚本在仓库：**[`create-oauth-app.rb`](../scripts/gitlab-oauth/create-oauth-app.rb)**
+
+```bash
+# 在 GitLab 服务器上执行（脚本里已写好 redirect_uri / scopes / organization_id）
+sudo gitlab-rails runner <仓库路径>/docs/13-sso-oidc/scripts/gitlab-oauth/create-oauth-app.rb
+# client_id / client_secret 会写入 /tmp/keycloak_oauth.txt（权限 600）
 ```
 
 > 应用的 **client secret 只返回一次**，丢失后只能删掉重建（会中断在用的服务）。
@@ -1017,8 +1014,8 @@ curl -sk -o /dev/null -w '%{http_code} %{redirect_url}\n' https://headlamp.devop
 ### 步骤 0：确认现状
 
 ```bash
-# GitLab OAuth 应用列表（通过 gitlab-rails runner 查库）
-sudo gitlab-rails runner /tmp/q.rb      # select id,name,redirect_uri from oauth_applications
+# GitLab OAuth 应用列表（脚本在仓库 docs/13-sso-oidc/scripts/gitlab-oauth/）
+sudo gitlab-rails runner <仓库路径>/docs/13-sso-oidc/scripts/gitlab-oauth/query-oauth-apps.rb
 
 # Keycloak 是否就绪
 kubectl -n keycloak get pods
@@ -1105,22 +1102,27 @@ GRANT ALL ON SCHEMA public TO keycloak;
 ### 步骤 3：Keycloak 建 realm + GitLab IdP
 
 ```bash
+# 载荷在仓库 docs/13-sso-oidc/scripts/keycloak-ceph-sso/
 TOKEN=$(curl -s -X POST http://10.0.0.121:32669/realms/master/protocol/openid-connect/token \
   -d 'grant_type=password&client_id=admin-cli&username=admin&password=<管理员密码>' \
   | python3 -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
 
 curl -X POST http://10.0.0.121:32669/admin/realms \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  --data @/tmp/ceph_realm.json
+  --data @../scripts/keycloak-ceph-sso/ceph-realm.json
 ```
 
 ### 步骤 4：Keycloak 建 SAML Client（给 Ceph）
 
 ```bash
+# 推荐直接用脚本，它会读取 ceph-saml-client.json、替换 SP 证书占位符，
+# 并自动移除 role_list scope（见第五节）
+python3 ../scripts/keycloak-ceph-sso/create-saml-client.py
+
+# 或者手动提交载荷（证书占位符需自行替换）
 curl -X POST http://10.0.0.121:32669/admin/realms/ceph-sso/clients \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  --data @/tmp/ceph_saml_client.json
-# 之后要移除 role_list scope，见第五节
+  --data @../scripts/keycloak-ceph-sso/ceph-saml-client.json
 ```
 
 ### 步骤 5：Ceph 生成 SP 证书并配置 SAML

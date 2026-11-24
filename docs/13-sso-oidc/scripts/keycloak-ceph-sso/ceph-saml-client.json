@@ -1,0 +1,42 @@
+{
+  "_comment": "Ceph Dashboard 的 SAML client（Keycloak 作为 SAML IdP 时给下游的入口）。用 create-saml-client.py 提交，脚本会把 <SP_CERT_BODY> 替换成 SP 证书的实际内容。",
+  "clientId": "https://10.0.0.41:8443/auth/saml2/metadata",
+  "name": "Ceph Dashboard",
+  "description": "Ceph Dashboard SAML SP",
+  "enabled": true,
+  "protocol": "saml",
+  "publicClient": false,
+  "frontchannelLogout": true,
+  "redirectUris": [
+    "https://10.0.0.41:8443/auth/saml2*"
+  ],
+  "attributes": {
+    "saml.client.signature": "true",
+    "saml.signing.certificate": "<SP_CERT_BODY>",
+    "saml.encryption.certificate": "<SP_CERT_BODY>",
+    "saml.encrypt": "true",
+    "saml.server.signature": "true",
+    "saml.assertion.signature": "true",
+    "saml.authnstatement": "true",
+    "saml_name_id_format": "username",
+    "saml.force.post.binding": "true",
+    "saml_assertion_consumer_url_post": "https://10.0.0.41:8443/auth/saml2",
+    "saml_assertion_consumer_url_redirect": "https://10.0.0.41:8443/auth/saml2",
+    "saml_single_logout_service_url_redirect": "https://10.0.0.41:8443/auth/saml2/logout",
+    "saml_signature_canonicalization_method": "http://www.w3.org/2001/10/xml-exc-c14n#"
+  },
+  "protocolMappers": [
+    {
+      "name": "uid",
+      "protocol": "saml",
+      "protocolMapper": "saml-user-attribute-mapper",
+      "config": {
+        "user.attribute": "username",
+        "attribute.name": "uid",
+        "attribute.nameformat": "Basic",
+        "friendly.name": "uid",
+        "jsonType.label": "String"
+      }
+    }
+  ]
+}

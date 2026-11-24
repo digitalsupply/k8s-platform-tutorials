@@ -282,48 +282,22 @@ curl -sk -o /dev/null -w '%{http_code}\n' https://10.0.0.41:8443/auth/saml2/logi
 ### 步骤 6：端到端验证
 
 不打开浏览器也能验证整条 SAML 链路（Keycloak 本地用户 → Ceph）。
-用一个带 Cookie 的 Python 脚本走完 4 步：
+脚本在仓库里：**[`e2e-saml-login.py`](../../13-sso-oidc/scripts/keycloak-ceph-sso/e2e-saml-login.py)**，
+走完 4 步：
 
-```python
-import urllib.request, urllib.parse, http.cookiejar, ssl, re, html
-
-ctx = ssl.create_default_context(); ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
-cj = http.cookiejar.CookieJar()
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *a): return None
-
-op = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx),
-                                 urllib.request.HTTPCookieProcessor(cj), NoRedirect)
-
-def req(url, data=None):
-    body = urllib.parse.urlencode(data).encode() if data else None
-    r = urllib.request.Request(url, data=body)
-    try:
-        x = op.open(r, timeout=20)
-        return x.getcode(), x.headers, x.read().decode()
-    except urllib.error.HTTPError as e:
-        return e.code, e.headers, e.read().decode()
-
-# 1. Ceph → Keycloak（拿 SAMLRequest 重定向）
-_, h, _ = req("https://10.0.0.41:8443/auth/saml2/login")
-loc = h["Location"]
-
-# 2. 打开 Keycloak 登录页，解析表单
-_, _, page = req(loc)
-action = re.search(r'<form[^>]*action="([^"]+)"', page).group(1)
-
-# 3. 提交用户名密码，拿 SAMLResponse
-_, _, page = req(html.unescape(action), {"username": "admin", "password": "Ceph@Admin123"})
-fields = dict(re.findall(r'name="([^"]+)" value="([^"]*)"', page))
-acs = html.unescape(re.search(r'<form[^>]*action="([^"]+)"', page).group(1))
-
-# 4. POST 到 Ceph ACS
-code, h, _ = req(acs, {"SAMLResponse": fields["SAMLResponse"],
-                       "RelayState": fields.get("RelayState", "")})
-print(code, h.get("Location"))
+```bash
+cd docs/13-sso-oidc/scripts/keycloak-ceph-sso
+python3 e2e-saml-login.py
 ```
+
+脚本逻辑（4 步）：
+
+1. 访问 Ceph 的 `/auth/saml2/login`，拿到跳转 Keycloak 的 `SAMLRequest`
+2. 打开 Keycloak 登录页，解析表单 action
+3. 提交用户名密码，拿到 `SAMLResponse`
+4. POST 到 Ceph 的 ACS，确认拿到 `access_token`
+
+地址和账号可用环境变量覆盖：`CEPH_DASH_URL`、`KC_BASE_URL`、`KC_USER`、`KC_PASS`。
 
 实测结果：
 
@@ -742,28 +716,21 @@ The redirect URI included is not valid.
 
 **排查技巧**：GitLab 会**先要求登录、登录后才校验** `redirect_uri`，
 所以用 curl 未登录访问 `/oauth/authorize` 只会得到 302 到 `/users/sign_in`，
-看不出问题。要直接查库：
+看不出问题。要直接查库（脚本在仓库里，见
+[scripts/gitlab-oauth/](../../13-sso-oidc/scripts/gitlab-oauth/)）：
 
-```ruby
-# /tmp/q.rb，然后 sudo gitlab-rails runner /tmp/q.rb
-rows = ActiveRecord::Base.connection.select_all(
-  "select id,name,uid,redirect_uri,scopes,confidential from oauth_applications"
-).to_a
-rows.each { |r| puts r.inspect }
+```bash
+# docs/13-sso-oidc/scripts/gitlab-oauth/query-oauth-apps.rb
+sudo gitlab-rails runner <仓库路径>/query-oauth-apps.rb
 ```
 
 **解决**：把 `redirect_uri` 改成 Keycloak 实际发送的地址。Admin UI 有时不允许
 编辑回调地址，可直接改库（改完立即生效，无需重启）：
 
-```ruby
-# /tmp/fix.rb
-uid = "<OAuth 应用的 uid>"
-new_uri = "http://10.0.0.121:32669/realms/ceph-sso/broker/gitlab/endpoint"
-ActiveRecord::Base.connection.execute(
-  ActiveRecord::Base.sanitize_sql(
-    ["update oauth_applications set redirect_uri = ? where uid = ?", new_uri, uid]
-  )
-)
+```bash
+# docs/13-sso-oidc/scripts/gitlab-oauth/fix-oauth-redirect-uri.rb
+# 先改脚本里的 UID / NEW_URI，再执行
+sudo gitlab-rails runner <仓库路径>/fix-oauth-redirect-uri.rb
 ```
 
 > 注意：GitLab 19.5 的 `oauth_applications` 表**没有** `OAuthApplication` 这个
