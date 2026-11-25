@@ -776,6 +776,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md) | `bigdev`/`smallops` 双用户全链路权限矩阵、GitLab `groups` claim 修复、各 UI 实测与回滚（2026-11-24） |
 | [16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据、GitLab 权限、8 个业务 UI 的权限映射与关键配置汇总（2026-11-24） |
 | [18-sso-oidc-credentials-and-id-tokens.md](notes/18-sso-oidc-credentials-and-id-tokens.md) | GitLab/Keycloak/K8s Secret/Ceph 全链路 SSO/OIDC 凭据、Headlamp 不同用户 id_token 与登录弹窗要粘贴的 k8s SA token 获取命令、执行机器与安全建议（2026-11-25） |
+| [19-ceph-sso-switch-user-stale-session.md](notes/19-ceph-sso-switch-user-stale-session.md) | Ceph 换用户后仍显示旧用户：GitLab/Keycloak/Ceph 三层会话、SLO 实测复现、`logout-all` 恢复与 Keycloak 事件审计（2026-11-25） |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
