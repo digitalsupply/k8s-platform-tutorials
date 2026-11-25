@@ -132,7 +132,7 @@ root 在 `digitalsupply` 组 → 命中 `oidc_admin_group` → **Harbor 系统�
 | Grafana | root | **GrafanaAdmin** | role_attribute_path 表达式 |
 | ArgoCD | root | **role:admin** | policy.csv（groups + email） |
 | Harbor | root | **系统管理员** | oidc_admin_group |
-| Headlamp | root / bigdev / smallops | **按用户 RBAC**（见第五节） | Headlamp 查用户 RBAC + oauth2-proxy 认证 |
+| Headlamp | root / bigdev / smallops | **按用户 RBAC**（见第五节） | oauth2-proxy 认证 + 粘贴 k8s token + SA RBAC |
 | Hubble UI | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
 | Tekton Dashboard | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
 | Alloy UI | root | 全访问（无细粒度 RBAC） | oauth2-proxy 只认证 |
@@ -271,7 +271,7 @@ Traefik 只负责把请求交给它。
 
 ---
 
-## 五、Headlamp 按用户 RBAC（2026-11-24 修复）
+## 五、Headlamp 按用户 RBAC（2026-11-25）
 
 ### 1. 之前的隐患：所有登录用户共享 SA 的 cluster-admin
 
@@ -284,9 +284,9 @@ Headlamp 部署时带了 `-unsafe-use-service-account-token` 参数，同时
 k8s API。`-unsafe-use-service-account-token` 让 Headlamp **直接用 SA token
 转发所有请求，不做任何 RBAC 检查**。于是：
 
-- oauth2-proxy 只负责**认证**（证明"你是谁"）
-- **授权**完全由 `headlamp` SA 决定，所有用户共享同一份权限
-- `smallops`、`bigdev`、任何 GitLab 用户，权限都和 `root` 一样
+- oauth2-proxy 只负责**认证**（证明“你是谁”）；
+- **授权**完全由 `headlamp` SA 决定，所有用户共享同一份权限；
+- `smallops`、`bigdev`、任何 GitLab 用户，权限都和 `root` 一样。
 
 实测（用该 SA 身份跑 `kubectl auth can-i`）：
 
@@ -299,24 +299,29 @@ get secrets -n kube-system  → yes
 get nodes/proxy             → yes
 ```
 
-### 2. 修复：开启按用户 RBAC
+### 2. 修复：去掉 unsafe 参数 + 按用户签发 token
 
-**核心是去掉 `-unsafe-use-service-account-token`**。去掉后 Headlamp 会：
+**核心是去掉 `-unsafe-use-service-account-token`。** 去掉后 Headlamp 不再用
+Pod 的 SA 转发请求，而是要求用户在登录页粘贴一个 k8s Bearer Token，并用
+**这个 token 的身份**去调 apiserver。没有 token 时，请求身份是
+`system:anonymous`（实测 403）。
 
-1. 从 `X-Forwarded-User` 头读取登录用户名（oauth2-proxy 设置）
-2. 用该身份查 `SelfSubjectRulesReview`，拿到这个用户被授权的动作
-3. **只有被授权的动作才转发到 k8s API**，未授权的直接拒绝
+因此 RBAC 必须绑 **ServiceAccount**，而不是 GitLab 用户名：
 
-然后按用户名建 k8s RBAC 绑定（**不需要创建 User 对象**，RBAC 按名字匹配）：
+| 用户 | ServiceAccount | 绑定 | 效果 |
+|---|---|---|---|
+| `root`（leihao） | `headlamp-root` | `ClusterRole/cluster-admin` | 完全控制集群 |
+| `bigdev` | `headlamp-bigdev` | `ClusterRole/headlamp-bigdev` | 只读 + 工作负载读写 |
+| `smallops` / 其他 | 无 | 无 | 无权限（oauth2-proxy 先 403） |
 
-| 用户 | 绑定 | 效果 |
-|---|---|---|
-| `root`（leihao） | `ClusterRole/cluster-admin` | 完全控制集群 |
-| `bigdev` | `ClusterRole/headlamp-bigdev` | 只读 + 工作负载读写 |
-| 其他用户 | 无绑定 | 无任何权限 |
+> **踩坑**：`kubectl create token` 生成的身份是
+> `system:serviceaccount:headlamp:<sa>`。之前绑的
+> `kind: User, name: root` 对 SA token **完全不生效**，必须绑 ServiceAccount。
 
-清单在 `platform-gitops` 仓库 `platform/headlamp/manifests/headlamp-user-rbac.yaml`，
-由 ArgoCD 应用 `platform-headlamp` 管理。
+清单在 `platform-gitops` 仓库
+`platform/headlamp/manifests/headlamp-user-rbac.yaml`，由 ArgoCD 应用
+`platform-headlamp` 管理。token 用
+`kubectl -n headlamp create token headlamp-bigdev --duration=24h` 签发。
 
 ### 3. bigdev 的权限边界
 
@@ -329,59 +334,66 @@ get nodes/proxy             → yes
 | get pods/log | ✅ | 看日志 |
 | **exec pods** | ❌ | 不能进容器执行命令 |
 | **create clusterrolebindings** | ❌ | 不能提权 |
-| **get nodes/proxy** | ❌ | 不能直连 kubelet |
+| **get nodes / nodes/proxy** | ❌ | 不能直连 kubelet |
 | **impersonate** | ❌ | 不能冒充其他身份 |
 | **secrets 写** | ❌ | 只能读 |
 
 > **踩坑**：一开始给 bigdev 授了 `get nodes`，实测 `get nodes/proxy`
 > 也跟着变成 `yes`（`nodes/proxy` 是 `nodes` 的子资源，父资源规则会带出来）。
-> RBAC **不支持减法**，只能把 `nodes` 整个去掉。如果确实需要看节点列表，
-> 要接受 `nodes/proxy` 一并放开的风险。
+> RBAC **不支持减法**，只能把 `nodes` 整个去掉。
 
 ### 4. 修复后的权限矩阵
 
-`kubectl auth can-i --as=<user>` 实测：
+`kubectl auth can-i --as=system:serviceaccount:headlamp:<sa>` 实测：
 
-| 动作 | root | bigdev | smallops |
-|---|---|---|---|
-| list pods | ✅ | ✅ | ❌ |
-| create pods | ✅ | ✅ | ❌ |
-| delete deployments | ✅ | ✅ | ❌ |
-| get secrets | ✅ | ✅ | ❌ |
-| create clusterrolebindings | ✅ | ❌ | ❌ |
-| exec pods | ✅ | ❌ | ❌ |
-| get nodes/proxy | ✅ | ❌ | ❌ |
-| impersonate users | ✅ | ❌ | ❌ |
+| 动作 | headlamp-root | headlamp-bigdev |
+|---|---|---|
+| list pods | ✅ | ✅ |
+| create pods | ✅ | ✅ |
+| delete deployments | ✅ | ✅ |
+| get secrets | ✅ | ✅ |
+| create clusterrolebindings | ✅ | ❌ |
+| exec pods | ✅ | ❌ |
+| get nodes / nodes/proxy | ✅ | ❌ |
+| impersonate users | ✅ | ❌ |
+
+`smallops` 没有对应 SA，也拿不到 token；且在 oauth2-proxy 层就被 403。
 
 ### 5. 残留风险与后续
 
-- **`headlamp` SA 仍然绑定 cluster-admin**。开启按用户 RBAC 后，SA 权限
-  只作为"转发凭据"，被 Headlamp 的逐用户检查挡住；但 SA token 本身仍是
-  集群最高权限凭据。如果哪天 Headlamp 的检查被绕过或出 bug，风险会暴露。
-  要彻底收干净，需要确认 Headlamp 是否支持**冒充（impersonation）**——
-  若支持，SA 只需 `impersonate` + `selfsubjectrulesreviews`，
-  由 apiserver 按用户 RBAC 强制，SA 就能降到最低权限。
-- **认证层也加了收敛**：`platform-gitops` 近期的提交把
-  `traefik/headlamp` 限制到 `digitalsupply` 组，`hubble/alloy/tekton`
-  限制到 `digitalsupply+deeptutor` 组。即使 RBAC 配错，能登录的人也更少。
+- **`headlamp` SA 的绑定已收回**：`headlamp-admin`（view）、
+  `headlamp-cluster-read`、`headlamp-cluster-admin` 都已删除。该 SA 不再
+  参与 apiserver 请求，也没有业务资源权限。
+- **bigdev 能在所有命名空间创建 Pod**：如果集群没有限制
+  `privileged` / `hostPath` / `hostNetwork`，可借此拿到节点 root。
+  建议把写权限改成指定命名空间的 RoleBinding，或上 PSA/Kyverno。
+- **bigdev 能读全集群 Secret（只读）**：不能接受就删掉角色里的
+  `secrets` 规则。
+- **认证层仍有收敛**：`traefik/headlamp` 限制到 `digitalsupply` 组，
+  `hubble/alloy/tekton` 限制到 `digitalsupply+deeptutor` 组。
+
+完整的原理、签发/续期/吊销命令和风险说明见
+[17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
 
 ### 6. 验证方法
 
 ```bash
-# k8s RBAC 层（确定性的，不依赖 Headlamp）
-kubectl auth can-i --as=root    create clusterrolebindings   # yes
-kubectl auth can-i --as=bigdev  create clusterrolebindings   # no
-kubectl auth can-i --as=smallops list pods                   # no
-
-# Headlamp 是否已去掉不安全参数
+# 部署参数：不应再有 unsafe 参数
 kubectl -n headlamp get deploy headlamp \
   -o jsonpath='{.spec.template.spec.containers[0].args}'
-# 输出里不应再有 -unsafe-use-service-account-token
+
+# k8s RBAC 层（按 ServiceAccount 验证）
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-root \
+  create clusterrolebindings   # yes
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-bigdev \
+  create clusterrolebindings   # no
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-bigdev \
+  get nodes/proxy              # no
 
 # ArgoCD 是否托管了用户级 RBAC
 kubectl -n argocd get app platform-headlamp \
   -o jsonpath='{range .status.resources[*]}{.kind}{"/"}{.name}{"\n"}{end}'
-# 应含 ClusterRole/headlamp-bigdev、
+# 应含 ServiceAccount/headlamp-root、ServiceAccount/headlamp-bigdev、
 # ClusterRoleBinding/headlamp-root-cluster-admin、
 # ClusterRoleBinding/headlamp-bigdev-limited
 ```

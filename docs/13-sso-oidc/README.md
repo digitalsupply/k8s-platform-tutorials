@@ -433,6 +433,24 @@ GitLab 在这里是 **OIDC 的 IdP**（OAuth2 provider，Grafana/ArgoCD/Harbor �
 `root`/`bigdev`/`smallops` 三个账号的凭据、GitLab 权限、业务侧权限和关键配置汇总见
 [notes/16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md)。
 
+### 9. Headlamp：从“共享 SA”改为“按用户 token”（2026-11-25）
+
+去掉 `-unsafe-use-service-account-token` 后，Headlamp 不再用 Pod 的 SA 调
+apiserver，而是要求每个用户粘贴一个 k8s Bearer Token。按用户建了两个
+ServiceAccount：
+
+- `headlamp-root` → `ClusterRole/cluster-admin`（`root` / leihao）；
+- `headlamp-bigdev` → 只读 + 工作负载读写（`bigdev`）；
+- `smallops` 没有 SA，且在 oauth2-proxy 层就被 403。
+
+token 用 `kubectl -n headlamp create token <sa> --duration=24h` 签发，再粘贴到
+Headlamp 的 “Headlamp Cluster Authentication” 输入框。`headlamp` SA 原来的
+`view` / `headlamp-cluster-read` 绑定已收回。
+
+完整原理（为什么不是 OIDC ID Token）、权限矩阵、签发/续期/吊销命令和
+残留风险见
+[notes/17-headlamp-token-login-per-user-rbac.md](notes/17-headlamp-token-login-per-user-rbac.md)。
+
 ## 架构
 
 ```text

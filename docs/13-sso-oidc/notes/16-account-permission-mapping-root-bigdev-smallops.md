@@ -48,7 +48,7 @@
 | ArgoCD | 原生 OIDC | `policy.csv` 读 `groups`，默认 `role:readonly` | **admin** | **admin** | **readonly** |
 | Harbor | 原生 OIDC | `oidc_admin_group=digitalsupply` | **系统管理员** | **系统管理员** | **普通用户**（自动 onboard） |
 | Traefik Dashboard | oauth2-proxy | `--allowed-group=digitalsupply` | **允许** | **允许** | **403** |
-| Headlamp | oauth2-proxy | `--allowed-group=digitalsupply` | **允许**（实际 `cluster-admin`） | **允许**（实际 `cluster-admin`） | **403** |
+| Headlamp | oauth2-proxy + 粘贴 k8s token | `--allowed-group=digitalsupply` + per-user SA RBAC | **cluster-admin**（`headlamp-root`） | **只读 + 工作负载读写**（`headlamp-bigdev`） | **403** |
 | Hubble | oauth2-proxy | `--allowed-group=digitalsupply,deeptutor` | **允许** | **允许** | **允许** |
 | Alloy | oauth2-proxy | `--allowed-group=digitalsupply,deeptutor` | **允许** | **允许** | **允许** |
 | Tekton | oauth2-proxy | `--allowed-group=digitalsupply,deeptutor` | **允许** | **允许** | **允许** |
@@ -70,7 +70,7 @@
 | ArgoCD | Settings、创建/同步/删除 Application | 只读列表和详情，写操作 403 | 创建 Application 探针：500（过 RBAC）/ 403 |
 | Harbor | “系统管理”（用户、项目、注册表、复制） | 只能看有权限的项目 | `admin_role_in_auth` + 列用户 200/403 |
 | Traefik | Dashboard 全量路由/服务/Middleware | 登录即 403 | `/dashboard/` 200 / 403 |
-| Headlamp | 集群资源全量读写 | 登录即 403 | `/` 200 / 403 |
+| Headlamp | 集群资源全量读写（`headlamp-root`） | 只读 + 工作负载读写（`headlamp-bigdev`，需粘贴 token） | `/` 200；`/api/v1/nodes` 200 / 403 |
 | Hubble | 流量视图 | 同左（放行） | `/` 200 |
 | Alloy | 采集配置/指标浏览器 | 同左（放行） | `/` 200 |
 | Tekton | Pipeline/PipelineRun 管理 | 同左（放行） | `/` 200 |
@@ -257,10 +257,11 @@ traefik   --allowed-group=digitalsupply
 headlamp  --allowed-group=digitalsupply
 ```
 
-> Headlamp 的“放行 ≠ 按人授权”：所有被放行的请求都用 `headlamp/headlamp` SA 访问
-> apiserver，而该 SA 通过 `ClusterRoleBinding/headlamp-cluster-admin` 绑定了
-> `cluster-admin`。因此 `bigdev`/`root` 进 Headlamp 就是集群管理员。
-> 详见 [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md)。
+> **2026-11-25 更新**：Headlamp 已改为“GitLab 认证 + 粘贴 k8s Bearer Token”，
+> 不再共享 `headlamp` SA 的权限。`root` 用 `headlamp-root`（`cluster-admin`），
+> `bigdev` 用 `headlamp-bigdev`（只读 + 工作负载读写），`smallops` 仍在
+> oauth2-proxy 层 403。上面“放行即集群管理员”的描述已过时，详见
+> [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
 
 ### 4.6 Keycloak `ceph-sso`
 
@@ -401,10 +402,12 @@ ssh root@192.168.67.201 "grep -n 'o.claim(:groups' \
 1. **密码**：`bigdev`/`smallops` 使用临时密码且未强制 2FA；`root` 仍在使用部署初始密码。
    生产化前应改为强密码 + 2FA，或接入企业目录。
 2. **`root` 权限过大**：GitLab 全局管理员 + 所有业务系统管理员 + `cluster-admin`
-   （Headlamp 共享 SA）。日常操作应使用 `bigdev`，`root` 仅作应急。
-3. **Headlamp 的共享 SA**：放行组内的人实际都是 `cluster-admin`；这是当前
-   oauth2-proxy 模式的固有限制，改为按人 RBAC 需要原生 OIDC + apiserver OIDC
-   （受 GitLab HTTP issuer 阻塞）。
+   （Headlamp 的 `headlamp-root` SA）。日常操作应使用 `bigdev`，`root` 仅作应急。
+3. **Headlamp 的授权模型（2026-11-25 已更新）**：不再共享 `headlamp` SA，
+   改为“GitLab 认证 + 粘贴 k8s token”；`root` → `headlamp-root`（`cluster-admin`），
+   `bigdev` → `headlamp-bigdev`（只读 + 工作负载读写）。残留风险是 `bigdev`
+   可在所有命名空间建 Pod、可读全集群 Secret，详见
+   [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
 4. **组名是硬契约**：`digitalsupply` 同时被 Grafana、ArgoCD、Harbor、Traefik、
    Headlamp 引用；`deeptutor` 被 Hubble/Alloy/Tekton 引用。重命名组会导致
    对应系统授权全部失效。

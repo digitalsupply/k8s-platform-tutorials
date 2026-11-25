@@ -3,6 +3,12 @@
 > 实测环境：K8s `v1.35.9`（3 control-plane + workers），Headlamp `ghcr.io/headlamp-k8s/headlamp:v0.46.0`，GitLab CE `19.5.0`，oauth2-proxy `v7.15.6`。  
 > 目的：对比当前“oauth2-proxy 统一入口认证”与“Headlamp 原生 OIDC + K8s RBAC”两种模式的配置、权限模型和风险。
 
+> **2026-11-25 更新**：本文第 2、7 节记录的是当时的
+> `-unsafe-use-service-account-token` 共享 SA 模式，**已经过时**。
+> 现在 Headlamp 改为“用户粘贴 k8s Bearer Token” + per-user ServiceAccount，
+> 详见 [17 · Headlamp 登录令牌与按用户 RBAC](17-headlamp-token-login-per-user-rbac.md)。
+> 本文保留作为方案对比与决策背景。
+
 ## 1. 结论先看
 
 | 维度 | 当前：oauth2-proxy ReverseProxy | 目标：Headlamp 原生 OIDC + K8s RBAC |

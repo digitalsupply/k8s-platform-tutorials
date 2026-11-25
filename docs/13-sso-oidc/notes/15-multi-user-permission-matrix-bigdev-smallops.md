@@ -244,10 +244,12 @@ oauth2-proxy-tekton    --allowed-group=digitalsupply --allowed-group=deeptutor
 不会把请求转发给上游。`smallops` 因此在 Traefik/Headlamp 上被挡在认证层；
 Hubble/Alloy/Tekton 则放行两个平台组，其他 GitLab 用户（例如未来新增的第三方账号）一律 403。
 
-> Headlamp 仍存在“通过认证即共享 SA 权限”的问题：
-> `ClusterRoleBinding/headlamp-cluster-admin` 把 `headlamp/headlamp` SA 绑到 `cluster-admin`，
-> 任何被 allowed-group 放行的人实际都是集群管理员。详见
-> [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md)。
+> **2026-11-25 更新**：Headlamp 已去掉 `-unsafe-use-service-account-token`，
+> 改为“用户粘贴 k8s Bearer Token” + per-user ServiceAccount：
+> `root` → `headlamp-root`（`cluster-admin`），`bigdev` → `headlamp-bigdev`
+> （只读 + 工作负载读写），`headlamp` SA 的 `cluster-admin` 绑定已收回。
+> 本文当时记录的“放行即集群管理员”已不再成立。详见
+> [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
 
 ### 3.5 Ceph Dashboard + Keycloak `ceph-sso`
 
@@ -417,8 +419,10 @@ ceph dashboard ac-user-show smallops | jq '{username,roles}'
    升级后务必确认 `groups` 仍在 `id_token` 里。
 3. **组名是授权契约**：`digitalsupply` 同时是 Grafana/ArgoCD/Harbor 的管理组，
    也是 Traefik/Headlamp 的放行组；重命名组会导致全部授权失效。
-4. **Headlamp 的集群管理员问题**：放行即等于 `cluster-admin`（共享 SA），
-   只适合完全可信的组；要按人授权必须改原生 OIDC + apiserver OIDC（当前受 HTTP issuer 限制）。
+4. **Headlamp 的授权（2026-11-25 已更新）**：已改为“GitLab 认证 + 粘贴 k8s token”，
+   不再共享 SA。`root` → `headlamp-root`（`cluster-admin`），`bigdev` →
+   `headlamp-bigdev`（只读 + 工作负载读写），`smallops` 仍在 oauth2-proxy 层 403。
+   详见 [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
 5. **Hubble / Alloy / Tekton 已收敛到两个平台组**：`digitalsupply` 与 `deeptutor` 可进，
    其他 GitLab 账号 403。若要进一步只留 `digitalsupply`，删掉 `deeptutor` 那一行即可
    （步骤与 Traefik 相同，改 `values.yaml` 后 ArgoCD 自动同步）。
