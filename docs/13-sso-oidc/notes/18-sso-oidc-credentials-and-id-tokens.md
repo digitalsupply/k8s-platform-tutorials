@@ -18,19 +18,36 @@
 
 > 说明：以下命令默认在**有相应权限的运维机**上执行；涉及 `ssh`、`kubectl`、`ceph` 的命令需要对应凭据与 RBAC。
 
+## 速查：关键凭据一览
+
+| 凭据 | 获取命令（执行机器） | 详细位置 |
+|---|---|---|
+| **GitLab `root` 账号密码** | `ssh root@192.168.67.201 "sed -n 's/^Password: //p' /etc/gitlab/initial_root_password"` | [1.1](#11-gitlab-root-账号密码) |
+| GitLab 普通用户密码（`bigdev`/`smallops`） | 临时密码，无落盘；通过 Admin UI / `gitlab-rails runner` 设置 | [1.2](#12-普通用户bigdev--smallops密码) |
+| GitLab PAT（推送/自动化） | `kubectl -n cicd get secret gitlab-auth -o jsonpath='{.data.token}' \| base64 -d` | [1.3](#13-gitlab-pat自动化--git-推送) |
+| GitLab OAuth `client_secret` | `ssh root@192.168.67.201 "gitlab-rails runner 'puts Doorkeeper::Application.find_by_name(%q(grafana)).secret'"` | [1.4](#14-gitlab-oauth-应用-client_secret各-sso-应用共用-gitlab-侧凭据) |
+| Keycloak 管理员 | `kubectl -n keycloak get secret keycloak-admin-secret -o jsonpath='{.data.keycloak-admin-password}' \| base64 -d` | [2.1](#21-keycloak-自身管理员) |
+| `ceph-sso` 用户 / GitLab 映射 | Keycloak Admin API（见 2.2） | [2.2](#22-ceph-sso-realm-用户与-gitlab-映射) |
+| K8s Secret（oauth2-* 等） | `kubectl -n <ns> get secret <name> -o jsonpath='{.data}'` | [3](#3-k8s-secret) |
+| Ceph admin key | `ceph auth print-key client.admin` | [4.1](#41-ceph-管理员-keyring) |
+| Headlamp 用户 id_token | `python3 .../get_sso_id_token.py --user <u> --app oauth2-headlamp` | [5](#5-headlamp不同用户身份验证的-id_token) |
+
 ## 1. GitLab（所有用户）
 
-### 1.1 `root` 初始密码
+### 1.1 GitLab `root` 账号密码
 
-GitLab 首次安装生成的初始密码保存在部署机文件里：
+`root` 是 GitLab 全局管理员。其密码是**首次安装生成的初始密码**，保存在部署机文件里，
+这是当前唯一能“直接获取” root 密码的方式（GitLab 库内只存哈希，无法反查）：
 
 ```bash
+# 执行机器：192.168.67.201（GitLab 本机）
 ssh -o BatchMode=yes root@192.168.67.201 \
   "sed -n 's/^Password: //p' /etc/gitlab/initial_root_password"
 ```
 
 > 注意：该文件在 `gitlab-ctl reconfigure` 后 **24 小时会被自动删除**。若已不存在，
-> 用 `ssh root@192.168.67.201 "gitlab-rake 'gitlab:password:reset[root]'"` 重置。
+> 用 `ssh root@192.168.67.201 "gitlab-rake 'gitlab:password:reset[root]'"` 重置，
+> 或改用 GitLab 管理员在 Admin UI 重置。
 
 ### 1.2 普通用户（`bigdev` / `smallops`）密码
 
