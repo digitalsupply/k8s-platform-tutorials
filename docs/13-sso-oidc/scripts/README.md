@@ -102,4 +102,3 @@ sudo gitlab-rails runner /path/to/create-oauth-app.rb
 |---|---|
 | `gitlab-create-oauth-app.sh` | 用 GitLab API 创建 OAuth 应用并 seal 成 SealedSecret |
 | `verify_sso.sh` | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
-| `get_sso_id_token.py` | 获取指定用户在某 OAuth 应用下的 OIDC id_token 并解码身份 claim（不同用户身份验证核对，如 Headlamp） |

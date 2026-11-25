@@ -14,7 +14,7 @@
 | Keycloak | `10.0.0.121:32669`（K8s `keycloak` namespace，经 kubectl 或直连） | `curl`、`kubectl` |
 | K8s Secret | 管理节点（有 kubeconfig 的机器，本机即可） | `kubectl` |
 | Ceph | 有 `ceph` 配置的机器（本机可用）；Ceph 主机 `ceph-01/02/03` | `ceph` CLI |
-| Headlamp / SSO id_token | 任意能访问 GitLab 与业务域名的机器（本机） | `python3` + `ssh`（见第 5 节脚本） |
+| Headlamp / SSO id_token | 运维机（能 `ssh root@192.168.67.201` 且能访问 `http://192.168.67.201`） | `python3`（仅标准库）+ `ssh`，命令见第 5.2 节 |
 
 > 说明：以下命令默认在**有相应权限的运维机**上执行；涉及 `ssh`、`kubectl`、`ceph` 的命令需要对应凭据与 RBAC。
 
@@ -30,7 +30,7 @@
 | `ceph-sso` 用户 / GitLab 映射 | Keycloak Admin API（见 2.2） | [2.2](#22-ceph-sso-realm-用户与-gitlab-映射) |
 | K8s Secret（oauth2-* 等） | `kubectl -n <ns> get secret <name> -o jsonpath='{.data}'` | [3](#3-k8s-secret) |
 | Ceph admin key | `ceph auth print-key client.admin` | [4.1](#41-ceph-管理员-keyring) |
-| Headlamp 用户 id_token | `python3 .../get_sso_id_token.py --user <u> --app oauth2-headlamp` | [5](#5-headlamp不同用户身份验证的-id_token) |
+| Headlamp 用户 id_token | 复制第 5.2 节整段命令执行（只改 `APP`/`USER_NAME`/`USER_PW`） | [5](#5-headlamp不同用户身份验证的-id_token) |
 
 ## 1. GitLab（所有用户）
 
@@ -250,50 +250,425 @@ oauth2-proxy 从 GitLab 拿到该用户的 **OIDC id_token**，其中包含身�
 - `preferred_username`：用户名；
 - `groups`：所在组（oauth2-proxy 的 `--allowed-group` 就是据此校验）。
 
-**不同用户的身份差异，体现在各自 id_token 的 `sub` / `groups` 上。** 要核对某个用户在某个应用下的
-身份验证 id_token，使用脚本 [scripts/get_sso_id_token.py](../scripts/get_sso_id_token.py)。
+**不同用户的身份差异，体现在各自 id_token 的 `sub` / `groups` 上。** 下面这条命令可以直接复制执行：
+只用 Python 3 标准库，**不依赖仓库里的任何脚本文件，也不需要 pip 安装依赖**。
 
-### 5.2 脚本用法
+### 5.2 获取命令（复制即可执行）
+
+**执行机器**：任意一台满足以下两个条件的运维机（本文场景就是平时执行 `kubectl` 的那台）：
+
+- 能 `ssh root@192.168.67.201`（用于读取该 OAuth 应用的 `client_id/secret/redirect_uri`）；
+- 能访问 `http://192.168.67.201`（GitLab 登录、换 token）。
 
 ```bash
-python3 docs/13-sso-oidc/scripts/get_sso_id_token.py \
-  --user bigdev --password 'Temp@12345' --app oauth2-headlamp
+# 只改首行三个变量：APP / USER_NAME / USER_PW
+APP=oauth2-headlamp USER_NAME=bigdev USER_PW='Temp@12345' python3 - <<'PY'
+# 获取指定 GitLab 用户在某 OAuth 应用下的 OIDC id_token，并解码身份 claim。
+# 只依赖 Python 标准库；通过 ssh 读取 GitLab OAuth 应用凭据，不需要任何额外脚本文件。
+# 环境变量：GITLAB / GITLAB_SSH / APP / USER_NAME / USER_PW
+import base64, http.cookiejar, json, os, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
+
+GITLAB = os.environ.get("GITLAB", "http://192.168.67.201")
+SSH = os.environ.get("GITLAB_SSH", "root@192.168.67.201")
+APP = os.environ.get("APP", "oauth2-headlamp")
+USER = os.environ.get("USER_NAME", "bigdev")
+PW = os.environ.get("USER_PW", "")
+
+ruby = (
+    "puts JSON.generate({uid: Doorkeeper::Application.find_by_name(%q(" + APP + ")).uid, "
+    "secret: Doorkeeper::Application.find_by_name(%q(" + APP + ")).secret, "
+    "redirect_uri: Doorkeeper::Application.find_by_name(%q(" + APP + ")).redirect_uri})"
+)
+if SSH in ("", "local"):
+    out = subprocess.check_output(["gitlab-rails", "runner", ruby], text=True).strip()
+else:
+    out = subprocess.check_output(
+        ["ssh", "-o", "BatchMode=yes", SSH, "gitlab-rails runner '" + ruby + "'"], text=True
+    ).strip()
+creds = json.loads(out)
+
+jar = http.cookiejar.CookieJar()
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+
+
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor(jar))
+opener.addheaders = [("User-Agent", "id-token-probe/1.0")]
+
+
+def call(url, data=None):
+    try:
+        r = opener.open(urllib.request.Request(url, data=data), timeout=20)
+        return r.getcode(), r.headers, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers, e.read().decode("utf-8", "replace")
+
+
+# 1) 表单登录 GitLab
+_, _, body = call(GITLAB + "/users/sign_in")
+m = re.search(r'name="authenticity_token" value="([^"]+)"', body)
+if not m:
+    sys.exit("登录页未找到 CSRF token")
+code, _, _ = call(GITLAB + "/users/sign_in", urllib.parse.urlencode({
+    "authenticity_token": m.group(1),
+    "user[login]": USER,
+    "user[password]": PW,
+    "user[remember_me]": "0",
+}).encode())
+if code != 302:
+    sys.exit(f"GitLab 登录失败: HTTP {code}（检查用户名/密码）")
+
+# 2) 走 /oauth/authorize 拿 code（必要时提交授权同意页）
+auth_url = (
+    f"{GITLAB}/oauth/authorize?client_id={creds['uid']}&response_type=code"
+    f"&scope=openid+profile+email&state=idtoken-probe"
+    f"&redirect_uri={urllib.parse.quote(creds['redirect_uri'], safe='')}"
+)
+code, h, body = call(auth_url)
+callback = h.get("Location") if code in (301, 302, 303, 307, 308) else None
+if not callback:
+    m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', body)
+    if m:
+        callback = m.group(1).replace("&amp;", "&")
+    else:
+        for form in re.findall(r"<form\b.*?</form>", body, re.S):
+            if 'value="delete"' in form:  # 跳过 Deny 表单
+                continue
+            data = {}
+            for tag in re.findall(r"<input\b[^>]*>", form):
+                n = re.search(r'name="([^"]+)"', tag)
+                v = re.search(r'value="([^"]*)"', tag)
+                if n:
+                    data[n.group(1)] = v.group(1) if v else ""
+            if "client_id" not in data:
+                continue
+            data.setdefault("commit", "Authorize")
+            c, hh, bb = call(GITLAB + "/oauth/authorize", urllib.parse.urlencode(data).encode())
+            callback = hh.get("Location") if c in (301, 302, 303, 307, 308) else None
+            if not callback:
+                m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', bb)
+                if m:
+                    callback = m.group(1).replace("&amp;", "&")
+            break
+if not callback:
+    sys.exit("未能完成 GitLab authorize")
+m = re.search(r"code=([0-9a-f]+)", callback)
+if not m:
+    sys.exit(f"回调里没有 code: {callback}")
+
+# 3) code 换 token，取 id_token 并解码 payload
+code, _, body = call(GITLAB + "/oauth/token", urllib.parse.urlencode({
+    "grant_type": "authorization_code",
+    "code": m.group(1),
+    "client_id": creds["uid"],
+    "client_secret": creds["secret"],
+    "redirect_uri": creds["redirect_uri"],
+}).encode())
+if code != 200:
+    sys.exit(f"换 token 失败: HTTP {code} {body[:300]}")
+tok = json.loads(body)
+if "id_token" not in tok:
+    sys.exit(f"响应里没有 id_token: {list(tok)}")
+
+p = tok["id_token"].split(".")[1]
+p += "=" * (-len(p) % 4)
+payload = json.loads(base64.urlsafe_b64decode(p))
+print(json.dumps({"user": USER, "app": APP, "client_id": creds["uid"],
+                  "id_token_payload": payload}, indent=2, ensure_ascii=False))
+PY
 ```
 
-输出（节选，已解码）：
+换用户 / 换 UI 只改首行三个变量，代码块原样复用：
+
+```bash
+APP=oauth2-headlamp USER_NAME=smallops USER_PW='Temp@12345' python3 - <<'PY'   # smallops 看 Headlamp
+APP=grafana          USER_NAME=bigdev   USER_PW='Temp@12345' python3 - <<'PY'   # bigdev 看 Grafana
+```
+
+只想看关键 claim 时，在首行末尾加管道（代码块不变）：
+
+```bash
+APP=oauth2-headlamp USER_NAME=bigdev USER_PW='Temp@12345' \
+python3 - <<'PY' | jq -c '{user, sub: .id_token_payload.sub, groups: .id_token_payload.groups}'
+# 获取指定 GitLab 用户在某 OAuth 应用下的 OIDC id_token，并解码身份 claim。
+# 只依赖 Python 标准库；通过 ssh 读取 GitLab OAuth 应用凭据，不需要任何额外脚本文件。
+# 环境变量：GITLAB / GITLAB_SSH / APP / USER_NAME / USER_PW
+import base64, http.cookiejar, json, os, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
+
+GITLAB = os.environ.get("GITLAB", "http://192.168.67.201")
+SSH = os.environ.get("GITLAB_SSH", "root@192.168.67.201")
+APP = os.environ.get("APP", "oauth2-headlamp")
+USER = os.environ.get("USER_NAME", "bigdev")
+PW = os.environ.get("USER_PW", "")
+
+ruby = (
+    "puts JSON.generate({uid: Doorkeeper::Application.find_by_name(%q(" + APP + ")).uid, "
+    "secret: Doorkeeper::Application.find_by_name(%q(" + APP + ")).secret, "
+    "redirect_uri: Doorkeeper::Application.find_by_name(%q(" + APP + ")).redirect_uri})"
+)
+if SSH in ("", "local"):
+    out = subprocess.check_output(["gitlab-rails", "runner", ruby], text=True).strip()
+else:
+    out = subprocess.check_output(
+        ["ssh", "-o", "BatchMode=yes", SSH, "gitlab-rails runner '" + ruby + "'"], text=True
+    ).strip()
+creds = json.loads(out)
+
+jar = http.cookiejar.CookieJar()
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+
+
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor(jar))
+opener.addheaders = [("User-Agent", "id-token-probe/1.0")]
+
+
+def call(url, data=None):
+    try:
+        r = opener.open(urllib.request.Request(url, data=data), timeout=20)
+        return r.getcode(), r.headers, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers, e.read().decode("utf-8", "replace")
+
+
+# 1) 表单登录 GitLab
+_, _, body = call(GITLAB + "/users/sign_in")
+m = re.search(r'name="authenticity_token" value="([^"]+)"', body)
+if not m:
+    sys.exit("登录页未找到 CSRF token")
+code, _, _ = call(GITLAB + "/users/sign_in", urllib.parse.urlencode({
+    "authenticity_token": m.group(1),
+    "user[login]": USER,
+    "user[password]": PW,
+    "user[remember_me]": "0",
+}).encode())
+if code != 302:
+    sys.exit(f"GitLab 登录失败: HTTP {code}（检查用户名/密码）")
+
+# 2) 走 /oauth/authorize 拿 code（必要时提交授权同意页）
+auth_url = (
+    f"{GITLAB}/oauth/authorize?client_id={creds['uid']}&response_type=code"
+    f"&scope=openid+profile+email&state=idtoken-probe"
+    f"&redirect_uri={urllib.parse.quote(creds['redirect_uri'], safe='')}"
+)
+code, h, body = call(auth_url)
+callback = h.get("Location") if code in (301, 302, 303, 307, 308) else None
+if not callback:
+    m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', body)
+    if m:
+        callback = m.group(1).replace("&amp;", "&")
+    else:
+        for form in re.findall(r"<form\b.*?</form>", body, re.S):
+            if 'value="delete"' in form:  # 跳过 Deny 表单
+                continue
+            data = {}
+            for tag in re.findall(r"<input\b[^>]*>", form):
+                n = re.search(r'name="([^"]+)"', tag)
+                v = re.search(r'value="([^"]*)"', tag)
+                if n:
+                    data[n.group(1)] = v.group(1) if v else ""
+            if "client_id" not in data:
+                continue
+            data.setdefault("commit", "Authorize")
+            c, hh, bb = call(GITLAB + "/oauth/authorize", urllib.parse.urlencode(data).encode())
+            callback = hh.get("Location") if c in (301, 302, 303, 307, 308) else None
+            if not callback:
+                m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', bb)
+                if m:
+                    callback = m.group(1).replace("&amp;", "&")
+            break
+if not callback:
+    sys.exit("未能完成 GitLab authorize")
+m = re.search(r"code=([0-9a-f]+)", callback)
+if not m:
+    sys.exit(f"回调里没有 code: {callback}")
+
+# 3) code 换 token，取 id_token 并解码 payload
+code, _, body = call(GITLAB + "/oauth/token", urllib.parse.urlencode({
+    "grant_type": "authorization_code",
+    "code": m.group(1),
+    "client_id": creds["uid"],
+    "client_secret": creds["secret"],
+    "redirect_uri": creds["redirect_uri"],
+}).encode())
+if code != 200:
+    sys.exit(f"换 token 失败: HTTP {code} {body[:300]}")
+tok = json.loads(body)
+if "id_token" not in tok:
+    sys.exit(f"响应里没有 id_token: {list(tok)}")
+
+p = tok["id_token"].split(".")[1]
+p += "=" * (-len(p) % 4)
+payload = json.loads(base64.urlsafe_b64decode(p))
+print(json.dumps({"user": USER, "app": APP, "client_id": creds["uid"],
+                  "id_token_payload": payload}, indent=2, ensure_ascii=False))
+PY
+```
+
+`root` 的密码不要手抄，用命令替换现场读取（代码块不变，只改首行）：
+
+```bash
+APP=oauth2-headlamp USER_NAME=root \
+USER_PW="$(ssh root@192.168.67.201 "sed -n 's/^Password: //p' /etc/gitlab/initial_root_password")" \
+python3 - <<'PY'
+# 获取指定 GitLab 用户在某 OAuth 应用下的 OIDC id_token，并解码身份 claim。
+# 只依赖 Python 标准库；通过 ssh 读取 GitLab OAuth 应用凭据，不需要任何额外脚本文件。
+# 环境变量：GITLAB / GITLAB_SSH / APP / USER_NAME / USER_PW
+import base64, http.cookiejar, json, os, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
+
+GITLAB = os.environ.get("GITLAB", "http://192.168.67.201")
+SSH = os.environ.get("GITLAB_SSH", "root@192.168.67.201")
+APP = os.environ.get("APP", "oauth2-headlamp")
+USER = os.environ.get("USER_NAME", "bigdev")
+PW = os.environ.get("USER_PW", "")
+
+ruby = (
+    "puts JSON.generate({uid: Doorkeeper::Application.find_by_name(%q(" + APP + ")).uid, "
+    "secret: Doorkeeper::Application.find_by_name(%q(" + APP + ")).secret, "
+    "redirect_uri: Doorkeeper::Application.find_by_name(%q(" + APP + ")).redirect_uri})"
+)
+if SSH in ("", "local"):
+    out = subprocess.check_output(["gitlab-rails", "runner", ruby], text=True).strip()
+else:
+    out = subprocess.check_output(
+        ["ssh", "-o", "BatchMode=yes", SSH, "gitlab-rails runner '" + ruby + "'"], text=True
+    ).strip()
+creds = json.loads(out)
+
+jar = http.cookiejar.CookieJar()
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+
+
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor(jar))
+opener.addheaders = [("User-Agent", "id-token-probe/1.0")]
+
+
+def call(url, data=None):
+    try:
+        r = opener.open(urllib.request.Request(url, data=data), timeout=20)
+        return r.getcode(), r.headers, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers, e.read().decode("utf-8", "replace")
+
+
+# 1) 表单登录 GitLab
+_, _, body = call(GITLAB + "/users/sign_in")
+m = re.search(r'name="authenticity_token" value="([^"]+)"', body)
+if not m:
+    sys.exit("登录页未找到 CSRF token")
+code, _, _ = call(GITLAB + "/users/sign_in", urllib.parse.urlencode({
+    "authenticity_token": m.group(1),
+    "user[login]": USER,
+    "user[password]": PW,
+    "user[remember_me]": "0",
+}).encode())
+if code != 302:
+    sys.exit(f"GitLab 登录失败: HTTP {code}（检查用户名/密码）")
+
+# 2) 走 /oauth/authorize 拿 code（必要时提交授权同意页）
+auth_url = (
+    f"{GITLAB}/oauth/authorize?client_id={creds['uid']}&response_type=code"
+    f"&scope=openid+profile+email&state=idtoken-probe"
+    f"&redirect_uri={urllib.parse.quote(creds['redirect_uri'], safe='')}"
+)
+code, h, body = call(auth_url)
+callback = h.get("Location") if code in (301, 302, 303, 307, 308) else None
+if not callback:
+    m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', body)
+    if m:
+        callback = m.group(1).replace("&amp;", "&")
+    else:
+        for form in re.findall(r"<form\b.*?</form>", body, re.S):
+            if 'value="delete"' in form:  # 跳过 Deny 表单
+                continue
+            data = {}
+            for tag in re.findall(r"<input\b[^>]*>", form):
+                n = re.search(r'name="([^"]+)"', tag)
+                v = re.search(r'value="([^"]*)"', tag)
+                if n:
+                    data[n.group(1)] = v.group(1) if v else ""
+            if "client_id" not in data:
+                continue
+            data.setdefault("commit", "Authorize")
+            c, hh, bb = call(GITLAB + "/oauth/authorize", urllib.parse.urlencode(data).encode())
+            callback = hh.get("Location") if c in (301, 302, 303, 307, 308) else None
+            if not callback:
+                m = re.search(r'(https?://[^"\'<>\s]+?code=[0-9a-f]+[^"\'<>\s]*)', bb)
+                if m:
+                    callback = m.group(1).replace("&amp;", "&")
+            break
+if not callback:
+    sys.exit("未能完成 GitLab authorize")
+m = re.search(r"code=([0-9a-f]+)", callback)
+if not m:
+    sys.exit(f"回调里没有 code: {callback}")
+
+# 3) code 换 token，取 id_token 并解码 payload
+code, _, body = call(GITLAB + "/oauth/token", urllib.parse.urlencode({
+    "grant_type": "authorization_code",
+    "code": m.group(1),
+    "client_id": creds["uid"],
+    "client_secret": creds["secret"],
+    "redirect_uri": creds["redirect_uri"],
+}).encode())
+if code != 200:
+    sys.exit(f"换 token 失败: HTTP {code} {body[:300]}")
+tok = json.loads(body)
+if "id_token" not in tok:
+    sys.exit(f"响应里没有 id_token: {list(tok)}")
+
+p = tok["id_token"].split(".")[1]
+p += "=" * (-len(p) % 4)
+payload = json.loads(base64.urlsafe_b64decode(p))
+print(json.dumps({"user": USER, "app": APP, "client_id": creds["uid"],
+                  "id_token_payload": payload}, indent=2, ensure_ascii=False))
+PY
+```
+
+> 如果就在 GitLab 主机（`192.168.67.201`）上执行，可以省掉 `ssh`，加前缀
+> `GITLAB=http://127.0.0.1 GITLAB_SSH=local`（需 root 权限调用 `gitlab-rails`）。
+
+### 5.3 实测结果（2026-11-25）
+
+| 用户 | `APP` | `sub` | `preferred_username` | `groups` |
+|---|---|---|---|---|
+| `bigdev` | `oauth2-headlamp` | `5` | `bigdev` | `["digitalsupply"]` |
+| `smallops` | `oauth2-headlamp` | `6` | `smallops` | `["deeptutor"]` |
+| `root` | `oauth2-headlamp` | `1` | `root` | `["digitalsupply","deeptutor"]` |
+
+完整 payload 示例（`bigdev` / Headlamp，节选，`aud` 已截断）：
 
 ```json
 {
   "user": "bigdev",
   "app": "oauth2-headlamp",
+  "client_id": "0217d408…b4cc",
   "id_token_payload": {
+    "sub": "5",
     "preferred_username": "bigdev",
     "email": "bigdev@example.com",
     "groups": ["digitalsupply"],
-    "sub": "5"
+    "groups_direct": ["digitalsupply"],
+    "iss": "http://192.168.67.201",
+    "exp": 1795581577,
+    "iat": 1795581457
   }
 }
 ```
 
-对比不同用户 / 不同应用：
+### 5.4 应用名映射
 
-```bash
-# root
-python3 docs/13-sso-oidc/scripts/get_sso_id_token.py \
-  --user root --password '<root 初始密码>' --app oauth2-headlamp
-
-# smallops
-python3 docs/13-sso-oidc/scripts/get_sso_id_token.py \
-  --user smallops --password 'Temp@12345' --app oauth2-headlamp
-
-# 换一个应用：Grafana / ArgoCD / Traefik
-python3 docs/13-sso-oidc/scripts/get_sso_id_token.py \
-  --user bigdev --password 'Temp@12345' --app grafana
-```
-
-### 5.3 应用名映射
-
-| 目标 UI | `--app` 参数（GitLab OAuth 应用名） |
+| 目标 UI | `APP`（GitLab OAuth 应用名） |
 |---|---|
 | Headlamp | `oauth2-headlamp` |
 | Traefik Dashboard | `oauth2-traefik` |
@@ -305,16 +680,19 @@ python3 docs/13-sso-oidc/scripts/get_sso_id_token.py \
 | Harbor | `harbor` |
 | Keycloak IdP（ceph-sso） | `keycloak` |
 
-### 5.4 脚本做了什么（等价手工流程）
+### 5.5 命令做了什么
 
 1. 通过 `ssh root@192.168.67.201` + `gitlab-rails runner` 读取该 OAuth 应用的
-   `client_id / client_secret / redirect_uri`；
-2. 以目标用户表单登录 GitLab（`/users/sign_in`）；
-3. 访问 `/oauth/authorize`，必要时处理 GitLab 授权同意页（只提交 Authorize 表单）；
-4. 用回调里的 `code` 到 `/oauth/token` 换 token，取 `id_token`；
-5. 解码并打印 `id_token` 的 payload。
+   `client_id / client_secret / redirect_uri`（**只读**，不修改 GitLab 任何对象）；
+2. 以目标用户表单登录 GitLab：`GET /users/sign_in` 取 CSRF，再 `POST /users/sign_in`；
+3. 访问 `/oauth/authorize` 拿 `code`；若该应用尚未被该用户授权，自动提交**同意页**
+   （GitLab 同时渲染 Authorize 与 Deny 两个表单，只提交 Authorize）；
+4. 用回调地址里的 `code` 调 `/oauth/token` 换 token，取 `id_token`；
+5. 解码 JWT payload 并打印。
 
-> 也可直接用脚本完成；不建议手工拼 curl 处理 GitLab 的 CSRF / 同意页，容易漏步骤。
+> 关键点：命令**不会真的访问** `redirect_uri`（`https://headlamp.devops.com/oauth2/callback`），
+> 只是从 `Location` 头里把 `code` 取出来，所以执行机器不需要能解析这些业务域名。
+> 手工用 `curl` 拼这套流程很容易漏掉 CSRF / 同意页，建议直接用上面的代码。
 
 ## 6. 安全性建议
 

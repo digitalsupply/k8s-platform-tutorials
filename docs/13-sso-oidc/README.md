@@ -792,7 +792,6 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
 | [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
-| [scripts/get_sso_id_token.py](scripts/get_sso_id_token.py) | 获取指定用户在某 OAuth 应用下的 OIDC id_token 并解码身份 claim（Headlamp 等不同用户身份验证核对） |
 | [scripts/README.md](scripts/README.md) | **SSO 脚本与配置清单总索引**（Keycloak↔Ceph、GitLab OAuth） |
 | [scripts/keycloak-ceph-sso/](scripts/keycloak-ceph-sso/) | Keycloak↔Ceph 脚本与载荷：`ceph-realm.json`、`ceph-saml-client.json`、`create-saml-client.py`、`e2e-saml-login.py`、`verify-sso-chain.py`、`test-slo-logout.py` |
 | [scripts/gitlab-oauth/](scripts/gitlab-oauth/) | GitLab 侧 Ruby 脚本：`query-oauth-apps.rb`、`fix-oauth-redirect-uri.rb`、`create-oauth-app.rb` |
