@@ -15,6 +15,7 @@
 | K8s Secret | 管理节点（有 kubeconfig 的机器，本机即可） | `kubectl` |
 | Ceph | 有 `ceph` 配置的机器（本机可用）；Ceph 主机 `ceph-01/02/03` | `ceph` CLI |
 | Headlamp / SSO id_token | 运维机（能 `ssh root@192.168.67.201` 且能访问 `http://192.168.67.201`） | `python3`（仅标准库）+ `ssh`，命令见第 5.2 节 |
+| Headlamp 控制台粘贴的 Token | 有 kubeconfig 的管理机（本机） | `kubectl create token`（见第 6 节） |
 
 > 说明：以下命令默认在**有相应权限的运维机**上执行；涉及 `ssh`、`kubectl`、`ceph` 的命令需要对应凭据与 RBAC。
 
@@ -31,6 +32,7 @@
 | K8s Secret（oauth2-* 等） | `kubectl -n <ns> get secret <name> -o jsonpath='{.data}'` | [3](#3-k8s-secret) |
 | Ceph admin key | `ceph auth print-key client.admin` | [4.1](#41-ceph-管理员-keyring) |
 | Headlamp 用户 id_token | 复制第 5.2 节整段命令执行（只改 `APP`/`USER_NAME`/`USER_PW`） | [5](#5-headlamp不同用户身份验证的-id_token) |
+| **Headlamp 弹窗要粘贴的 Token** | `kubectl -n headlamp create token headlamp-root --duration=24h` | 第 6 节 |
 
 ## 1. GitLab（所有用户）
 
@@ -252,6 +254,9 @@ oauth2-proxy 从 GitLab 拿到该用户的 **OIDC id_token**，其中包含身�
 
 **不同用户的身份差异，体现在各自 id_token 的 `sub` / `groups` 上。** 下面这条命令可以直接复制执行：
 只用 Python 3 标准库，**不依赖仓库里的任何脚本文件，也不需要 pip 安装依赖**。
+
+> 注意：如果你要的是 Headlamp 页面 `…/c/main/token` 弹窗里**粘贴**的那个 token，它不是 id_token，
+> 而是 k8s ServiceAccount token —— 直接看本文第 6 节。
 
 ### 5.2 获取命令（复制即可执行）
 
@@ -694,7 +699,93 @@ PY
 > 只是从 `Location` 头里把 `code` 取出来，所以执行机器不需要能解析这些业务域名。
 > 手工用 `curl` 拼这套流程很容易漏掉 CSRF / 同意页，建议直接用上面的代码。
 
-## 6. 安全性建议
+## 6. Headlamp 控制台粘贴的 Token（k8s Bearer Token）
+
+### 6.1 先分清两个 token
+
+打开 `https://headlamp.devops.com`，GitLab 登录后若出现
+**“Please paste your authentication token.”**（`…/c/main/token`），它要的是
+**Kubernetes ServiceAccount Bearer Token**，**不是**第 5 节的 OIDC id_token。
+
+| 对比项 | OIDC id_token（第 5 节） | k8s Bearer Token（本节） |
+|---|---|---|
+| 签发者 | GitLab | kube-apiserver |
+| 谁生成 | oauth2-proxy 自动完成 | `kubectl create token` |
+| `sub` | GitLab 用户 ID，如 `1`、`5`、`6` | `system:serviceaccount:headlamp:headlamp-root` |
+| 证明什么 | “你是 GitLab 的哪个用户” | “以哪个 k8s 身份操作集群” |
+| 喂给谁 | oauth2-proxy（用户看不到） | Headlamp 的 **Headlamp Cluster Authentication** 弹窗 |
+| 有效期 | `120` 秒 | `--duration` 决定，默认 1h |
+| 能不能互换 | 不能，apiserver 不认 GitLab 的 id_token | 不能，oauth2-proxy 不认 k8s token |
+
+> 为什么会弹这个：Headlamp 已移除 `-unsafe-use-service-account-token`，不再自动拿 Pod 里的
+> SA token 当登录身份。GitLab 登录只通过了 oauth2-proxy 那一层，进集群还需要一个 **k8s 身份**。
+> 设计与权限矩阵见 [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md)。
+
+### 6.2 获取命令
+
+**执行机器**：任意一台**有能创建 ServiceAccount token 的 kubeconfig** 的机器（管理员机器，本文即本机）。
+`bigdev` / `smallops` 没有集群 kubeconfig，**发不了这个 token**，必须由管理员代发。
+
+```bash
+# root（GitLab root / lei hao）：全集群权限（cluster-admin）
+kubectl -n headlamp create token headlamp-root --duration=24h
+
+# bigdev：受限权限（权限清单见 17 号文档第五节）
+kubectl -n headlamp create token headlamp-bigdev --duration=24h
+```
+
+输出是**一整行 JWT**，复制后粘贴到 Headlamp 弹窗，点 **Authenticate** 即可。
+
+当前存在的用户 SA（2026-11-25 实测）：
+
+```text
+NAME              AGE
+headlamp          （已收回业务权限，不要再用它登录）
+headlamp-root     绑定 ClusterRole/cluster-admin
+headlamp-bigdev   绑定 ClusterRole/headlamp-bigdev
+```
+
+> 没有 `headlamp-smallops`：`smallops` 目前**没有** Headlamp 用的 ServiceAccount。
+> 需要给它发 token 的话，先建 SA + ClusterRoleBinding，再签 token。
+
+### 6.3 粘贴前先确认拿到的是哪个身份
+
+```bash
+kubectl -n headlamp create token headlamp-root --duration=10m \
+  | cut -d. -f2 | tr '_-' '/+' | base64 -d 2>/dev/null \
+  | jq -c '{sub, sa: ."kubernetes.io".serviceaccount.name, exp, iat}'
+```
+
+预期（实测）：
+
+```json
+{"sub":"system:serviceaccount:headlamp:headlamp-root","sa":"headlamp-root","exp":1795584313,"iat":1795583713}
+```
+
+> `sub` 不是 GitLab 用户 ID，也不是 Keycloak UUID；它是 k8s SA 身份。
+> 贴错 SA 就等于用错权限。
+
+### 6.4 有效期、续期与吊销
+
+- 有效期由 `--duration` 决定：默认 **1 小时**，最小 **10 分钟**，实测 `24h` 可用，建议 `8h`～`24h`；
+- Headlamp 侧 `-session-ttl=86400` 只管浏览器 cookie，**不能延长** token 本身；
+- 过期后 Headlamp 请求变 401/403，重新 `create token` 再粘贴即可；
+- 单个 token 是**无状态 JWT，无法单独吊销**；怀疑泄漏就删 SA（该 SA 的所有 token 立即失效），
+  ArgoCD 会自动从 Git 恢复：
+
+```bash
+kubectl -n headlamp delete serviceaccount headlamp-root   # 慎用：root 全权限 token 会一起失效
+```
+
+- `kubectl create token` 的输出会进 shell history，建议直接管道到剪贴板/文件，用完清理：
+
+```bash
+kubectl -n headlamp create token headlamp-root --duration=8h > /tmp/headlamp-root.jwt && chmod 600 /tmp/headlamp-root.jwt
+# 粘贴完成后
+shred -u /tmp/headlamp-root.jwt
+```
+
+## 7. 安全性建议
 
 1. **最小权限**：按用途选择最小凭据——GitLab PAT 仅仓库权限；oauth2-proxy 的 `client-secret`
    只对应单个应用；`cookie-secret` 仅用于会话。不要为省事复用高权限凭据。
