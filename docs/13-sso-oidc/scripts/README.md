@@ -1,7 +1,7 @@
 # SSO 脚本与配置清单
 
-本目录收录 Ceph Dashboard 经 Keycloak 接 GitLab SSO 过程中用到的
-**脚本和配置载荷**，让文档里的命令可以直接复现。
+本目录收录 SSO / OIDC 接入过程中用到的**脚本和配置载荷**（Keycloak↔Ceph、
+GitLab OAuth 应用、Headlamp per-user RBAC 等），让文档里的命令可以直接复现。
 
 文档位置：
 - [Ceph Dashboard 经 Keycloak 接 GitLab SSO（实战记录）](../../06-storage-ceph/notes/keycloak-gitlab-ceph-saml-sso.md)
