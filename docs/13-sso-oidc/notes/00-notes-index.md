@@ -22,6 +22,7 @@
 | [15-multi-user-permission-matrix-bigdev-smallops.md](15-multi-user-permission-matrix-bigdev-smallops.md) | 新建 `bigdev`/`smallops` 并打通全链路差异化授权：GitLab 组、ID Token `groups`、Grafana/ArgoCD/Harbor/oauth2-proxy/Ceph 的权限矩阵与实测（2026-11-24） |
 | [16-account-permission-mapping-root-bigdev-smallops.md](16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据来源、GitLab 权限、8 个业务 UI 的实际权限与关键配置汇总（2026-11-24） |
 | [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md) | Headlamp 改为粘贴 k8s Bearer Token 的原因（移除 `-unsafe-use-service-account-token`）、per-user ServiceAccount RBAC、`root`/`bigdev`/`smallops` 权限矩阵、签发/续期/吊销 token 的完整命令、安全注意事项（2026-11-25） |
+| [18-sso-oidc-credentials-and-id-tokens.md](18-sso-oidc-credentials-and-id-tokens.md) | GitLab/Keycloak/K8s Secret/Ceph 全链路 SSO/OIDC 凭据、Headlamp 不同用户 id_token 与登录弹窗要粘贴的 k8s SA token 获取命令、执行机器与安全建议（2026-11-25） |
 
 ## 阅读校正
 
