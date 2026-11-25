@@ -775,6 +775,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md](notes/14-headlamp-oauth2-proxy-vs-native-oidc-rbac.md) | Headlamp oauth2-proxy 反代 vs 原生 OIDC + K8s RBAC 详细对比；含“原生接入能否解决登录即全权限”及选择 oauth2-proxy 的原因 |
 | [15-multi-user-permission-matrix-bigdev-smallops.md](notes/15-multi-user-permission-matrix-bigdev-smallops.md) | `bigdev`/`smallops` 双用户全链路权限矩阵、GitLab `groups` claim 修复、各 UI 实测与回滚（2026-11-24） |
 | [16-account-permission-mapping-root-bigdev-smallops.md](notes/16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据、GitLab 权限、8 个业务 UI 的权限映射与关键配置汇总（2026-11-24） |
+| [18-sso-oidc-credentials-and-id-tokens.md](notes/18-sso-oidc-credentials-and-id-tokens.md) | GitLab/Keycloak/K8s Secret/Ceph/Headlamp 全链路 SSO/OIDC 凭据与不同用户 id_token 获取命令、执行机器与安全建议（2026-11-25） |
 | [00-notes-index.md](notes/00-notes-index.md) | 原始文档索引与版本勘误 |
 
 ## 配套资产
@@ -791,6 +792,7 @@ curl -sk -o /dev/null -w "%{http_code} %{redirect_url}\n" \
 | [assets/ui/](assets/ui/) | Traefik/Hubble/Alloy/Tekton 的 IngressRoute |
 | [scripts/gitlab-create-oauth-app.sh](scripts/gitlab-create-oauth-app.sh) | 创建 GitLab OAuth Application 并生成 SealedSecret（secret 不打印） |
 | [scripts/verify_sso.sh](scripts/verify_sso.sh) | 一键验证 discovery、5 个 UI、ArgoCD、Grafana、Harbor |
+| [scripts/get_sso_id_token.py](scripts/get_sso_id_token.py) | 获取指定用户在某 OAuth 应用下的 OIDC id_token 并解码身份 claim（Headlamp 等不同用户身份验证核对） |
 | [scripts/README.md](scripts/README.md) | **SSO 脚本与配置清单总索引**（Keycloak↔Ceph、GitLab OAuth） |
 | [scripts/keycloak-ceph-sso/](scripts/keycloak-ceph-sso/) | Keycloak↔Ceph 脚本与载荷：`ceph-realm.json`、`ceph-saml-client.json`、`create-saml-client.py`、`e2e-saml-login.py`、`verify-sso-chain.py`、`test-slo-logout.py` |
 | [scripts/gitlab-oauth/](scripts/gitlab-oauth/) | GitLab 侧 Ruby 脚本：`query-oauth-apps.rb`、`fix-oauth-redirect-uri.rb`、`create-oauth-app.rb` |
