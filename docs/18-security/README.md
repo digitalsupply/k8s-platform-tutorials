@@ -5,6 +5,7 @@
 >
 > 详细章节：[`10-linux-k8s-security.md`](10-linux-k8s-security.md)。
 > ServiceAccount / RBAC 专项审计：[`11-serviceaccount-rbac-audit.md`](11-serviceaccount-rbac-audit.md)。
+> Role/ClusterRole/Binding/Subject 全景分析：[`12-rbac-role-binding-subject-analysis.md`](12-rbac-role-binding-subject-analysis.md)。
 > 一句话版本：[15 面试速查 13-security](../15-interview-cheatsheet/13-security.md)。
 
 ## 本环境结论
@@ -36,6 +37,7 @@
 ├── README.md
 ├── 10-linux-k8s-security.md
 ├── 11-serviceaccount-rbac-audit.md
+├── 12-rbac-role-binding-subject-analysis.md
 └── assets/
     ├── evidence/
     │   ├── linux-baseline.txt
@@ -54,6 +56,8 @@
 1. 先看 [`10-linux-k8s-security.md`](10-linux-k8s-security.md) 的基线表；
 2. 用 [`11-serviceaccount-rbac-audit.md`](11-serviceaccount-rbac-audit.md) 梳理全集群
    ServiceAccount 的绑定与可清理项；
-3. 用 [`assets/checklists/linux-baseline.md`](assets/checklists/linux-baseline.md) 查宿主；
+3. 用 [`12-rbac-role-binding-subject-analysis.md`](12-rbac-role-binding-subject-analysis.md)
+   分析 Role/ClusterRole/Binding/Subject 的组合与权限合理性；
+4. 用 [`assets/checklists/linux-baseline.md`](assets/checklists/linux-baseline.md) 查宿主；
 3. 用 [`assets/checklists/k8s-workload-security.md`](assets/checklists/k8s-workload-security.md) 评审工作负载；
 4. 用 [`assets/evidence/`](assets/evidence/README.md) 复现/对比本环境。
