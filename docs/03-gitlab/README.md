@@ -101,6 +101,8 @@ GitLab 与集群不在同一网段（`192.168.67.0/24` ↔ `10.0.0.0/24` 无路�
 |---|---|
 | [harbor-accounts-registry.md](harbor-accounts-registry.md) | Harbor OIDC、账号体系、项目角色、Robot、镜像仓库、扫描、复制、保留 |
 | [harbor-config-pitfalls.md](harbor-config-pitfalls.md) | 实际配置、8080/8443、自签证书、Trivy 修复、imagePullSecret 安全 |
+| [notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md](notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md) | 重启后 OIDC 登录入口消失：nginx 缓存旧 core IP、`/api` 打到 jobservice、reload 与 systemd 自愈 |
+| [assets/harbor-nginx-reload.sh](assets/harbor-nginx-reload.sh) / [harbor-nginx-reload.service](assets/harbor-nginx-reload.service) | 开机等 core/portal 健康后自动 reload Harbor nginx |
 
 ## 主要概念与原理
 
@@ -134,6 +136,9 @@ GitLab 与集群不在同一网段（`192.168.67.0/24` ↔ `10.0.0.0/24` 无路�
    应改成项目级 Robot。
 8. **Trivy 变量前缀**：必须用 `SCANNER_TRIVY_DB_REPOSITORY` 和
    `SCANNER_TRIVY_JAVA_DB_REPOSITORY`，`TRIVY_DB_REPOSITORY` 不生效。
+9. **Harbor 重启后 OIDC 入口消失**：nginx 只在启动时解析 `upstream core`，
+   重启后容器 IP 重排，`/api`、`/c` 可能打到 jobservice；用
+   `docker exec nginx nginx -s reload` 恢复，开机自愈见坑 7。
 
 ## 修复关键 / 建议
 
@@ -160,5 +165,6 @@ notes/install-and-port.md       # 先看历史安装/端口坑
   → notes/gitlab-repo-access…   # 实际克隆/凭据
   → cicd-gitops.md              # Runner/Tekton/Harbor/GitOps
   → harbor-accounts-registry.md # Harbor 账号/项目/Robot
-  → harbor-config-pitfalls.md   # 端口/证书/Trivy/imagePullSecret
+  → harbor-config-pitfalls.md   # 端口/证书/Trivy/imagePullSecret/重启后 OIDC 入口
+  → notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md  # 本次故障复盘
 ```

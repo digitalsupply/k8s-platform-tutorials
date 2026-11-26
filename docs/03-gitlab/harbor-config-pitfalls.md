@@ -166,6 +166,27 @@ Java DB 也要单独配 `SCANNER_TRIVY_JAVA_DB_REPOSITORY`。
 Harbor 的 admin 密码、DB 密码、OIDC client secret 都在 Harbor 主机上；
 imagePullSecret 又用了 admin，导致凭据扩散。应使用 Robot。
 
+### 坑 7：重启后 nginx 缓存旧 core IP，OIDC 按钮消失
+
+2026-11-26 主机重启 + `docker compose up -d` 后，登录页没有
+`Login with GitLab`，本地 admin 也 401，但容器全部 healthy、
+DB 里 `auth_mode=oidc_auth` 仍在。
+
+原因：Harbor 的 nginx 只在启动时解析一次 `upstream core` 并缓存 IP。
+主机重启后容器 IP 重新分配，旧 `core` IP 可能分给 `harbor-jobservice`，
+于是 `/api/`、`/c/` 全打到 jobservice。公开接口
+`GET /api/v2.0/systeminfo` 返回 401，前端因此不渲染 OIDC 按钮。
+
+恢复（执行机器 `ubuntu02`）：
+
+```bash
+docker exec nginx nginx -s reload
+```
+
+持久化：用 `harbor-nginx-reload.service` 开机等 core/portal 健康后自动
+reload。完整排查过程、systemd 单元与验证命令见
+[notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md](notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md)。
+
 ## 修复关键 / 建议
 
 1. **端口固定为 8080/8443**，文档和客户端都按此配置；
@@ -179,6 +200,8 @@ imagePullSecret 又用了 admin，导致凭据扩散。应使用 Robot。
    - `/data`（Harbor 数据）
    - Harbor DB 备份
 7. **不要把 `harbor.yml` / 部署文档中的密码提交 Git**。
+8. **重启后先看公开接口**：`/api/v2.0/systeminfo` 若 401，先 reload nginx，
+   不要误改 OIDC 配置（见坑 7）。
 
 ## 验证命令
 
@@ -186,7 +209,7 @@ imagePullSecret 又用了 admin，导致凭据扩散。应使用 Robot。
 # 容器
 sudo docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}'
 
-# 系统信息
+# 系统信息（公开接口，不需要认证；返回 401 说明 nginx 转发错了，见坑 7）
 curl -k https://192.168.67.202:8443/api/v2.0/systeminfo | jq
 
 # 项目

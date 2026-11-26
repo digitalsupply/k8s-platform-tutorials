@@ -20,6 +20,7 @@ Keycloak ↔ Ceph 侧的脚本与 JSON 载荷。
 | `e2e-saml-login.py` | 端到端验证 SAML 登录（不开浏览器，走完 4 步拿 access_token） | 步骤 6 |
 | `verify-sso-chain.py` | 验证整条跳转链：Ceph → Keycloak → GitLab | 步骤 7 |
 | `test-slo-logout.py` | 验证 SAML 单点登出是否真的销毁了 Keycloak 会话 | 坑 25 |
+| `repro-user-switch.py` | 复现/验证“换 GitLab 用户后 Ceph 仍是旧用户”：只退 GitLab 会复用 Keycloak 会话，走 Ceph 退出（SLO）才换人 | [19](../notes/19-ceph-sso-switch-user-stale-session.md) |
 
 ### 用法
 
@@ -38,6 +39,7 @@ python3 create-saml-client.py
 python3 verify-sso-chain.py     # 跳转链
 python3 e2e-saml-login.py       # 端到端登录
 python3 test-slo-logout.py      # 登出链路
+python3 repro-user-switch.py    # 换用户后仍是旧用户？
 ```
 
 所有脚本都支持用环境变量覆盖地址和账号，见各文件头部的说明：

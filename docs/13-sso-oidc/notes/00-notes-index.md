@@ -23,6 +23,7 @@
 | [16-account-permission-mapping-root-bigdev-smallops.md](16-account-permission-mapping-root-bigdev-smallops.md) | `root`/`bigdev`/`smallops` 三账号凭据来源、GitLab 权限、8 个业务 UI 的实际权限与关键配置汇总（2026-11-24） |
 | [17-headlamp-token-login-per-user-rbac.md](17-headlamp-token-login-per-user-rbac.md) | Headlamp 改为粘贴 k8s Bearer Token 的原因（移除 `-unsafe-use-service-account-token`）、per-user ServiceAccount RBAC、`root`/`bigdev`/`smallops` 权限矩阵、签发/续期/吊销 token 的完整命令、安全注意事项（2026-11-25） |
 | [18-sso-oidc-credentials-and-id-tokens.md](18-sso-oidc-credentials-and-id-tokens.md) | GitLab/Keycloak/K8s Secret/Ceph 全链路 SSO/OIDC 凭据、Headlamp 不同用户 id_token 与登录弹窗要粘贴的 k8s SA token 获取命令、执行机器与安全建议（2026-11-25） |
+| [19-ceph-sso-switch-user-stale-session.md](19-ceph-sso-switch-user-stale-session.md) | Ceph 换用户后仍显示旧用户：GitLab/Keycloak/Ceph 三层会话、SLO 实测复现、`logout-all` 恢复与事件审计（2026-11-25） |
 
 ## 阅读校正
 
@@ -33,3 +34,8 @@
 2. **Sealed Secrets 私钥备份路径**：`07-sealed-secrets.md` 里记录的
    `/root/k8s-postmortem/backup/sealed-secrets-key.yaml` 在当前环境已不存在。
    请重新从集群 Secret 导出并离线保存，详见分类 README 的「坑 16」。
+
+## 相关复盘（其他分类）
+
+- Harbor 重启后登录页没有 OIDC 入口（nginx 缓存旧 `core` IP，`/api` 打到
+  jobservice）：[03-gitlab/notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md](../../03-gitlab/notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md)。

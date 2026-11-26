@@ -854,6 +854,10 @@ cookie 被清除，再次访问 `/auth/saml2/login` 会**重新要求认证**，
   若 Keycloak 已配置成自动跳 GitLab，而 GitLab 仍登录，下次登录会静默完成——
   这是标准 SSO 行为，不是 bug。
 
+> 2026-11-25 的复现与排查记录（GitLab / Keycloak / Ceph 三层会话、只退 GitLab 会复用 Keycloak 会话、
+> `logout-all` 强制下线、Keycloak 事件审计）见
+> [19-ceph-sso-switch-user-stale-session.md](../../13-sso-oidc/notes/19-ceph-sso-switch-user-stale-session.md)。
+
 ## 四、注意事项
 
 1. **Keycloak 生产环境用 PostgreSQL**：dev 模式的 H2 内存数据库不持久化，
