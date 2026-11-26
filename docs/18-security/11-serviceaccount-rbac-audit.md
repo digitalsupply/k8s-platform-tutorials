@@ -45,6 +45,7 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
 | **遗留长期 token Secret（`type=kubernetes.io/service-account-token`）** | **0** |
 | 集群内 Pod 总数 / 自动挂载 SA token | 168 / 155（13 个显式 `automountServiceAccountToken: false`） |
 | 绑定到 `cluster-admin` 的主体 | 4 个（1 个是**死绑定**） |
+| binding 中的 subject 类型 | SA 177 个 / User 10 个 / Group 24 个（去重后 103 个 SA 作为 subject） |
 
 **三个最重要的结论：**
 
@@ -61,23 +62,145 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
 
 ---
 
-## 三、ServiceAccount 在集群里承担的四类角色
+## 三、核心概念：Subject、ServiceAccount、Pod 与 apiserver
 
-理解权限前先明确 SA 的四种用途，后面逐个对照：
+前面按命名空间列了每个 SA 的绑定，这里把“**SA 是什么、subject 是什么、Pod 到底需不需要 SA**”
+讲清楚，避免把概念混在一起。
 
-| 类型 | 说明 | 典型例子 |
+### 1. RBAC 的三要素：Role、Binding、Subject
+
+RBAC 由三个东西组成，缺一不可：
+
+| 要素 | 作用 | 例子 |
 |---|---|---|
-| **系统控制器 SA** | Kubernetes / kubeadm 自带控制器的身份，权限“刚好够用”，绑定到 `system:controller:*` 这类内置 ClusterRole | `kube-system/deployment-controller` |
-| **平台组件 / Operator SA** | 各中间件、Operator 组件的身份，权限来自 Helm/Operator 自带的 Role/ClusterRole，通常按组件最小化 | `argocd/argocd-server`、`cert-manager/cert-manager` |
-| **业务工作负载 SA** | 业务应用的身份，权限取决于业务需要 | `cicd/pipeline`、`gitlab-runner/gitlab-runner` |
-| **访问/用户类 SA** | 不跑工作负载，只作为“人或流程”的授权载体，靠 token 登录或调用 API | `headlamp-root`、`headlamp-bigdev` |
-| **默认 SA** | K8s 在每个命名空间自动创建，未指定 SA 的 Pod 会落到它身上 | 各命名空间的 `default` |
+| **Role / ClusterRole** | 定义权限（能做什么） | `ClusterRole/cluster-admin`、`Role/pg16-ceph` |
+| **RoleBinding / ClusterRoleBinding** | 把权限“挂”给某些身份 | `headlamp-root-cluster-admin` |
+| **Subject** | 被授权者（谁拿到这些权限） | `ServiceAccount headlamp-root`、`Group system:masters` |
 
-**为什么权限长成这样**：RBAC 是“按需授予”。控制器只给它管理的资源
-（如 deployment-controller 只操作 ReplicaSet/Deployment 等）；Operator 的
-权限是上游 chart 定义的；业务 SA 的权限往往偏大，因为要兼容业务操作。
+一个绑定的结构就是：
 
----
+```yaml
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-root-cluster-admin
+roleRef:            # ① 权限来自哪个 Role/ClusterRole
+  kind: ClusterRole
+  name: cluster-admin
+subjects:           # ② 这些身份拿到上面的权限
+  - kind: ServiceAccount
+    name: headlamp-root
+    namespace: headlamp
+```
+
+**所以“SA 被谁绑定”本质是：这个 SA 的名字出现在哪些 RoleBinding /
+ClusterRoleBinding 的 `subjects` 里。**
+
+### 2. Subject 有三种类型
+
+`subjects` 里可以放三种身份，**ServiceAccount 只是其中一种**：
+
+| kind | 代表 | 说明 |
+|---|---|---|
+| `ServiceAccount` | `headlamp/headlamp-root` | K8s 内置身份，**命名空间级**；Pod 和 token 的身份 |
+| `User` | `system:kube-controller-manager`、OIDC 用户如 `root` | 单个身份，可以是人或外部系统 |
+| `Group` | `system:masters`、`kubeadm:cluster-admins`、OIDC 组如 `digitalsupply` | 一组身份 |
+
+**本集群实测**：所有 binding 的 subject 一共 **211 个**，其中
+**ServiceAccount 177 个、User 10 个、Group 24 个**；去重后有 **103 个 SA**
+作为 subject。User/Group 基本都是 `system:*` 系统身份
+（如 `system:kube-scheduler`、`system:authenticated`、`system:nodes`）。
+
+> 注意：本集群 **apiserver 没有配置 OIDC**，所以 K8s RBAC 里**没有**
+> `root`/`digitalsupply` 这类 OIDC 用户/组绑定。GitLab 用户能获得 k8s 身份，
+> 是通过 Headlamp 的 SA token（见下文例子），而不是直接作为 RBAC 的
+> User/Group subject。
+
+### 3. ServiceAccount 是“身份”，绑定才给“权限”
+
+- **SA 对象本身不包含任何权限**。它只是一个身份载体。
+- 权限来自“以该 SA 为 subject 的绑定”。
+- SA 对应的完整 K8s 身份名是：**`system:serviceaccount:<namespace>:<name>`**。
+  例如 `headlamp-root` 的 token，其 `sub` 就是
+  `system:serviceaccount:headlamp:headlamp-root`。
+
+所以两条线要分开看：
+
+```text
+ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
+        │
+        └─ Pod 用它去访问 apiserver 时，才真正“用到”这份权限
+```
+
+### 4. Pod 与 SA：每个 Pod 都有身份，但不是都要访问 apiserver
+
+这是最容易搞混的一点，分三层：
+
+1. **每个 Pod 都必然有一个 SA**。Pod 显式写 `serviceAccountName` 就用它；
+   不写就用所在命名空间的 `default` SA。不存在“没有 SA 的 Pod”。
+2. **SA 提供身份（token），绑定决定这个身份能做什么**。有 SA 但没有绑定，
+   Pod 只能拿到 `system:authenticated` 的基线权限。
+3. **是否需要访问 apiserver，决定 SA 的权限是否真正生效**：
+   - Pod 代码会调 apiserver（创建对象、读 Secret、列举资源）→ 需要
+     **指定 SA + 该 SA 有绑定**，否则会 403。
+   - Pod 完全不调 apiserver（只连数据库/外部接口、只读挂载卷）→ SA 只是
+     “白给”的身份，token 挂进来也不用，可以关掉自动挂载。
+
+`automountServiceAccountToken` 控制是否把 token 挂进 Pod：
+
+- `true`（默认）：Pod 里挂载 `/var/run/secrets/kubernetes.io/serviceaccount/`
+  的 token。
+- `false`：不挂载。Pod 即使想调 apiserver 也没有现成的 token 可用，适合
+  **确定不访问 apiserver** 的 Pod。
+
+> 本集群 168 个 Pod 中，**155 个默认自动挂载**，只有 **13 个显式
+> `automountServiceAccountToken: false`**——这 13 个就是典型的
+> “不需要 SA/apiserver”的 Pod。
+
+### 5. 什么 Pod 需要 SA + 访问 apiserver
+
+| 场景 | 原因 | 本集群例子 |
+|---|---|---|
+| 控制器 / Operator / Webhook | 要管理 K8s 对象、处理准入 | `argocd-*`、`cert-manager`、`cilium`、`prometheus-operator` |
+| 需要创建/管理 K8s 对象的业务 | 在集群里起资源 | `cicd/pipeline`（创建 PipelineRun）、`gitlab-runner`（创建任务 Pod） |
+| 需要读集群内 Secret/配置的组件 | 拿凭据/配置 | `sealed-secrets-controller`、`pg16-ceph` |
+
+**共同特征**：这些 SA 在绑定里有对应的 Role/ClusterRole，且 Pod 实际会调
+apiserver。
+
+### 6. 什么 Pod 不需要 SA / apiserver
+
+| 场景 | 原因 | 本集群例子 |
+|---|---|---|
+| 纯应用后端 | 只连数据库/外部 HTTP，不碰 K8s API | `keycloak`（连 PostgreSQL）、`open-webui`、`kafka` broker |
+| 反向代理 | 只转发流量 | `oauth2-proxy/*`（5 个 Pod，用 `default` SA、无绑定） |
+| 只读节点/挂载卷的采集器 | 直接读节点指标或挂载卷，不调 API | `prometheus-prometheus-node-exporter`（显式 `false`）、`etcd-snapshot`（直连 etcd，显式 `false`）、`hubble-relay` |
+
+这类 Pod 通常：
+- 用 `default` SA 或一个无绑定的 SA；
+- 最好设置 `automountServiceAccountToken: false`，减少被利用面。
+
+### 7. 集群实际例子（与本次审计一一对应）
+
+| SA（作为 subject） | 绑定 | 使用方 Pod | 是否访问 apiserver | 说明 |
+|---|---|---|---|---|
+| `headlamp/headlamp-root` | `ClusterRole/cluster-admin` | **无 Pod** | 否（人粘贴 token） | **纯访问类 SA**：不跑工作负载，只作为登录 token 的 subject |
+| `headlamp/headlamp-bigdev` | `ClusterRole/headlamp-bigdev` | **无 Pod** | 否（人粘贴 token） | 同上，受限访问类 |
+| `cicd/pipeline` | `ClusterRole/edit` | 27 个 Pod（`el-*`、build/clone/check） | **是** | 流水线执行器要创建/删除 PipelineRun、任务 Pod，故需集群级 edit |
+| `gitlab-runner/gitlab-runner` | `Role/gitlab-runner-manager`（通配） | 1 Pod | **是** | Runner 要创建任务 Pod、读命名空间 Secret |
+| `kube-system/deployment-controller` | `ClusterRole/system:controller:deployment-controller` | 静态 Pod | **是** | 控制器管理 Deployment/ReplicaSet |
+| `oauth2-proxy/default` | **无绑定** | 5 个 Pod | **否** | 反向代理，不用调 apiserver，只有基线身份 |
+| `etcd-backup/default` | **无绑定** | 快照 Job（`automount: false`） | **否** | 直连 etcd 做快照，显式不挂 token |
+| `monitoring/prometheus-prometheus-node-exporter` | **无绑定** | DaemonSet（`automount: false`） | **否** | 只读节点指标 |
+| `kafka/my-cluster-kafka` | 仅 `get` 3 个指定 Secret | 1 Pod | 基本否 | 只取证书，权限被压到最小 |
+
+### 8. 几个容易踩的点
+
+- **“SA 被绑定”不等于“SA 有权限”**：绑定的是角色，角色里写什么才有什么。
+- **`default` SA 也能被绑定**：例如 `cicd/default` 绑了 `openwebui-runner-role`，
+  于是该命名空间里用 `default` 的 Pod 也能创建 PipelineRun。
+- **User/Group 是另外两种 subject**：本集群里主要是 `system:*` 身份；
+  要给 GitLab 用户/组直接做 k8s RBAC，需要 apiserver 配 OIDC，目前没有。
+- **无绑定 ≠ 不能用**：没有自定义绑定的 SA/Pod 仍能认证，只是只有基线权限。
 
 ## 四、按命名空间逐个讲解
 
