@@ -516,6 +516,20 @@ kubectl -n headlamp delete serviceaccount headlamp-bigdev
 10. **换浏览器/无痕窗口要重新粘贴**
     token 存在 cookie 里，换会话就没了。
 
+11. **`kubectl --token` 被客户端证书覆盖，查不到 SA 真实权限**
+    在带**客户端证书**的 kubeconfig 下，用 `kubectl --token=<SA token>`
+    来“扮演” SA 是**无效**的：客户端证书的身份会**覆盖** token，实际查的
+    仍是管理员权限，会误判。
+
+    ```bash
+    # 错误做法：被客户端证书覆盖，仍显示管理员权限
+    kubectl --token="$TOKEN" auth can-i '*' '*'          # yes（错误）
+    # 正确做法：用 --as 明确模拟 SA 身份
+    kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-root '*' '*'
+    ```
+
+    **模拟 SA 身份用 `--as`；要真实验证就用挂载该 SA 的 Pod 调 apiserver。**
+
 ---
 
 ## 九、安全注意事项
