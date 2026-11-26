@@ -34,3 +34,8 @@
 2. **Sealed Secrets 私钥备份路径**：`07-sealed-secrets.md` 里记录的
    `/root/k8s-postmortem/backup/sealed-secrets-key.yaml` 在当前环境已不存在。
    请重新从集群 Secret 导出并离线保存，详见分类 README 的「坑 16」。
+
+## 相关复盘（其他分类）
+
+- Harbor 重启后登录页没有 OIDC 入口（nginx 缓存旧 `core` IP，`/api` 打到
+  jobservice）：[03-gitlab/notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md](../../03-gitlab/notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md)。

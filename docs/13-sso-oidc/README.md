@@ -336,7 +336,10 @@ Harbor 不在 K8s 里，配置存在自己的数据库，不能 GitOps。流程�
 - 回调 URI 必须完全一致；
 - Harbor 的 `oidc_scope` 用**逗号**：`openid,profile,email`；
 - 保留本地 admin 作为 break-glass；
-- 回滚只需把 `auth_mode` 改回 `db_auth`。
+- 回滚只需把 `auth_mode` 改回 `db_auth`；
+- 主机重启后若登录页没有 OIDC 入口，先查公开接口
+  `GET /api/v2.0/systeminfo`；401 多半是 nginx 缓存了旧 `core` IP，
+  见 [03-gitlab 复盘](../03-gitlab/notes/harbor-oidc-login-missing-after-reboot-2026-11-26.md)。
 
 ### 6. Traefik / Hubble / Alloy / Tekton / Headlamp：oauth2-proxy 反向代理
 

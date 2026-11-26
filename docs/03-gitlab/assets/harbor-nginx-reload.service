@@ -1,0 +1,15 @@
+[Unit]
+Description=Reload Harbor nginx upstream DNS after boot
+Documentation=file:/usr/local/sbin/harbor-nginx-reload.sh
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/harbor-nginx-reload.sh
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
