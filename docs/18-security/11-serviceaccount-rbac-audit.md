@@ -274,6 +274,44 @@ kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create clusterrolebi
 **身份是共享的**：所有指定同一个 SA 的 Pod，权限完全相同，无法区分到具体
 Pod。要按 Pod/人区分，必须给每个工作负载建独立 SA。
 
+**端到端验证（真正用该 SA 的 Pod 调 apiserver）**
+
+`--as` 是“模拟”，要确认“实际能行”，可以起一个挂载该 SA 的 Pod，用它自己的
+token 调 apiserver：
+
+```bash
+kubectl -n cicd run sa-e2e --rm -i --restart=Never --image=curlimages/curl:8.10.1 \
+  --overrides='{"spec":{"serviceAccountName":"pipeline","automountServiceAccountToken":true,"restartPolicy":"Never"}}' \
+  -- sh -c '
+T=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+# 有权限的动作 -> 201
+curl -sk -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+  -d "{\"apiVersion\":\"v1\",\"kind\":\"ConfigMap\",\"metadata\":{\"name\":\"sa-e2e-cm\",\"namespace\":\"cicd\"}}" \
+  https://kubernetes.default.svc/api/v1/namespaces/cicd/configmaps -w "HTTP %{http_code}\n" -o /dev/null
+# 无权限的动作 -> 403
+curl -sk -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+  -d "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRoleBinding\",\"metadata\":{\"name\":\"sa-e2e-crb\"},\"roleRef\":{\"kind\":\"ClusterRole\",\"name\":\"view\",\"apiGroup\":\"rbac.authorization.k8s.io\"},\"subjects\":[{\"kind\":\"User\",\"name\":\"x\"}]}" \
+  https://kubernetes.default.svc/apis/rbac.authorization.k8s.io/v1/clusterrolebindings -w "HTTP %{http_code}\n" -o /dev/null
+'
+```
+
+实测结果：创建 ConfigMap **HTTP 201**（允许）、创建 ClusterRoleBinding
+**HTTP 403**（拒绝），与 `kubectl auth can-i --as=system:serviceaccount:cicd:pipeline`
+的判断完全一致。
+
+**一个容易踩的坑**：不要在带**客户端证书**的 kubeconfig 上用
+`kubectl --token=<SA token>` 来“扮演” SA。此时客户端证书的身份会**覆盖**
+token，`--token` 实际不生效，查到的仍是管理员权限。本集群实测：
+
+```bash
+# 客户端证书 kubeconfig + --token，仍然被当成管理员
+kubectl --token="$TOKEN" auth can-i '*' '*'        # yes（错误，被证书覆盖）
+# 正确做法：用 --as 明确模拟 SA 身份
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline '*' '*'   # 按 SA 真实权限
+```
+
+**模拟 SA 身份用 `--as`；要真实验证就用上面这种挂载该 SA 的 Pod。**
+
 ### 8. 什么 Pod 不需要 SA / apiserver
 
 | 场景 | 原因 | 本集群例子 |
