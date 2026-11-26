@@ -95,7 +95,79 @@ subjects:           # ② 这些身份拿到上面的权限
 **所以“SA 被谁绑定”本质是：这个 SA 的名字出现在哪些 RoleBinding /
 ClusterRoleBinding 的 `subjects` 里。**
 
-### 2. Subject 有三种类型
+### 2. Role / ClusterRole：权限本体，以及它如何与 Subject 关联
+
+**Role 和 ClusterRole 都是“权限规则集”**，回答的是“允许对哪些资源做哪些动作”。
+它们本身**不会**把权限给任何人，必须通过 Binding 与 Subject 连接后，Subject
+才获得这些权限。
+
+**两者的区别是作用范围：**
+
+| | Role | ClusterRole |
+|---|---|---|
+| 作用范围 | **单个命名空间内** | **整个集群** |
+| 能授权的资源 | 该命名空间内的资源 | 集群级资源（nodes、namespaces、PV、clusterroles…）+ 所有命名空间的命名空间级资源 |
+| 一般由谁引用 | `RoleBinding` | `ClusterRoleBinding`（`RoleBinding` 也可以引用 ClusterRole） |
+
+**为什么分两种**：K8s 资源本身分两类，Role 管不了集群级资源：
+
+- **命名空间级资源**：pods、services、configmaps、secrets、deployments…
+- **集群级资源**：nodes、namespaces、persistentvolumes、storageclasses、
+  clusterroles、clusterrolebindings…
+
+**权限规则长什么样**：每条规则是「apiGroups + resources + verbs」三元组：
+
+```yaml
+kind: ClusterRole
+metadata:
+  name: headlamp-bigdev
+rules:
+  - apiGroups: [""]                        # 核心组
+    resources: ["pods"]                    # 针对 pods
+    verbs: ["get", "list", "watch"]        # 只读
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+```
+
+**与 Subject 的关系（关键链路）**：
+
+```text
+Subject（谁）                ← subjects 引用
+    ↑
+RoleBinding / ClusterRoleBinding   （把“谁”和“哪个权限”连起来）
+    ↑ roleRef 引用
+Role（命名空间内权限） / ClusterRole（集群级权限）   （权限规则本体）
+```
+
+一句话总结：**Role/ClusterRole 是“权限”，Binding 是“连接”，Subject 是“谁”。**
+
+**四种组合决定 Subject 最终拿到的权限范围：**
+
+| roleRef | 绑定类型 | Subject 最终权限范围 |
+|---|---|---|
+| `Role` | `RoleBinding` | **仅该命名空间内** |
+| `ClusterRole` | `ClusterRoleBinding` | **整个集群** |
+| `ClusterRole` | `RoleBinding` | **仅该命名空间内**（把集群级规则“降”到命名空间） |
+| `Role` | `ClusterRoleBinding` | ❌ 不允许（ClusterRoleBinding 只能引用 ClusterRole） |
+
+**本集群实例：**
+
+| 权限本体 | 绑定 | Subject | 实际效果 |
+|---|---|---|---|
+| `ClusterRole/cluster-admin`（规则 `*`→`*`→`*`） | `ClusterRoleBinding/headlamp-root-cluster-admin` | `SA headlamp/headlamp-root` | **全集群全权限** |
+| `ClusterRole/edit`（集群级编辑） | `ClusterRoleBinding/pipeline-edit-binding` | `SA cicd/pipeline` | **全集群编辑**（含 Secret 写） |
+| `Role/pg16-ceph`（仅 cnpg-system 内 pg16-ceph 相关 CR/Secret） | `RoleBinding/pg16-ceph` | `SA cnpg-system/pg16-ceph` | **仅 cnpg-system 内** |
+| `ClusterRole/strimzi-cluster-operator-namespaced` | `RoleBinding/strimzi-cluster-operator` | `SA kafka/strimzi-cluster-operator` | ClusterRole 经 **RoleBinding** 引用，权限**限定在 kafka 命名空间** |
+
+最后一行是容易忽略的点：**`RoleBinding` 也能引用 `ClusterRole`**，此时虽然
+引用的是集群级角色，但授予范围被限制在该 RoleBinding 所在的命名空间。
+
+**内置角色的聚合**：`edit` / `view` / `admin` 不是手写规则，而是用
+`aggregationRule`（按标签聚合其它 ClusterRole）生成；`cluster-admin` 则是
+直接的 `*` 通配规则。
+
+### 3. Subject 有三种类型
 
 `subjects` 里可以放三种身份，**ServiceAccount 只是其中一种**：
 
@@ -115,7 +187,7 @@ ClusterRoleBinding 的 `subjects` 里。**
 > 是通过 Headlamp 的 SA token（见下文例子），而不是直接作为 RBAC 的
 > User/Group subject。
 
-### 3. ServiceAccount 是“身份”，绑定才给“权限”
+### 4. ServiceAccount 是“身份”，绑定才给“权限”
 
 - **SA 对象本身不包含任何权限**。它只是一个身份载体。
 - 权限来自“以该 SA 为 subject 的绑定”。
@@ -131,7 +203,7 @@ ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
         └─ Pod 用它去访问 apiserver 时，才真正“用到”这份权限
 ```
 
-### 4. Pod 与 SA：每个 Pod 都有身份，但不是都要访问 apiserver
+### 5. Pod 与 SA：每个 Pod 都有身份，但不是都要访问 apiserver
 
 这是最容易搞混的一点，分三层：
 
@@ -156,7 +228,7 @@ ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
 > `automountServiceAccountToken: false`**——这 13 个就是典型的
 > “不需要 SA/apiserver”的 Pod。
 
-### 5. 什么 Pod 需要 SA + 访问 apiserver
+### 6. 什么 Pod 需要 SA + 访问 apiserver
 
 | 场景 | 原因 | 本集群例子 |
 |---|---|---|
@@ -167,7 +239,7 @@ ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
 **共同特征**：这些 SA 在绑定里有对应的 Role/ClusterRole，且 Pod 实际会调
 apiserver。
 
-### 6. 什么 Pod 不需要 SA / apiserver
+### 7. 什么 Pod 不需要 SA / apiserver
 
 | 场景 | 原因 | 本集群例子 |
 |---|---|---|
@@ -179,7 +251,7 @@ apiserver。
 - 用 `default` SA 或一个无绑定的 SA；
 - 最好设置 `automountServiceAccountToken: false`，减少被利用面。
 
-### 7. 集群实际例子（与本次审计一一对应）
+### 8. 集群实际例子（与本次审计一一对应）
 
 | SA（作为 subject） | 绑定 | 使用方 Pod | 是否访问 apiserver | 说明 |
 |---|---|---|---|---|
@@ -193,7 +265,7 @@ apiserver。
 | `monitoring/prometheus-prometheus-node-exporter` | **无绑定** | DaemonSet（`automount: false`） | **否** | 只读节点指标 |
 | `kafka/my-cluster-kafka` | 仅 `get` 3 个指定 Secret | 1 Pod | 基本否 | 只取证书，权限被压到最小 |
 
-### 8. 几个容易踩的点
+### 9. 几个容易踩的点
 
 - **“SA 被绑定”不等于“SA 有权限”**：绑定的是角色，角色里写什么才有什么。
 - **`default` SA 也能被绑定**：例如 `cicd/default` 绑了 `openwebui-runner-role`，
