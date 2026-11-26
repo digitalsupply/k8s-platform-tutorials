@@ -53,11 +53,11 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
    `kubectl create token` / 控制器动态签发的 bound token（JWT，默认 1h），
    不存在“一个 Secret 永久有效”的隐患。这一点是好的。
 2. **唯一绑定 `cluster-admin` 的活跃使用方 SA 是 `headlamp-root`**，
-   用于管理员登录 Headlamp；另外有一个**死绑定** `admin-user` 指向已删除
-   命名空间里的 SA，应当清理。业务类 SA（如 `cicd/pipeline`、
+   用于管理员登录 Headlamp。此前有一个**死绑定** `admin-user` 指向已删除
+   命名空间里的 SA，**已于 2026-11-26 删除**。业务类 SA（如 `cicd/pipeline`、
    `gitlab-runner`）权限偏大但不是 cluster-admin。
 3. **20 个“孤儿”全部是各命名空间的 `default` SA**，是 Kubernetes 自动创建
-   的，不是业务遗留，一般不建议删除。真正可清理的是 3 项死绑定/一次性 SA
+   的，不是业务遗留，一般不建议删除。`admin-user` 已清理，剩余 2 项一次性 SA
    （见第八节）。
 
 ---
@@ -1090,11 +1090,11 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 | `cluster-admin` | `Group system:masters` | 内置，无实际成员（仅证书 CN 匹配） |
 | `kubeadm:cluster-admins` | `Group kubeadm:cluster-admins` | kubeadm 引导组，靠客户端证书 |
 | `headlamp-root-cluster-admin` | `SA headlamp/headlamp-root` | **活跃**，管理员登录用 |
-| `admin-user` | `SA admin-user@kubernetes-dashboard` | **死绑定**，命名空间已删除 |
+| ~~`admin-user`~~ | `SA admin-user@kubernetes-dashboard` | ~~**死绑定**~~ **已于 2026-11-26 删除** |
 
-**`admin-user` 是明确的清理对象**：它指向的 `kubernetes-dashboard`
-命名空间和 SA 都不存在，但绑定还在，一旦有人重建同名命名空间/SA，会
-立刻获得集群管理员权限。
+**`admin-user` 已于 2026-11-26 清理**：它原本指向的 `kubernetes-dashboard`
+命名空间和 SA 都不存在，绑定一旦存在，重建同名命名空间/SA 就会立刻获得
+集群管理员权限。现已删除，当前 cluster-admin 绑定只剩 3 个合法主体。
 
 ### 2. 集群级 Secret 写权限的 SA
 
@@ -1143,7 +1143,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 
 | 对象 | 类型 | 清理命令 | 依据 |
 |---|---|---|---|
-| `ClusterRoleBinding/admin-user` | ClusterRoleBinding | `kubectl delete clusterrolebinding admin-user` | 指向已删除的 `kubernetes-dashboard` 命名空间里的 `admin-user` SA，死绑定且是 cluster-admin |
+| ~~`ClusterRoleBinding/admin-user`~~ | ClusterRoleBinding | ✅ 已执行 `kubectl delete clusterrolebinding admin-user`（2026-11-26） | 指向已删除的 `kubernetes-dashboard` 命名空间里的 `admin-user` SA，死绑定且是 cluster-admin |
 | `argocd/argocd-redis-secret-init`（SA + Role + RoleBinding） | SA/Role/RoleBinding | `kubectl -n argocd delete sa argocd-redis-secret-init role argocd-redis-secret-init rolebinding argocd-redis-secret-init` | 一次性初始化 Job 的 SA，无 Job/工作负载，GitOps 仓库未引用 |
 | `cicd/cicd-cleanup`（SA + Role + RoleBinding） | SA/Role/RoleBinding | `kubectl -n cicd delete sa cicd-cleanup role cicd-cleanup rolebinding cicd-cleanup` | 一次性清理 Job 的 SA，无 Job/工作负载，GitOps 仓库未引用 |
 
@@ -1188,7 +1188,7 @@ kubectl get sa -A -o json | \
 
 | # | 发现 | 风险 | 建议 |
 |---|---|---|---|
-| 1 | `admin-user` 死绑定到 cluster-admin | 低（SA 不存在），但若重建同名 SA 立即提权 | 立即删除该绑定 |
+| 1 | ~~`admin-user` 死绑定到 cluster-admin~~ **已处理** | 低（SA 不存在），但若重建同名 SA 立即提权 | ✅ 已于 2026-11-26 删除 |
 | 2 | `cicd/pipeline` 拥有集群级 `edit`，含 Secret 写 | 高 | 评估能否改为命名空间级 Role；对流水线 Pod 加 PSA 限制 |
 | 3 | `gitlab-runner-manager` 命名空间内 `*` | 中 | 确认 Runner 命名空间隔离充分，Runner 令牌保护到位 |
 | 4 | 155/168 Pod 自动挂载 SA token | 中 | 对不访问 API 的 Pod 显式 `automountServiceAccountToken: false` |

@@ -34,20 +34,20 @@ kubectl get users / groups                 # 无 User/Group 对象（见下文�
 | **Role**（命名空间级权限） | **60** |
 | **ClusterRole**（集群级权限） | **182** |
 | **RoleBinding**（命名空间级连接） | **68** |
-| **ClusterRoleBinding**（集群级连接） | **136** |
+| **ClusterRoleBinding**（集群级连接） | **135** |
 | **RBAC 对象合计** | **446** |
 
 | 统计项 | 数量 |
 |---|---|
-| 绑定中的 subject 条目 | **211** |
-| 去重后的 `(roleRef, subject)` 组合 | **209** |
-| 去重后的 Subject 总数 | **116**（SA 103 + Group 8 + User 5） |
+| 绑定中的 subject 条目 | **210** |
+| 去重后的 `(roleRef, subject)` 组合 | **208** |
+| 去重后的 Subject 总数 | **115**（SA 102 + Group 8 + User 5） |
 
 **组合按主体类型**：
 
 | 主体类型 | 组合数 |
 |---|---|
-| ServiceAccount | 175 |
+| ServiceAccount | 174 |
 | Group | 24 |
 | User | 10 |
 
@@ -55,11 +55,11 @@ kubectl get users / groups                 # 无 User/Group 对象（见下文�
 
 | 维度 | 分布 |
 |---|---|
-| 按角色类型 | ClusterRole 140 / Role 69 |
-| 按绑定类型 | ClusterRoleBinding 136 / RoleBinding 73 |
+| 按角色类型 | ClusterRole 139 / Role 69 |
+| 按绑定类型 | ClusterRoleBinding 135 / RoleBinding 73 |
 
 **一句话**：**182 个 ClusterRole + 60 个 Role 定义了“能做什么”，204 个绑定
-把它们连到 116 个身份上，形成 209 个实际生效的“权限 + 连接 + 主体”组合。**
+把它们连到 115 个身份上，形成 208 个实际生效的“权限 + 连接 + 主体”组合。**
 
 ---
 
@@ -132,7 +132,7 @@ Role 几乎全是**命名空间内的辅助角色**，主要是：
 | 类型 | 数量 | 作用范围 |
 |---|---|---|
 | RoleBinding | 68 | 把权限**限制在命名空间内**授予 Subject |
-| ClusterRoleBinding | 136 | 把权限**授予到整个集群** |
+| ClusterRoleBinding | 135 | 把权限**授予到整个集群** |
 
 **绑定的主要用途分类**：
 
@@ -195,11 +195,11 @@ Role 几乎全是**命名空间内的辅助角色**，主要是：
 
 ## 六、三者配合的组合：数量与分布
 
-**去重组合 209 个**，按主体类型：
+**去重组合 208 个**，按主体类型：
 
 | 主体 | 组合数 | 典型角色 |
 |---|---|---|
-| ServiceAccount | 175 | 控制器、Operator、业务、访问类角色 |
+| ServiceAccount | 174 | 控制器、Operator、业务、访问类角色 |
 | Group | 24 | 内置角色（basic-user、discovery、public-info-viewer、cluster-admin 等） |
 | User | 10 | 调度器、控制器管理器、kube-proxy、kubelet-client |
 
@@ -207,9 +207,9 @@ Role 几乎全是**命名空间内的辅助角色**，主要是：
 
 | 维度 | 分布 |
 |---|---|
-| ClusterRole 组合 | 140 |
+| ClusterRole 组合 | 139 |
 | Role 组合 | 69 |
-| ClusterRoleBinding 组合 | 136 |
+| ClusterRoleBinding 组合 | 135 |
 | RoleBinding 组合 | 73 |
 
 **组合的“密度”**：绝大多数角色只被 1 个组合引用（171 个角色引用次数为 1），
@@ -348,7 +348,7 @@ ClusterRole/tekton-config-read-role
 
 | # | 问题 | 位置 | 风险 | 建议 |
 |---|---|---|---|---|
-| 1 | **`admin-user` 死绑定到 cluster-admin** | `ClusterRoleBinding/admin-user` → `SA admin-user@kubernetes-dashboard` | 命名空间已删除，SA 不存在；一旦重建同名 SA 立即获得集群管理员 | **立即删除该绑定** |
+| 1 | ~~`admin-user` 死绑定到 cluster-admin~~ **已处理** | 原 `ClusterRoleBinding/admin-user` → `SA admin-user@kubernetes-dashboard` | 已于 2026-11-26 删除；当前 cluster-admin 绑定仅剩 3 个合法主体 | ✅ **已删除** |
 | 2 | **`cicd/pipeline` 集群级 `edit`** | `ClusterRole/edit` + `ClusterRoleBinding/pipeline-edit-binding` | 可跨集群创建/删除 pods、**Secret**、serviceaccounts | 评估改为命名空间级 Role；对流水线 Pod 加 PSA 限制 |
 | 3 | **`gitlab-runner-manager` 命名空间通配** | `Role/gitlab-runner-manager` | 命名空间内 pods/secrets/jobs 全通配，等同命名空间管理员 | 确认 Runner 命名空间隔离与令牌保护 |
 | 4 | **`tekton-operators-proxy-webhook` 高权限** | `Role/tekton-operators-proxy-admin` + ClusterRole | 命名空间内 Secret 全量 + 集群级 pods/deployments/webhook 全量 | 收敛或加审计 |
@@ -384,9 +384,9 @@ ClusterRole/tekton-config-read-role
 
 ### 结论
 
-1. **总量**：60 个 Role + 182 个 ClusterRole，68 个 RoleBinding + 136 个
-   ClusterRoleBinding，共 **446 个 RBAC 对象**，形成 **209 个实际生效组合**。
-2. **主体**：116 个去重身份（SA 103、Group 8、User 5）；**User/Group 全是
+1. **总量**：60 个 Role + 182 个 ClusterRole，68 个 RoleBinding + 135 个
+   ClusterRoleBinding，共 **445 个 RBAC 对象**，形成 **208 个实际生效组合**。
+2. **主体**：115 个去重身份（SA 102、Group 8、User 5）；**User/Group 全是
    系统身份，没有 OIDC 用户/组**。
 3. **骨架合理**：系统、引导、Operator 层符合 Kubernetes 标准模型，配置完整
    （0 坏绑定）。
@@ -395,7 +395,7 @@ ClusterRole/tekton-config-read-role
 
 ### 建议（按优先级）
 
-1. **立即**：删除 `ClusterRoleBinding/admin-user`（死绑定 + cluster-admin）。
+1. ✅ **已处理**：`admin-user` 死绑定已于 2026-11-26 删除。
 2. **近期**：收敛 `cicd/pipeline` 的 `edit` 权限（改命名空间级、限制 Secret）；
    评估 `tekton-operators-proxy-webhook` 的高权限。
 3. **中期**：清理 47 个未直接引用的 ClusterRole 中的遗留项（如
