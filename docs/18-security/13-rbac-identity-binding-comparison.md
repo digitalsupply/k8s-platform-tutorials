@@ -202,6 +202,49 @@ subjects:
 - **`headlamp/headlamp-root`**：**最高权限**，风险在于“谁能拿到它的 token”。
   控制点是**凭证的分发**——只有管理员能签发，且不应把 token 泄露给非管理员。
 
+### 8. 使用主体是怎么配置出来的：`serviceAccountName`
+
+**谁在用一个 SA，不是由 SA 或绑定决定的，而是由使用它的 Pod/工作负载里的
+`serviceAccountName` 决定的。**
+
+```yaml
+spec:
+  template:
+    spec:
+      serviceAccountName: <SA 名>        # ← 这一行决定这个 Pod 用哪个 SA
+      automountServiceAccountToken: true # ← 是否自动挂载该 SA 的 token
+```
+
+**`cicd/pipeline` 有约 30 个 Pod 用它**，因为这些工作负载把
+`serviceAccountName` 写成了 `pipeline`：
+
+```yaml
+# Tekton EventListener 对应的 Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: pipeline
+```
+
+**`headlamp/headlamp-root` 没有 Pod 用它**，因为没有任何工作负载把
+`serviceAccountName` 写成 `headlamp-root`。Headlamp 自己的 Deployment 用的是
+另一个 SA：
+
+```yaml
+# headlamp Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: headlamp   # ← 不是 headlamp-root
+```
+
+所以 `headlamp-root` 只能由**人粘贴 token** 使用，没有 Pod 使用它。
+
+> **注意**：对 Headlamp 这类“去掉 `-unsafe-use-service-account-token`”的组件，
+> 即使把 `serviceAccountName` 改成 `headlamp-root`，Headlamp 也**不会**使用
+> 挂载的 SA token，用户仍须粘贴 token。详见
+> [17 号文档第四节](../13-sso-oidc/notes/17-headlamp-token-login-per-user-rbac.md#四常见误解改-serviceaccountname-为-headlamp-root-能免-token-吗)。
+
 ---
 
 ## 五、认证 + 授权链路对比

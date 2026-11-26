@@ -877,6 +877,17 @@ serviceaccounts、events、persistentvolumeclaims、jobs` 给了 `*` 通配。
   + 工作负载读写，明确排除 `exec`、RBAC 写、`nodes/proxy`、`impersonate`、
   Secret 写。
 
+**使用主体说明**：
+
+- `headlamp` 的使用主体是 **Headlamp Pod**——Deployment 的 Pod 模板里
+  `serviceAccountName: headlamp`，Pod 自动挂载它的 token。
+- `headlamp-root` / `headlamp-bigdev` **没有任何 Pod 使用**（全集群无 Pod
+  把 `serviceAccountName` 指向它们），只能由**人粘贴 token** 使用。
+- 注意：Headlamp 去掉 `-unsafe-use-service-account-token` 后**不使用** Pod
+  挂载的 SA token，只认粘贴的 token。因此即使把 `serviceAccountName` 改成
+  `headlamp-root`，也不会让登录用户自动获得全权（详见
+  [17 号文档第四节](../13-sso-oidc/notes/17-headlamp-token-login-per-user-rbac.md#四常见误解改-serviceaccountname-为-headlamp-root-能免-token-吗)）。
+
 详见 [13-sso-oidc 的 17 号文档](../13-sso-oidc/notes/17-headlamp-token-login-per-user-rbac.md)。
 
 ### kafka（4 个）

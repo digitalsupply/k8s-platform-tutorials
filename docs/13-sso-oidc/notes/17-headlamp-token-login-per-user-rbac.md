@@ -135,7 +135,75 @@ Headlamp 登录框只写 “token”，指的是**后者**。
 
 ---
 
-## 四、当前 GitOps 配置
+## 四、常见误解：改 `serviceAccountName` 为 `headlamp-root` 能免 token 吗？
+
+### 1. 结论：不能（仅改 serviceAccountName）
+
+只把 Headlamp Deployment 的 `serviceAccountName` 从 `headlamp` 改成
+`headlamp-root`，**不会**让任何 GitLab 用户自动获得全集群权限。
+用户仍然必须自己粘贴 token；不粘贴时，请求身份仍是 `system:anonymous`。
+
+### 2. 实测证据
+
+对真实 Headlamp Pod 做对照（该 Pod 挂载的是 `headlamp` SA 的合法 token）：
+
+| 请求方式 | apiserver 认为的身份 | 结果 |
+|---|---|---|
+| 不粘贴任何 token | `system:anonymous` | **403** |
+| 粘贴 `headlamp-root` 的 token | `system:serviceaccount:headlamp:headlamp-root` | 200（全权） |
+| 粘贴 `headlamp-bigdev` 的 token | `system:serviceaccount:headlamp:headlamp-bigdev` | namespaces 200 / nodes 403（受限） |
+
+**关键**：不粘贴 token 时身份是 `system:anonymous`，而不是 Pod 挂载的
+`headlamp` SA。这证明 **Headlamp 根本没有使用 Pod 挂载的 SA token**，
+它只认用户粘贴的 token。
+
+### 3. 原因：没有 `-unsafe-use-service-account-token`
+
+Headlamp 的参数里**没有** `-unsafe-use-service-account-token`，所以它
+**不使用** Pod 挂载的 SA token，只使用用户粘贴的 token。
+
+把 `serviceAccountName` 改成 `headlamp-root`，只是让 `headlamp-root` 的
+cluster-admin token **被挂载进 Pod 的文件系统**，但 Headlamp **不会拿它
+去调 apiserver**。因此：
+
+- 不粘贴 token → 仍是 `system:anonymous` → 403；
+- 粘贴自己的 bigdev token → 仍是受限；
+- **没有任何人因为“SA 改成了 headlamp-root”而自动获得全权。**
+
+### 4. 什么情况下才会成立
+
+改 `serviceAccountName` 为 `headlamp-root`，**并且**重新加上
+`-unsafe-use-service-account-token`：
+
+```yaml
+args:
+  - "-in-cluster"
+  - "-in-cluster-context-name=main"
+  - "-plugins-dir=/headlamp/plugins"
+  - "-session-ttl=86400"
+  - "-unsafe-use-service-account-token"   # ← 加上这个
+```
+
+这时 Headlamp 会**直接用 Pod 挂载的 SA token** 调 apiserver。因为 SA 是
+`headlamp-root`（绑 cluster-admin），所以**任何能通过 GitLab 登录、打开
+Headlamp Web UI 的人，都自动以 `headlamp-root` 身份获得全集群全权限**。
+
+这正是我们当初**刻意移除**的不安全模式——所有登录用户共享同一个高权 SA
+身份，`smallops`、`bigdev`、任何人都是集群管理员。手动粘贴 token，就是
+为了避免这个共享高权身份的问题。
+
+### 5. 额外风险：高权 token 被挂进 Web 组件
+
+即使不加 `-unsafe-use-service-account-token`，把 `headlamp-root`
+（cluster-admin token）挂载进 Headlamp Pod 的**文件系统**，本身也是风险：
+一旦该 Pod 被攻破或有人能 `exec` 进去，就能从
+`/var/run/secrets/kubernetes.io/serviceaccount/token` 读出全权 token。
+
+**不要把高权 SA 挂给面向多用户的 Web 组件。**
+
+---
+
+## 五、当前 GitOps 配置
 
 ### 1. Headlamp Deployment
 
@@ -226,7 +294,7 @@ ClusterRoleBinding/headlamp-bigdev-limited
 
 ---
 
-## 五、权限矩阵
+## 六、权限矩阵
 
 ### 1. 三账号总览
 
@@ -302,7 +370,7 @@ ClusterRoleBinding/headlamp-bigdev-limited
 
 ---
 
-## 六、获取令牌的完整步骤
+## 七、获取令牌的完整步骤
 
 ### 1. 前提
 
@@ -413,7 +481,7 @@ kubectl -n headlamp delete serviceaccount headlamp-bigdev
 
 ---
 
-## 七、常见问题 / 踩坑
+## 八、常见问题 / 踩坑
 
 1. **403 `system:anonymous`**
    没有粘贴 token，或请求没带上 `Authorization` 头。
@@ -450,7 +518,7 @@ kubectl -n headlamp delete serviceaccount headlamp-bigdev
 
 ---
 
-## 八、安全注意事项
+## 九、安全注意事项
 
 1. **token 等同于密码**
    不要提交到 Git、不要贴到聊天/文档、不要放进工单。文档里的 token
@@ -486,7 +554,7 @@ kubectl -n headlamp delete serviceaccount headlamp-bigdev
 
 ---
 
-## 九、验证记录（2026-11-25）
+## 十、验证记录（2026-11-25）
 
 ```bash
 # 1. 部署参数：不应再有 unsafe 参数
@@ -519,7 +587,7 @@ kubectl -n argocd get app platform-headlamp \
 
 ---
 
-## 十、与原生 OIDC 的关系 / 后续
+## 十一、与原生 OIDC 的关系 / 后续
 
 当前是 **“oauth2-proxy 认证 + 手动粘贴 k8s token”**，不是真正的
 “用户 OIDC 身份直通 K8s RBAC”。
@@ -546,7 +614,7 @@ RBAC 绑 `User`/`Group`。在此之前，当前方案是可用折中：
 
 ---
 
-## 十一、变更清单
+## 十二、变更清单
 
 `platform-gitops`：
 
