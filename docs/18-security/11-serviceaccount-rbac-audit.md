@@ -58,7 +58,7 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
    `gitlab-runner`）权限偏大但不是 cluster-admin。
 3. **20 个“孤儿”全部是各命名空间的 `default` SA**，是 Kubernetes 自动创建
    的，不是业务遗留，一般不建议删除。真正可清理的是 3 项死绑定/一次性 SA
-   （见第七节）。
+   （见第八节）。
 
 ---
 
@@ -274,7 +274,340 @@ apiserver。
   要给 GitLab 用户/组直接做 k8s RBAC，需要 apiserver 配 OIDC，目前没有。
 - **无绑定 ≠ 不能用**：没有自定义绑定的 SA/Pod 仍能认证，只是只有基线权限。
 
-## 四、按命名空间逐个讲解
+## 四、集群里的真实例子：命令 + 配置 + 作用
+
+概念讲完，这里用**本集群真实存在的对象**把「权限本体 → 连接 → Subject → 效果」
+彻底跑通。每个例子都给出：**查什么命令、对象是什么配置、这样配的作用是什么**。
+
+### 例子 1：全集群最高权限 `cluster-admin` → `headlamp-root`
+
+**命令：**
+
+```bash
+# 看权限本体
+kubectl get clusterrole cluster-admin -o yaml
+# 看连接
+kubectl get clusterrolebinding headlamp-root-cluster-admin -o yaml
+# 看 Subject（SA）
+kubectl get sa headlamp-root -n headlamp -o yaml
+# 验证效果
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-root '*' '*'
+```
+
+**配置：**
+
+```yaml
+# ① 权限本体：ClusterRole（集群级）
+kind: ClusterRole
+metadata:
+  name: cluster-admin
+rules:
+  - apiGroups: ["*"]      # 所有 API 组
+    resources: ["*"]      # 所有资源
+    verbs: ["*"]          # 所有动作
+  - nonResourceURLs: ["*"]
+    verbs: ["*"]
+```
+
+```yaml
+# ② 连接：ClusterRoleBinding
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-root-cluster-admin
+roleRef:                  # 引用集群级权限
+  kind: ClusterRole
+  name: cluster-admin
+subjects:                 # Subject：谁拿到这些权限
+  - kind: ServiceAccount
+    name: headlamp-root
+    namespace: headlamp
+```
+
+**作用：**
+
+- `cluster-admin` 是“全资源全动作”的集群级角色；
+- 经 **ClusterRoleBinding** 挂给 Subject `headlamp/headlamp-root`；
+- 这个 SA 不跑 Pod，它的 token 被粘贴到 Headlamp 登录后，身份
+  `system:serviceaccount:headlamp:headlamp-root` 即获得**全集群全权限**；
+- 这是 **ClusterRole + ClusterRoleBinding + SA subject → 全集群** 的标准链路。
+
+### 例子 2：集群级编辑 `edit` → `cicd/pipeline`
+
+**命令：**
+
+```bash
+kubectl get clusterrole edit -o yaml
+kubectl get clusterrolebinding pipeline-edit-binding -o yaml
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create secrets
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create clusterrolebindings
+```
+
+**配置：**
+
+```yaml
+# ① 权限本体：ClusterRole edit（内置聚合角色，规则很多，节选）
+kind: ClusterRole
+metadata:
+  name: edit
+aggregationRule:                     # 由带标签的 ClusterRole 聚合而成
+  clusterRoleSelectors:
+    - matchLabels:
+        rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:                               # 聚合后实际生效的规则（节选）
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "delete", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps", "services", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["create", "delete", "update", "patch"]
+```
+
+```yaml
+# ② 连接：ClusterRoleBinding
+kind: ClusterRoleBinding
+metadata:
+  name: pipeline-edit-binding
+roleRef:
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: pipeline
+    namespace: cicd
+```
+
+**作用：**
+
+- `edit` 是集群级“编辑”角色，覆盖 pods/secrets/deployments 等资源的增删改；
+- 挂给 `cicd/pipeline` 这个 SA，流水线里的 Pod（`el-*` 等）用它调 apiserver
+  时，就能创建/删除 PipelineRun、任务 Pod；
+- 注意 `edit` **包含 Secret 的增删**，所以 `cicd/pipeline` 是业务 SA 中权限
+  偏大的典型；而它**不能**创建 clusterrolebinding、不能 exec。
+
+### 例子 3：命名空间内权限 `Role/pg16-ceph` → `cnpg-system/pg16-ceph`
+
+**命令：**
+
+```bash
+kubectl get role pg16-ceph -n cnpg-system -o yaml
+kubectl get rolebinding pg16-ceph -n cnpg-system -o yaml
+# 同命名空间有权限
+kubectl auth can-i --as=system:serviceaccount:cnpg-system:pg16-ceph list secrets -n cnpg-system
+# 跨命名空间没有权限
+kubectl auth can-i --as=system:serviceaccount:cnpg-system:pg16-ceph list secrets -n default
+```
+
+**配置：**
+
+```yaml
+# ① 权限本体：Role（仅 cnpg-system 命名空间内）
+kind: Role
+metadata:
+  name: pg16-ceph
+  namespace: cnpg-system
+rules:
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resourceNames: ["pg-secret", "pg-superuser-secret", "pg16-ceph-ca"]
+    resources: ["secrets"]          # 只允许读这几个指定 Secret
+    verbs: ["get", "watch"]
+  # … 其余规则仅针对 pg16-ceph 相关 CR 和对象
+```
+
+```yaml
+# ② 连接：RoleBinding
+kind: RoleBinding
+metadata:
+  name: pg16-ceph
+  namespace: cnpg-system
+roleRef:
+  kind: Role
+  name: pg16-ceph
+subjects:
+  - kind: ServiceAccount
+    name: pg16-ceph
+    namespace: cnpg-system
+```
+
+**作用：**
+
+- Role 只作用于 `cnpg-system` 命名空间，且规则只针对 `pg16-ceph` 集群；
+- 经 **RoleBinding** 挂给该命名空间的 `pg16-ceph` SA；
+- 该 SA 在 `cnpg-system` 内能管理这个 PostgreSQL 集群、读指定 Secret，
+  **跨到其它命名空间就没有权限**；
+- 这是 **Role + RoleBinding + SA subject → 仅命名空间内** 的标准链路，
+  也是 CNPG 官方推荐做法，权限边界清晰。
+
+### 例子 4：ClusterRole 经 RoleBinding “降范围” `strimzi-cluster-operator`
+
+**命令：**
+
+```bash
+kubectl get clusterrole strimzi-cluster-operator-namespaced -o yaml
+kubectl get rolebinding strimzi-cluster-operator -n kafka -o yaml
+# 在 kafka 命名空间内可以
+kubectl auth can-i --as=system:serviceaccount:kafka:strimzi-cluster-operator create deployments -n kafka
+# 在其它命名空间不可以
+kubectl auth can-i --as=system:serviceaccount:kafka:strimzi-cluster-operator create deployments -n default
+```
+
+**配置：**
+
+```yaml
+# ① 权限本体：ClusterRole（集群级定义）
+kind: ClusterRole
+metadata:
+  name: strimzi-cluster-operator-namespaced
+rules:                              # 节选
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods", "secrets", "configmaps", "services", "deployments"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+```
+
+```yaml
+# ② 连接：RoleBinding（注意：不是 ClusterRoleBinding）
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator
+  namespace: kafka
+roleRef:
+  kind: ClusterRole                 # 引用的是 ClusterRole
+  name: strimzi-cluster-operator-namespaced
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: kafka
+```
+
+**作用：**
+
+- 关键：`roleRef` 是 **ClusterRole**，但绑定是 **RoleBinding**（在 kafka 命名空间）；
+- 所以虽然引用的是集群级角色，**授予范围被限制在 kafka 命名空间**：
+  在 kafka 内能创建 deployment，到 default 等其它命名空间就无权限；
+- 这验证了 **ClusterRole + RoleBinding → 仅命名空间内** 的组合，
+  是把集群级规则按命名空间收窄的常用手法。
+
+### 例子 5：对照组——无绑定的 SA，只有基线权限 `oauth2-proxy/default`
+
+**命令：**
+
+```bash
+kubectl get sa default -n oauth2-proxy -o yaml
+kubectl get rolebinding -n oauth2-proxy -o name      # 应无输出
+kubectl get clusterrolebinding -o json | \
+  jq '.items[] | select(.subjects[]?.name=="default" and .subjects[]?.namespace=="oauth2-proxy")'
+kubectl auth can-i --as=system:serviceaccount:oauth2-proxy:default list pods
+kubectl auth can-i --as=system:serviceaccount:oauth2-proxy:default list secrets
+```
+
+**配置：**
+
+```yaml
+# ① Subject：只有这个 SA，没有任何绑定指向它
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: oauth2-proxy
+# ② 不存在对应的 Role / RoleBinding / ClusterRoleBinding
+```
+
+**作用：**
+
+- oauth2-proxy 是反向代理，**不调 apiserver**；
+- 它用的 `default` SA **没有任何绑定**，因此只有 `system:authenticated`
+  的基线权限，`list pods`、`list secrets` 都是 `no`；
+- 这组对照说明：**有 SA 不等于有权限，权限完全由绑定决定**；
+  不访问 apiserver 的 Pod，无绑定正好合适，也不该给它多余权限。
+
+### 例子 6：自定义细粒度权限 `headlamp-bigdev`
+
+**命令：**
+
+```bash
+kubectl get clusterrole headlamp-bigdev -o yaml
+kubectl get clusterrolebinding headlamp-bigdev-limited -o yaml
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-bigdev get secrets
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-bigdev exec pods
+kubectl auth can-i --as=system:serviceaccount:headlamp:headlamp-bigdev get nodes/proxy
+```
+
+**配置：**
+
+```yaml
+# ① 权限本体：自定义 ClusterRole
+kind: ClusterRole
+metadata:
+  name: headlamp-bigdev
+rules:                              # 节选
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets", "namespaces", "events"]
+    verbs: ["get", "list", "watch"]            # 集群级只读
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  # 明确不含：pods/exec、RBAC 写、nodes/proxy、impersonate、Secret 写
+```
+
+```yaml
+# ② 连接：ClusterRoleBinding
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-bigdev-limited
+roleRef:
+  kind: ClusterRole
+  name: headlamp-bigdev
+subjects:
+  - kind: ServiceAccount
+    name: headlamp-bigdev
+    namespace: headlamp
+```
+
+**作用：**
+
+- 自定义的集群级角色：全集群只读 + 对 pods/services/configmaps/deployments
+  的增删改，同时**明确排除** exec、RBAC 写、`nodes/proxy`、impersonate、Secret 写；
+- 挂给 `headlamp/headlamp-bigdev`，用于受限开发者登录；
+- 展示 **自定义 ClusterRole + ClusterRoleBinding + SA** 如何做到细粒度授权：
+  权限写在角色规则里，通过绑定连到 Subject。
+
+### 闭环总结
+
+| 例子 | 权限本体 | 连接 | Subject | 效果范围 |
+|---|---|---|---|---|
+| 1 | `ClusterRole/cluster-admin` | ClusterRoleBinding | `SA headlamp-root` | 全集群全权限 |
+| 2 | `ClusterRole/edit` | ClusterRoleBinding | `SA cicd/pipeline` | 全集群编辑 |
+| 3 | `Role/pg16-ceph` | RoleBinding | `SA pg16-ceph` | 仅 cnpg-system |
+| 4 | `ClusterRole/strimzi-...-namespaced` | RoleBinding | `SA strimzi-cluster-operator` | 仅 kafka |
+| 5 | 无 | 无 | `SA oauth2-proxy/default` | 仅基线权限 |
+| 6 | `ClusterRole/headlamp-bigdev` | ClusterRoleBinding | `SA headlamp-bigdev` | 全集群受限 |
+
+**一条完整链路**：
+
+```text
+① Role / ClusterRole（权限本体，定义规则）
+        ↓ roleRef 被引用
+② RoleBinding / ClusterRoleBinding（连接，决定挂给谁、范围多大）
+        ↓ subjects 引用
+③ Subject（SA / User / Group，谁拿到权限）
+        ↓ 实际使用
+④ Pod 用 SA 的 token 访问 apiserver → 按规则放行/拒绝
+```
+
+**记住**：**Role/ClusterRole 是“能做什么”，Binding 是“连到谁”，Subject 是“谁”。**
+三者缺一不可；最终权限范围由“权限本体的类型”和“绑定的类型”共同决定。
+
+## 五、按命名空间逐个讲解
 
 > 表格列：**SA / 作用 / 绑定 / 使用方 / 权限说明**。
 
@@ -296,7 +629,7 @@ apiserver。
 Secret）。`default` 被 Redis 使用，只享受 `system:authenticated` 基线权限。
 
 > `argocd-redis-secret-init` 是初始化 Job 的一次性 SA，Job 已不存在，
-> 属于可清理项（见第七节）。
+> 属于可清理项（见第八节）。
 
 ### ceph-csi-operator-system（2 个）
 
@@ -370,7 +703,7 @@ Certificate、CSR、Order、Challenge 等，所以绑定了多个集群级角色
 | `default` | 默认身份 | 无 | **无（整个命名空间为空）** |
 
 **权限说明**：该命名空间除自动创建的 `default` SA 外没有任何资源、没有
-Pod。属于疑似遗留的空命名空间，见第七节。
+Pod。属于疑似遗留的空命名空间，见第八节。
 
 ### cnpg-system（4 个）
 
@@ -613,7 +946,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 | `default` | 默认身份 | 无 | 无 |
 
 **权限说明**：两个工作负载都**缩容到 0**，目前没有运行 Pod，SA 处于闲置
-状态。若确认 open-webui 已下线，可连同命名空间清理（见第七节）。
+状态。若确认 open-webui 已下线，可连同命名空间清理（见第八节）。
 
 ### opentelemetry（3 个）
 
@@ -673,7 +1006,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 
 ---
 
-## 五、敏感权限重点汇总
+## 六、敏感权限重点汇总
 
 ### 1. 绑定到 `cluster-admin` 的主体（4 个）
 
@@ -712,7 +1045,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 
 ---
 
-## 六、为什么权限是这样（总结规律）
+## 七、为什么权限是这样（总结规律）
 
 1. **控制器 SA 权限小而准**：`system:controller:*` 内置角色按职责划分，
    不做通配，这是 Kubernetes 的最小权限设计。
@@ -729,7 +1062,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 
 ---
 
-## 七、过期 / 可清理清单
+## 八、过期 / 可清理清单
 
 ### A. 明确可清理（无工作负载、绑定已成死引用）
 
@@ -776,7 +1109,7 @@ kubectl get sa -A -o json | \
 
 ---
 
-## 八、审计发现与建议
+## 九、审计发现与建议
 
 | # | 发现 | 风险 | 建议 |
 |---|---|---|---|
@@ -791,7 +1124,7 @@ kubectl get sa -A -o json | \
 
 ---
 
-## 九、复现命令
+## 十、复现命令
 
 ```bash
 # 1. 总数与分布
