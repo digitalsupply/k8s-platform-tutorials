@@ -239,7 +239,42 @@ ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
 **共同特征**：这些 SA 在绑定里有对应的 Role/ClusterRole，且 Pod 实际会调
 apiserver。
 
-### 7. 什么 Pod 不需要 SA / apiserver
+### 7. 如何验证某个 SA 身份的权限（`auth can-i --as`）
+
+一个 Pod 指定 `serviceAccountName: <sa>` 后，它访问 apiserver 时的**身份就是
+该 SA**，会自动继承这个 SA 被绑定到的全部权限——**Pod 本身不需要再单独绑定**。
+验证这个身份能做什么，最直接的方式就是模拟它的身份问 apiserver：
+
+```bash
+# 看该 SA 身份的完整权限清单
+kubectl auth can-i --list --as=system:serviceaccount:cicd:pipeline
+
+# 看某个具体动作是否允许
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create configmaps
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create clusterrolebindings
+```
+
+**为什么这条命令能代表 Pod 的真实权限：**
+
+- `--as=system:serviceaccount:<ns>:<sa>` 就是 Pod 挂载的 SA token 里 `sub`
+  对应的身份；
+- `auth can-i` 让 apiserver 以该身份做一次授权判断，和 Pod 带着 token 调
+  apiserver 时走的判定**完全一致**（纯授权判断，不校验 token 真伪）；
+- 因此它返回的 yes/no，就是该 SA 身份实际能行使的权限。
+
+**三个前提（缺一个就“理论有权限、实际用不上”）：**
+
+1. **Pod 要挂载到 token**：`automountServiceAccountToken` 必须为 `true`
+   （默认）。设为 `false` 的 Pod 没有 token，无法以该身份调 apiserver。
+2. **Pod 要真的调用 apiserver**：不调 API 的 Pod，即使挂着高权限 SA 也不会
+   用到这份权限（身份和权限仍存在，属于潜在面）。
+3. **SA 要有绑定**：没有绑定的 SA 只有基线权限，`--as` 查出来也只有
+   discovery、basic-user 等。
+
+**身份是共享的**：所有指定同一个 SA 的 Pod，权限完全相同，无法区分到具体
+Pod。要按 Pod/人区分，必须给每个工作负载建独立 SA。
+
+### 8. 什么 Pod 不需要 SA / apiserver
 
 | 场景 | 原因 | 本集群例子 |
 |---|---|---|
@@ -251,7 +286,7 @@ apiserver。
 - 用 `default` SA 或一个无绑定的 SA；
 - 最好设置 `automountServiceAccountToken: false`，减少被利用面。
 
-### 8. 集群实际例子（与本次审计一一对应）
+### 9. 集群实际例子（与本次审计一一对应）
 
 | SA（作为 subject） | 绑定 | 使用方 Pod | 是否访问 apiserver | 说明 |
 |---|---|---|---|---|
@@ -265,7 +300,7 @@ apiserver。
 | `monitoring/prometheus-prometheus-node-exporter` | **无绑定** | DaemonSet（`automount: false`） | **否** | 只读节点指标 |
 | `kafka/my-cluster-kafka` | 仅 `get` 3 个指定 Secret | 1 Pod | 基本否 | 只取证书，权限被压到最小 |
 
-### 9. 几个容易踩的点
+### 10. 几个容易踩的点
 
 - **“SA 被绑定”不等于“SA 有权限”**：绑定的是角色，角色里写什么才有什么。
 - **`default` SA 也能被绑定**：例如 `cicd/default` 绑了 `openwebui-runner-role`，
@@ -386,6 +421,8 @@ subjects:
   时，就能创建/删除 PipelineRun、任务 Pod；
 - 注意 `edit` **包含 Secret 的增删**，所以 `cicd/pipeline` 是业务 SA 中权限
   偏大的典型；而它**不能**创建 clusterrolebinding、不能 exec。
+- 用 `kubectl auth can-i --list --as=system:serviceaccount:cicd:pipeline`
+  即可验证这 27 个 Pod 共享的这份权限（详见第 7 小节）。
 
 ### 例子 3：命名空间内权限 `Role/pg16-ceph` → `cnpg-system/pg16-ceph`
 
