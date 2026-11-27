@@ -26,7 +26,7 @@
 | SC | NNP false 93/163；seccomp none 123 | 覆盖不足 |
 | apiserver | 无 audit policy、无 etcd 加密 | 无 API 审计/Secret 明文 |
 | Secret | 128；Sealed Secrets；无 Vault/ESO | 轮换/审计弱 |
-| RBAC | 136 个 SA；4 个 cluster-admin（含 1 个死绑定）；155/168 Pod 自动挂 SA token；0 个遗留 token Secret | 权限过大/身份面偏大，详见 [11 号审计](11-serviceaccount-rbac-audit.md) |
+| RBAC | 136 个 SA；3 个活跃 cluster-admin（另 1 个死绑定已删除）；156/182 Pod 有效自动挂 SA token（26 个不挂载）；0 个遗留 token Secret | 权限过大/身份面偏大，详见 [11 号审计](11-serviceaccount-rbac-audit.md) |
 | NetworkPolicy | 23；仅 1 个全选隔离 | 无默认 deny |
 | mTLS | Cilium mesh-auth=false；无 mesh/SPIRE | 无服务身份 |
 | 供应链 | 扫描有、拦截无、签名无；deeptutor 1740 漏洞 | 供应链风险 |

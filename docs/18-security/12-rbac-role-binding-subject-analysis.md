@@ -367,7 +367,7 @@ ClusterRole/tekton-config-read-role
 | # | 问题 | 说明 |
 |---|---|---|
 | 9 | **无 OIDC，无法做用户/组级 RBAC** | User/Group 全是 `system:*`，GitLab 用户无法直接作为 k8s RBAC 主体 |
-| 10 | **155/168 Pod 自动挂载 SA token** | 身份面偏大，被攻破的 Pod 可直接使用其 SA 权限 |
+| 10 | **156/182 Pod 有效自动挂载 SA token** | 身份面偏大，被攻破的 Pod 可直接使用其 SA 权限；26 个有效不挂载（13 个 Pod 显式 false + 13 个继承 SA false） |
 
 ### 4. 运行情况印证
 

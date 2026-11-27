@@ -43,8 +43,8 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
 | ArgoCD 托管（带 tracking-id 注解） | 39 |
 | **纯孤儿（无绑定、无工作负载、无遗留 token）** | 20（全部是 `default`） |
 | **遗留长期 token Secret（`type=kubernetes.io/service-account-token`）** | **0** |
-| 集群内 Pod 总数 / 自动挂载 SA token | 168 / 155（13 个显式 `automountServiceAccountToken: false`） |
-| 绑定到 `cluster-admin` 的主体 | 4 个（1 个是**死绑定**） |
+| 集群内 Pod 总数 / 有效挂载 SA token | 182 / 156（26 个有效不挂载：13 个 Pod 显式 false + 13 个继承 SA false） |
+| 绑定到 `cluster-admin` 的主体 | 3 个活跃（另 1 个 `admin-user` 已于 2026-11-26 删除） |
 | binding 中的 subject 类型 | SA 177 个 / User 10 个 / Group 24 个（去重后 103 个 SA 作为 subject） |
 
 **三个最重要的结论：**
@@ -224,9 +224,14 @@ ServiceAccount（身份）  ──被绑定──>  Role/ClusterRole（权限）
 - `false`：不挂载。Pod 即使想调 apiserver 也没有现成的 token 可用，适合
   **确定不访问 apiserver** 的 Pod。
 
-> 本集群 168 个 Pod 中，**155 个默认自动挂载**，只有 **13 个显式
-> `automountServiceAccountToken: false`**——这 13 个就是典型的
-> “不需要 SA/apiserver”的 Pod。
+> 截至 2026-11-27，本集群 182 个 Pod 中，Pod 字段显式
+> `automountServiceAccountToken: false` 的有 **13 个**；但把 **SA 级设置**
+> 也算进去后，**有效不挂载的是 26 个**（另有 13 个 `tempo3` Pod 继承了
+> SA 上的 `false`）。早期快照“168 个 Pod / 155 个挂载 / 13 个关闭”是
+> **只看 Pod 字段**的口径。
+>
+> 完整清单、配置来源和三个口径陷阱见
+> [第六节第 4 小节](#4-自动挂载-sa-token-的-pod口径清单与考量)。
 
 ### 6. 什么 Pod 需要 SA + 访问 apiserver
 
@@ -751,6 +756,10 @@ Certificate、CSR、Order、Challenge 等，所以绑定了多个集群级角色
 不授予任何额外资源权限——属于“能跑但无业务权限”的状态。若该应用需要
 访问集群资源，需要补绑定。
 
+Deployment 的 Pod 模板显式写了 `automountServiceAccountToken: false`，
+所以 Pod 里没有 SA token。拉私有镜像用的是 `imagePullSecrets: harbor-auth`
+（Secret），与 SA token 无关。
+
 ### cicd（3 个）
 
 | SA | 作用 | 绑定 | 使用方 |
@@ -832,6 +841,11 @@ Pod。属于疑似遗留的空命名空间，见第八节。
 **权限说明**：etcd 快照 Job 未指定 SA，使用 `default`，仅基线权限。
 快照内容本身在 PVC/Secret 里，靠 RBAC 之外的机制保护。建议给快照 Job
 建专用 SA 并只授予所需权限。
+
+CronJob 的 Pod 模板显式写了 `automountServiceAccountToken: false`：它用
+`hostNetwork: true` 直连 `127.0.0.1:2379`，靠挂载的 etcd 客户端证书认证，
+不需要 K8s API。该 Job 同时是 `runAsUser: 0` 且挂宿主机证书，关闭 token
+可避免“宿主风险 + 集群凭证”叠加。
 
 ### gitlab-runner（2 个）
 
@@ -967,6 +981,10 @@ kube-system 是集群核心，48 个 SA 分为四类：
 因为它是集群级采集器，需要遍历节点与工作负载——但都是**只读**，符合
 采集器定位。`tempo3`/`loki-canary` 无自定义绑定，靠基线权限运行。
 
+`tempo3` 的 SA 上写了 `automountServiceAccountToken: false`，因此它下面
+**13 个 Pod 虽然 Pod 字段没写，实际都不挂载 token**——这是“SA 级继承”
+的典型例子，只统计 Pod 字段会漏掉。Tempo 的后端是 S3，不需要 K8s API。
+
 ### metallb-system（3 个）
 
 | SA | 作用 | 绑定 | 使用方 |
@@ -995,6 +1013,11 @@ kube-system 是集群核心，48 个 SA 分为四类：
 主要是对 ServiceMonitor/PodMonitor/PrometheusRule 的读写。
 `prometheus-grafana` 的 `ClusterRole/prometheus-grafana-clusterrole` 当前
 规则数为 0（空角色），说明只靠 Role + 基线，权限很窄。
+
+`prometheus-prometheus-node-exporter` 的 SA 和 Pod 模板都显式写了
+`automountServiceAccountToken: false`（6 个 DaemonSet Pod 全部不挂载）；
+`default` 下的 2 个 Pod 是 `wecom-adapter`，也在 Deployment 里显式关闭。
+两者都只读宿主指标或只转发 webhook，不需要 apiserver。
 
 ### n8n（1 个）
 
@@ -1094,7 +1117,7 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 
 ## 六、敏感权限重点汇总
 
-### 1. 绑定到 `cluster-admin` 的主体（4 个）
+### 1. 绑定到 `cluster-admin` 的主体（3 个活跃 + 1 个已删除）
 
 | 绑定 | 主体 | 状态 |
 |---|---|---|
@@ -1122,12 +1145,177 @@ ConfigMap 来动态供应 NFS 卷，是 PV 供应器的标准权限。
 - `gitlab-runner/gitlab-runner-manager`：命名空间内对 pods/secrets/jobs 等
   使用 `*` 通配，等同命名空间管理员（Runner 执行器标准模型）。
 
-### 4. 自动挂载 SA token 的 Pod
+### 4. 自动挂载 SA token 的 Pod：口径、清单与考量
 
-168 个 Pod 中 **155 个自动挂载** SA token，只有 13 个显式
-`automountServiceAccountToken: false`。这意味着一旦 Pod 被攻破或
-`exec` 进去，就能拿到该 SA 的 token。建议对不需要访问 API 的 Pod
-（如纯代理、采集器、一次性 Job）显式关闭自动挂载。
+`automountServiceAccountToken: false` 是“不给凭证”，比“给一个小权限”更
+彻底。但它有两个口径，还有一个容易被忽略的覆盖关系。
+
+#### 1) 两个口径：Pod 字段 vs 有效挂载
+
+截至 2026-11-27 的实测：
+
+```text
+Pod 总数                         182
+├─ Pod 字段显式 false             13   ← 最常见的统计口径
+├─ Pod 字段显式 true              28
+└─ Pod 未设置                    141   ← 继承 SA 的设置
+```
+
+把 SA 级设置也算进去后的**有效结果**：
+
+| 口径 | 数量 | 说明 |
+|---|---|---|
+| 有效挂载 token | **156** | Pod `true` + 未设置且 SA 未关闭 |
+| 有效不挂载 | **26** | 13 个 Pod 显式 false + 13 个继承 SA 的 false |
+| 其中：Pod 显式 false | 13 | 见下表 |
+| 其中：Pod 未写、继承 SA false | **13** | 全是 `logging/tempo3` |
+
+**优先级**：Pod 字段 > SA 字段 > 默认 `true`。
+
+- Pod 写了 → 以 Pod 为准；
+- Pod 没写 → 继承 SA；
+- 两者都没写 → 默认挂载。
+
+所以只统计 Pod 字段会**漏掉**“SA 关了、Pod 没写”的 Pod（本集群就是
+`tempo3` 的 13 个）；也会**误判**“SA 关了、Pod 又写 true”的 Pod
+（本集群就是 `traefik`）。
+
+#### 2) 13 个显式关闭的 Pod 清单
+
+| # | 命名空间 | Pod / 工作负载 | SA | 配置来源 | 为什么不挂 |
+|---|---|---|---|---|---|
+| 1 | china-study-free | `china-study-free-*`（Deployment） | `china-study-free` | `ChinaStudyFree/deploy/k8s/base/deployment.yaml` | Web 应用，只写本地 JSONL，不调 API |
+| 2-4 | etcd-backup | `etcd-snapshot-*`（CronJob 历史 Pod） | `default` | `platform-gitops-public/platform/backup/etcd/cronjob.yaml` | 用宿主机证书直连 `127.0.0.1:2379` 做快照，再传 S3 |
+| 5 | kube-system | `hubble-relay-*`（Deployment） | `hubble-relay` | `platform/network/cilium/manifests.yaml` | 连本节点 Cilium agent 的 gRPC，不走 apiserver |
+| 6-11 | monitoring | `prometheus-prometheus-node-exporter-*`（DaemonSet，6 节点各 1） | `prometheus-prometheus-node-exporter` | kube-prometheus-stack（SA 上即 `false`） | 只读宿主 `/proc`、`/sys`、`/`，暴露 9100 指标 |
+| 12-13 | monitoring | `wecom-adapter-*`（Deployment，2 副本） | `default` | `platform/monitoring/wecom/deployment.yaml` | 收 Alertmanager webhook，转发企业微信 |
+
+> 其中 3 个 `etcd-snapshot-*` 是**已完成的 Job Pod**（`Succeeded`）。
+> 实际 Running 且不挂载的是 **10 个**：1 + 1 + 6 + 2。
+
+#### 3) 为什么关掉：五条考量
+
+**① 它们不需要 apiserver，凭证不该存在**
+
+这 13 个 Pod 的职责里没有一条需要调 Kubernetes API：
+
+- `china-study-free`：业务 Web，只落本地文件；
+- `wecom-adapter`：只接 HTTP webhook、发企业微信；
+- `node-exporter`：只读宿主 `/proc`、`/sys`；
+- `etcd-snapshot`：直连 `127.0.0.1:2379`，用 etcd 客户端证书；
+- `hubble-relay`：连 Cilium agent，不连 apiserver；
+- `tempo3`：后端是 S3（`10.0.0.31:7480`），不调 API。
+
+**既然不用，就不要把凭证放进去。** 这是最小权限最直接的落地：不是
+“少给权限”，而是“根本不给凭证”。
+
+**② 缩小攻击面：应用被攻破也拿不到集群凭证**
+
+如果应用存在 RCE/SSRF，攻击者第一件事就是读：
+
+```text
+/var/run/secrets/kubernetes.io/serviceaccount/token
+```
+
+拿到后就能以该 SA 身份调 apiserver。关掉自动挂载后，这个路径**根本
+不存在**（实测 `ls` 报 `No such file or directory`）。即使 SA 本身权限
+不高，也少了一条横向移动的路。
+
+**③ 这些组件本身“高危”，更不能带 token**
+
+- `etcd-snapshot`：`hostNetwork: true` + `runAsUser: 0` + 挂宿主机
+  `/etc/etcd` 证书；
+- `node-exporter`：挂宿主机 `/proc`、`/sys`、`/`。
+
+它们已经在宿主机层面有很强能力，再给集群 token 等于**把宿主风险和集群
+风险叠加**。
+
+**④ 避免应用“误用”API**
+
+即使没有恶意，依赖库也可能在启动时探测 in-cluster 配置（发现 token 就
+尝试连 apiserver），产生无意义请求、报错或审计噪音。没有 token，SDK
+会直接走“非集群模式”，行为更可预期。
+
+**⑤ 减少凭证轮换与审计负担**
+
+projected token 默认 1 小时轮换，kubelet 要持续维护；审计日志里也会多出
+这些身份。不用就不挂。
+
+#### 4) 四个容易踩的坑
+
+**① SA 级和 Pod 级是“Pod 优先”，会互相覆盖**
+
+- `tempo3`：Pod 字段为空，但 SA `logging/tempo3` 上是 `false` →
+  **13 个 Pod 有效不挂载**；
+- `traefik`：SA `traefik/traefik` 上是 `false`，但 Pod 模板显式写了
+  `true` → **token 照样挂载**（它要 watch Ingress，确实需要 API）。
+
+```bash
+# tempo3：Pod 没写，继承 SA 的 false
+kubectl -n logging get sa tempo3 -o jsonpath='{.automountServiceAccountToken}{"\n"}'   # false
+kubectl -n logging get pod tempo3-distributor-xxx -o jsonpath='{.spec.automountServiceAccountToken}{"\n"}'  # 空
+
+# traefik：SA 关了，但 Pod 又开回来
+kubectl -n traefik get sa traefik -o jsonpath='{.automountServiceAccountToken}{"\n"}'   # false
+kubectl -n traefik get pod traefik-xxx -o jsonpath='{.spec.automountServiceAccountToken}{"\n"}'  # true
+kubectl -n traefik exec traefik-xxx -- ls /var/run/secrets/kubernetes.io/serviceaccount/  # 有 token
+```
+
+**结论**：关不关要看组件**是否需要 API**，不能一刀切；审计时两个字段都
+要看。
+
+**② `automount: false` ≠ 完全没有凭证**
+
+它只关掉“自动注入的默认 token”。如果 Pod 里**显式**写了 projected
+volume，token 照样会挂进去：
+
+```yaml
+volumes:
+  - name: kube-api-access-xxxx
+    projected:
+      sources:
+        - serviceAccountToken:
+            path: token
+```
+
+`automountServiceAccountToken` 管的是默认注入，不管显式投影。审计时要
+同时看 `volumes`，不能只看这个字段。
+
+**③ 关掉 token 不影响拉镜像**
+
+`china-study-free` 用了 `imagePullSecrets: harbor-auth`，那是 **Secret**，
+和 SA token 是两回事。关掉自动挂载不影响私有仓库拉取。
+
+**④ 关掉 token 也不等于“访问不了 apiserver”**
+
+Pod 仍能网络连通 apiserver，只是**没有凭证**（匿名请求会被 403）。要
+彻底隔离，还得配 NetworkPolicy。凭证层和网络层是两道独立防线。
+
+#### 5) 验证命令
+
+```bash
+# 1) Pod 字段口径
+kubectl get pods -A -o json | jq -r '
+  .items[] | select(.spec.automountServiceAccountToken==false) |
+  "\(.metadata.namespace)/\(.metadata.name)  SA=\(.spec.serviceAccountName)"'
+
+# 2) SA 级口径（被继承的 false）
+kubectl get sa -A -o json | jq -r '
+  .items[] | select(.automountServiceAccountToken==false) |
+  "\(.metadata.namespace)/\(.metadata.name)"'
+
+# 3) 实际验证 token 文件不存在
+kubectl -n monitoring exec deploy/wecom-adapter -- \
+  ls /var/run/secrets/kubernetes.io/serviceaccount/    # 应报 No such file
+
+# 4) 检查是否有显式投影（automount=false 也可能有 token）
+kubectl -n <ns> get pod <pod> -o json | jq '
+  .spec.volumes[] | select(.projected.sources[]?.serviceAccountToken)'
+```
+
+**一句话**：这 13 个 Pod 的共同点是“不需要 apiserver”；关掉自动挂载 =
+不给凭证，比“给个小权限”更彻底。但统计和审计要同时看 **Pod 字段、
+SA 字段、显式投影** 三处，否则会漏判或误判。
 
 ---
 
@@ -1202,7 +1390,7 @@ kubectl get sa -A -o json | \
 | 1 | ~~`admin-user` 死绑定到 cluster-admin~~ **已处理** | 低（SA 不存在），但若重建同名 SA 立即提权 | ✅ 已于 2026-11-26 删除 |
 | 2 | `cicd/pipeline` 拥有集群级 `edit`，含 Secret 写 | 高 | 评估能否改为命名空间级 Role；对流水线 Pod 加 PSA 限制 |
 | 3 | `gitlab-runner-manager` 命名空间内 `*` | 中 | 确认 Runner 命名空间隔离充分，Runner 令牌保护到位 |
-| 4 | 155/168 Pod 自动挂载 SA token | 中 | 对不访问 API 的 Pod 显式 `automountServiceAccountToken: false` |
+| 4 | 156/182 Pod 有效自动挂载 SA token（26 个有效不挂载） | 中 | 对不访问 API 的 Pod 显式 `automountServiceAccountToken: false`；注意 SA 级继承与显式投影 |
 | 5 | 多个 SA 具备集群级 Secret 读/写 | 中 | 按“最小必要”收敛；`headlamp-bigdev` 若不需要可去掉 Secret 读 |
 | 6 | 无遗留长期 token Secret | ✅ 良好 | 继续保持 bound token 机制，不要改回长期 Secret |
 | 7 | 大量业务 Pod 使用 `default` SA | 低 | 逐步为业务应用创建专用 SA，便于审计与授权 |
@@ -1234,4 +1422,16 @@ kubectl get clusterrolebinding -o json | jq -r '.items[] | .metadata.name as $b 
 
 # 7. 找无工作负载的非默认 SA
 kubectl get sa -A -o json | jq -r '.items[] | select(.metadata.name!="default") | .metadata.namespace+"/"+.metadata.name'
+
+# 8. 自动挂载 token 的两个口径
+#    Pod 字段显式 false
+kubectl get pods -A -o json | jq -r '.items[] | select(.spec.automountServiceAccountToken==false) | .metadata.namespace+"/"+.metadata.name'
+#    SA 级 false（会被没写 Pod 字段的 Pod 继承）
+kubectl get sa -A -o json | jq -r '.items[] | select(.automountServiceAccountToken==false) | .metadata.namespace+"/"+.metadata.name'
+
+# 9. 找显式投影的 SA token（automount=false 也可能有 token）
+kubectl get pods -A -o json | jq -r '.items[] | select(.spec.volumes[]?.projected.sources[]?.serviceAccountToken) | .metadata.namespace+"/"+.metadata.name'
+
+# 10. 实测某个 Pod 里 token 文件是否存在
+kubectl -n <ns> exec <pod> -- ls /var/run/secrets/kubernetes.io/serviceaccount/
 ```
