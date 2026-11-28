@@ -201,6 +201,43 @@ Headlamp Web UI 的人，都自动以 `headlamp-root` 身份获得全集群全�
 
 **不要把高权 SA 挂给面向多用户的 Web 组件。**
 
+### 6. 反过来看：低权 Pod SA 也不是边界，**签发权限才是**
+
+上面说的是“别把高权 token 挂进 Pod”。另一面同样重要：**把 Headlamp Pod
+的 SA 换成低权的 `headlamp`，并不能阻止别人拿到 `headlamp-root` 的权限**。
+
+原因不在 Headlamp，而在**谁能给 `headlamp-root` 签 token**。K8s 1.35 的
+`ClusterRole/edit` 就含 `create serviceaccounts/token` 和
+`impersonate serviceaccounts`，还能建 Pod 并指定任意 `serviceAccountName`。
+本集群的 `cicd/pipeline` 直接绑定了 `edit`，实测三条路径都能拿到
+`headlamp-root`：
+
+```bash
+# A. 以 pipeline 身份直接给 headlamp-root 签 token
+kubectl -n headlamp create token headlamp-root \
+  --as=system:serviceaccount:cicd:pipeline
+
+# B. impersonate
+kubectl --token="$PIPE_TOKEN" auth can-i get nodes \
+  --as=system:serviceaccount:headlamp:headlamp-root   # yes
+
+# C. 建一个 serviceAccountName: headlamp-root 的 Pod（dry-run 通过）
+kubectl -n headlamp run evil --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server
+```
+
+此外，`headlamp-bigdev` 自己虽不能签 token/impersonate，但它能在 `headlamp`
+命名空间建 Pod，同样可以走链路 C。CSI 的两个 SA 也能签 `headlamp-root`
+token（`auth can-i` 对它们给假阴性，需实测）。
+
+**所以边界要画在“谁能签发/冒用/承载 SA”上，而不是“Headlamp Pod 用哪个 SA”上。**
+修补方向：把 `pipeline` 的 `edit` 降为 `cicd` 命名空间级、用准入策略禁止
+Pod 使用 `headlamp-root`/`headlamp-bigdev`、收敛 CSI 的 token 权限。
+完整方案见
+[18-security/13 第七节](../../18-security/13-rbac-identity-binding-comparison.md#七谁拥有-edit-权限如何提权怎么修)。
+
 ---
 
 ## 五、当前 GitOps 配置
@@ -546,11 +583,15 @@ kubectl -n headlamp delete serviceaccount headlamp-bigdev
 3. **`bigdev` 能在所有命名空间创建 Pod（最大残留风险）**
    包括 `kube-system`。如果集群没有限制 `privileged` / `hostPath` /
    `hostNetwork`，用户可以创建一个挂载宿主机根目录的 Pod，拿到节点
-   root，再横向拿到集群管理员。**这已经超出“只读 + 工作负载读写”的
-   本意。** 建议至少做一项：
+   root，再横向拿到集群管理员。**更直接的路径**是建一个
+   `serviceAccountName: headlamp-root` 的 Pod，Pod 内直接就是
+   cluster-admin（实测 server dry-run 通过，见第四节第 6 小节）。
+   **这已经超出“只读 + 工作负载读写”的本意。** 建议至少做一项：
    - 把写权限从 `ClusterRole` 改成指定命名空间的 `RoleBinding`；
-   - 上 Pod Security Admission `restricted`，或用 Kyverno/Gatekeeper
-     禁止 `privileged`、`hostPath`、`hostNetwork`；
+   - 用准入策略（ValidatingAdmissionPolicy/Kyverno）禁止 Pod 使用
+     `headlamp-root`/`headlamp-bigdev` 这类 access-only SA；
+   - 上 Pod Security Admission `restricted`，禁止 `privileged`、`hostPath`、
+     `hostNetwork`；
    - 只给 Deployment 的 `patch`（重启/扩缩容），不给 Pod `create`。
 
 4. **审计粒度只到 SA，不到人**

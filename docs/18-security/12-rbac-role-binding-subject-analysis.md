@@ -145,6 +145,8 @@ Role 几乎全是**命名空间内的辅助角色**，主要是：
 5. **Operator 绑定**：各 Operator 的 ClusterRole/Role → 其 SA。
 6. **业务/访问绑定**：`cluster-admin`→`headlamp-root`、`edit`→`cicd/pipeline`、
    `Role/gitlab-runner-manager`→`gitlab-runner`、`Role/pg16-ceph`→`pg16-ceph` 等。
+   其中 `edit`→`cicd/pipeline` 是**唯一直接绑定 `edit` 的实体**，且可提权到
+   cluster-admin（见第四、九节）。
 7. **信息类绑定**：`tekton-*-info`、`tekton-config-read-role`、
    `tekton-result-read-role` → `system:authenticated`。
 8. **认证委托绑定**：`extension-apiserver-authentication-reader`、
@@ -296,8 +298,39 @@ ClusterRole/edit
   + Subject: ServiceAccount cicd/pipeline
 ```
 
-**作用**：让流水线执行器能跨集群创建/删除工作负载。**功能上合理**，
-但 `edit` 权限偏大（见第九节）。
+**作用**：让流水线执行器能创建/删除工作负载。**功能上能跑通，
+但不是安全边界**（见第九节）。
+
+**这是本集群唯一直接绑定 `ClusterRole/edit` 的实体**。实测（2026-11-28）
+`edit` 在 K8s 1.35 含 `impersonate serviceaccounts`、`create
+serviceaccounts/token`、`pods/exec|attach|portforward|proxy` 写权限，且
+`create pods` 可指定任意 `serviceAccountName`。因此 `cicd/pipeline` 可以：
+
+```bash
+# A. 直接给 cluster-admin SA 签 token
+kubectl -n headlamp create token headlamp-root \
+  --as=system:serviceaccount:cicd:pipeline
+
+# B. impersonate 成 headlamp-root
+kubectl --token="$PIPE_TOKEN" auth can-i get nodes \
+  --as=system:serviceaccount:headlamp:headlamp-root   # yes
+
+# C. 建一个 serviceAccountName: headlamp-root 的 Pod（server dry-run 通过）
+kubectl -n headlamp run evil --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server
+```
+
+三条路径任意一条都等价于拿到 cluster-admin。实测 PipelineRun/TaskRun
+全部落在 `cicd`，所以最直接的修补是把这条 `ClusterRoleBinding` 换成
+`cicd` 命名空间内的 `RoleBinding`。完整修补方案见
+[13 号文档第七节](13-rbac-identity-binding-comparison.md#七谁拥有-edit-权限如何提权怎么修)。
+
+> 另外两个 CSI SA（`ceph-csi-rbd/rbd-csi-ceph-com-ctrlplugin-sa`、
+> `...-nodeplugin-sa`）的 ClusterRole 也含 `serviceaccounts/token` create，
+> 实测同样能签 `headlamp-root` token；`headlamp-bigdev` 虽不能签 token，
+> 但能建 Pod，也能走链路 C。**审计 `edit` 时要连带看这三类。**
 
 ### 8. 访问类组合：`ClusterRole/cluster-admin` + SA
 
@@ -349,10 +382,12 @@ ClusterRole/tekton-config-read-role
 | # | 问题 | 位置 | 风险 | 建议 |
 |---|---|---|---|---|
 | 1 | ~~`admin-user` 死绑定到 cluster-admin~~ **已处理** | 原 `ClusterRoleBinding/admin-user` → `SA admin-user@kubernetes-dashboard` | 已于 2026-11-26 删除；当前 cluster-admin 绑定仅剩 3 个合法主体 | ✅ **已删除** |
-| 2 | **`cicd/pipeline` 集群级 `edit`** | `ClusterRole/edit` + `ClusterRoleBinding/pipeline-edit-binding` | 可跨集群创建/删除 pods、**Secret**、serviceaccounts | 评估改为命名空间级 Role；对流水线 Pod 加 PSA 限制 |
+| 2 | **`cicd/pipeline` 集群级 `edit`** | `ClusterRole/edit` + `ClusterRoleBinding/pipeline-edit-binding` | **极高**：`edit` 含 `impersonate serviceaccounts`、`create serviceaccounts/token`、`pods/exec` 写；实测可提权到 `headlamp-root`（cluster-admin） | 优先降为 `cicd` 命名空间级 `RoleBinding`；再用自定义 ClusterRole 去掉提权规则；配合准入限制 Pod SA |
 | 3 | **`gitlab-runner-manager` 命名空间通配** | `Role/gitlab-runner-manager` | 命名空间内 pods/secrets/jobs 全通配，等同命名空间管理员 | 确认 Runner 命名空间隔离与令牌保护 |
 | 4 | **`tekton-operators-proxy-webhook` 高权限** | `Role/tekton-operators-proxy-admin` + ClusterRole | 命名空间内 Secret 全量 + 集群级 pods/deployments/webhook 全量 | 收敛或加审计 |
 | 5 | **信息类角色绑给 `system:authenticated`** | `tekton-config-read-role`、`tekton-result-read-role`、`tekton-*-info` | 任何认证身份（含所有 SA）都能读 Tekton 配置/结果 | 若不需要，改为绑定到具体 SA/组 |
+| 6 | **CSI 两个 SA 可签 token** | `ClusterRole/rbd-csi-ceph-com-ctrlplugin-cr`、`...-nodeplugin-cr` → `SA ceph-csi-rbd/*` | 含 `serviceaccounts/token` create，实测可签 `headlamp-root` token | 确认 CSI 是否需要；不需要就删规则，需要就限定 resourceNames |
+| 7 | **`headlamp-bigdev` 可建 Pod** | `ClusterRole/headlamp-bigdev` → `SA headlamp/headlamp-bigdev` | 虽不能签 token，但能在 `headlamp` 建 Pod 并指定 `serviceAccountName: headlamp-root`，dry-run 实测通过 | 用准入策略禁止 Pod 使用 access-only SA；收回不必要的 `create pods` |
 
 ### 2. 卫生问题（非直接安全风险）
 
@@ -396,8 +431,11 @@ ClusterRole/tekton-config-read-role
 ### 建议（按优先级）
 
 1. ✅ **已处理**：`admin-user` 死绑定已于 2026-11-26 删除。
-2. **近期**：收敛 `cicd/pipeline` 的 `edit` 权限（改命名空间级、限制 Secret）；
-   评估 `tekton-operators-proxy-webhook` 的高权限。
+2. **近期**：把 `cicd/pipeline` 的 `edit` 从集群级 `ClusterRoleBinding` 降为
+   `cicd` 命名空间级 `RoleBinding`（实测流水线只用 `cicd`）；用自定义
+   ClusterRole 去掉 `serviceaccounts/token`、`impersonate`、`pods/exec|attach|portforward|proxy`
+   写权限；对 `headlamp-root`/`headlamp-bigdev` 加准入限制禁止 Pod 使用；
+   收敛 CSI 两个 SA 的 token 签发权限。评估 `tekton-operators-proxy-webhook` 的高权限。
 3. **中期**：清理 47 个未直接引用的 ClusterRole 中的遗留项（如
    `headlamp-cluster-read`、`kube-proxy` Role）；信息类角色从
    `system:authenticated` 改绑到具体 SA/组。

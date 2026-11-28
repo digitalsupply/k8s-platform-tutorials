@@ -26,7 +26,7 @@
 | SC | NNP false 93/163；seccomp none 123 | 覆盖不足 |
 | apiserver | 无 audit policy、无 etcd 加密 | 无 API 审计/Secret 明文 |
 | Secret | 128；Sealed Secrets；无 Vault/ESO | 轮换/审计弱 |
-| RBAC | 136 个 SA；3 个活跃 cluster-admin（另 1 个死绑定已删除）；156/182 Pod 有效自动挂 SA token（26 个不挂载）；0 个遗留 token Secret | 权限过大/身份面偏大，详见 [11 号审计](11-serviceaccount-rbac-audit.md) |
+| RBAC | 136 个 SA；3 个活跃 cluster-admin（另 1 个死绑定已删除）；**1 个实体直接绑 `edit`（`cicd/pipeline`），实测可经签 token / impersonate / Pod-SA 提权到 cluster-admin**；156/182 Pod 有效自动挂 SA token（26 个不挂载）；0 个遗留 token Secret | 权限过大/身份面偏大，详见 [11 号审计](11-serviceaccount-rbac-audit.md)、[13 号对比第七节](13-rbac-identity-binding-comparison.md#七谁拥有-edit-权限如何提权怎么修) |
 | NetworkPolicy | 23；仅 1 个全选隔离 | 无默认 deny |
 | mTLS | Cilium mesh-auth=false；无 mesh/SPIRE | 无服务身份 |
 | 供应链 | 扫描有、拦截无、签名无；deeptutor 1740 漏洞 | 供应链风险 |
@@ -63,5 +63,5 @@
 4. 用 [`13-rbac-identity-binding-comparison.md`](13-rbac-identity-binding-comparison.md)
    理解工作负载身份与访问类身份的根本差异；
 5. 用 [`assets/checklists/linux-baseline.md`](assets/checklists/linux-baseline.md) 查宿主；
-3. 用 [`assets/checklists/k8s-workload-security.md`](assets/checklists/k8s-workload-security.md) 评审工作负载；
-4. 用 [`assets/evidence/`](assets/evidence/README.md) 复现/对比本环境。
+6. 用 [`assets/checklists/k8s-workload-security.md`](assets/checklists/k8s-workload-security.md) 评审工作负载；
+7. 用 [`assets/evidence/`](assets/evidence/README.md) 复现/对比本环境。

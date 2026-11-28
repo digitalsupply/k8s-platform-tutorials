@@ -45,6 +45,7 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
 | **遗留长期 token Secret（`type=kubernetes.io/service-account-token`）** | **0** |
 | 集群内 Pod 总数 / 有效挂载 SA token | 182 / 156（26 个有效不挂载：13 个 Pod 显式 false + 13 个继承 SA false） |
 | 绑定到 `cluster-admin` 的主体 | 3 个活跃（另 1 个 `admin-user` 已于 2026-11-26 删除） |
+| 绑定到 `ClusterRole/edit` 的主体 | **1 个**（`SA cicd/pipeline`，集群级；可提权到 cluster-admin） |
 | binding 中的 subject 类型 | SA 177 个 / User 10 个 / Group 24 个（去重后 103 个 SA 作为 subject） |
 
 **三个最重要的结论：**
@@ -55,7 +56,8 @@ kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>
 2. **唯一绑定 `cluster-admin` 的活跃使用方 SA 是 `headlamp-root`**，
    用于管理员登录 Headlamp。此前有一个**死绑定** `admin-user` 指向已删除
    命名空间里的 SA，**已于 2026-11-26 删除**。业务类 SA（如 `cicd/pipeline`、
-   `gitlab-runner`）权限偏大但不是 cluster-admin。
+   `gitlab-runner`）直接绑定不是 cluster-admin，但 `cicd/pipeline` 的 `edit`
+   可经签 token / impersonate / Pod-SA 提权到 cluster-admin（见第六节第 5 小节）。
 3. **20 个“孤儿”全部是各命名空间的 `default` SA**，是 Kubernetes 自动创建
    的，不是业务遗留，一般不建议删除。`admin-user` 已清理，剩余 2 项一次性 SA
    （见第八节）。
@@ -335,7 +337,7 @@ kubectl auth can-i --as=system:serviceaccount:cicd:pipeline '*' '*'   # 按 SA �
 |---|---|---|---|---|
 | `headlamp/headlamp-root` | `ClusterRole/cluster-admin` | **无 Pod** | 否（人粘贴 token） | **纯访问类 SA**：不跑工作负载，只作为登录 token 的 subject |
 | `headlamp/headlamp-bigdev` | `ClusterRole/headlamp-bigdev` | **无 Pod** | 否（人粘贴 token） | 同上，受限访问类 |
-| `cicd/pipeline` | `ClusterRole/edit` | 27 个 Pod（`el-*`、build/clone/check） | **是** | 流水线执行器要创建/删除 PipelineRun、任务 Pod，故需集群级 edit |
+| `cicd/pipeline` | `ClusterRole/edit` | 约 40 个 Pod（`el-*`、build/clone/check） | **是** | 流水线执行器要创建/删除 PipelineRun、任务 Pod；实际只用到 `cicd`，建议降为命名空间级 |
 | `gitlab-runner/gitlab-runner` | `Role/gitlab-runner-manager`（通配） | 1 Pod | **是** | Runner 要创建任务 Pod、读命名空间 Secret |
 | `kube-system/deployment-controller` | `ClusterRole/system:controller:deployment-controller` | 静态 Pod | **是** | 控制器管理 Deployment/ReplicaSet |
 | `oauth2-proxy/default` | **无绑定** | 5 个 Pod | **否** | 反向代理，不用调 apiserver，只有基线身份 |
@@ -418,6 +420,9 @@ kubectl get clusterrole edit -o yaml
 kubectl get clusterrolebinding pipeline-edit-binding -o yaml
 kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create secrets
 kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create clusterrolebindings
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create pods/exec
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline impersonate serviceaccounts
+kubectl auth can-i --as=system:serviceaccount:cicd:pipeline create serviceaccounts/token
 ```
 
 **配置：**
@@ -463,9 +468,38 @@ subjects:
 - 挂给 `cicd/pipeline` 这个 SA，流水线里的 Pod（`el-*` 等）用它调 apiserver
   时，就能创建/删除 PipelineRun、任务 Pod；
 - 注意 `edit` **包含 Secret 的增删**，所以 `cicd/pipeline` 是业务 SA 中权限
-  偏大的典型；而它**不能**创建 clusterrolebinding、不能 exec。
-- 用 `kubectl auth can-i --list --as=system:serviceaccount:cicd:pipeline`
-  即可验证这 27 个 Pod 共享的这份权限（详见第 7 小节）。
+  偏大的典型；
+- **它不能直接创建 clusterrolebinding，但可以提权**：`edit` 含
+  `impersonate serviceaccounts`、`create serviceaccounts/token`、
+  `pods/exec` 写权限，还能建 Pod 并指定任意 `serviceAccountName`。
+
+**实测提权（2026-11-28）：**
+
+```bash
+# A. 以 pipeline 身份给 headlamp-root 签 token
+kubectl -n headlamp create token headlamp-root \
+  --as=system:serviceaccount:cicd:pipeline          # 成功
+
+# B. 用 pipeline 自己的 token impersonate headlamp-root
+PIPE_TOKEN=$(kubectl -n cicd create token pipeline --duration=10m)
+kubectl --token="$PIPE_TOKEN" auth can-i get nodes \
+  --as=system:serviceaccount:headlamp:headlamp-root # yes
+# 注意：本机 kubeconfig 带客户端证书时 --token 会被证书覆盖，
+# 需用只含 token 的临时 kubeconfig；见第十节复现命令。
+
+# C. 建一个用 headlamp-root SA 的 Pod（dry-run 通过）
+kubectl -n headlamp run evil --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server                                   # created (server dry run)
+```
+
+结论：**`ClusterRole/edit` 在本集群等价于 cluster-admin 的跳板**，因为
+`headlamp` 命名空间里存在一个绑定 cluster-admin 的 SA。修补建议见
+[第六节第 5 小节](#5-edit-的隐藏提权面token-签发与-pod-sa)。
+
+> 用 `kubectl auth can-i --list --as=system:serviceaccount:cicd:pipeline`
+> 即可验证这约 40 个 Pod 共享的这份权限（详见第六节第 5 小节）。
 
 ### 例子 3：命名空间内权限 `Role/pg16-ceph` → `cnpg-system/pg16-ceph`
 
@@ -764,7 +798,7 @@ Deployment 的 Pod 模板显式写了 `automountServiceAccountToken: false`，
 
 | SA | 作用 | 绑定 | 使用方 |
 |---|---|---|---|
-| `pipeline` | **CI 流水线执行身份**，供 Tekton EventListener 触发流水线 | **ClusterRoleBinding → `ClusterRole/edit`（集群级）** | 19 个 Deployment、27 个 Pod（`el-*` 事件监听器等） |
+| `pipeline` | **CI 流水线执行身份**，供 Tekton EventListener 触发流水线 | **ClusterRoleBinding → `ClusterRole/edit`（集群级）** | 3 个 Deployment、3 个 EventListener、约 40 个 Pod（随流水线运行变化） |
 | `default` | open-webui runner 身份 | Role `openwebui-runner-role` | 1 Pod |
 | `cicd-cleanup` | **一次性**：清理流水线运行记录 | Role `cicd-cleanup` | **无** |
 
@@ -772,9 +806,13 @@ Deployment 的 Pod 模板显式写了 `automountServiceAccountToken: false`，
 
 - `pipeline` 绑定 `ClusterRole/edit`，是本审计中**权限最大的业务 SA**：
   可以集群级 `create/delete pods`、`delete deployments`、**`create/delete secrets`**、
-  `create serviceaccounts`，但**不能**改 RBAC、不能 `exec`、不能碰
-  `nodes/proxy`。Tekton EventListener 需要跨命名空间创建/删除 PipelineRun，
-  所以给了集群级 `edit`。
+  `create serviceaccounts`；但它**不是“有边界”的**——`edit` 含
+  `impersonate serviceaccounts`、`create serviceaccounts/token`、
+  `pods/exec` 写权限，还能建 Pod 并指定任意 `serviceAccountName`。
+  实测可借此拿到 `headlamp-root`（cluster-admin），见第六节第 5 小节。
+- 历史上给集群级 `edit` 的理由是“跨命名空间”；但实测 PipelineRun/TaskRun
+  **全部在 `cicd`**，没有跨命名空间写入的证据。建议降为 `cicd` 的
+  `RoleBinding`，切断对 `headlamp` 命名空间的访问。
 - `default` 的 `openwebui-runner-role` 允许对 `pipelineruns` 做
   `create/get/list/watch/patch/delete`，并可读同命名空间的 PVC/Secret/
   ConfigMap/SA——给 open-webui 的运行器创建和结束流水线用。
@@ -1317,6 +1355,85 @@ kubectl -n <ns> get pod <pod> -o json | jq '
 不给凭证，比“给个小权限”更彻底。但统计和审计要同时看 **Pod 字段、
 SA 字段、显式投影** 三处，否则会漏判或误判。
 
+### 5. `edit` 的隐藏提权面：token 签发与 Pod SA
+
+**直接绑定 `ClusterRole/edit` 的实体（2026-11-28 实测）：**
+
+| 实体 | 绑定 | 范围 | 使用方 |
+|---|---|---|---|
+| `SA cicd/pipeline` | `ClusterRoleBinding/pipeline-edit-binding` | 全集群 | 3 个 Deployment、3 个 EventListener、约 40 个 Pod |
+
+没有名为 `edit` 的 `Role`，也没有绑定到 `ClusterRole/admin` 的实体。
+`edit` 的权限超集（cluster-admin）另有 3 个：`Group system:masters`、
+`Group kubeadm:cluster-admins`、`SA headlamp/headlamp-root`。
+
+**为什么 `edit` 不是安全边界**（K8s 1.35 原生规则）：
+
+| 规则 | 后果 |
+|---|---|
+| `impersonate serviceaccounts` | 可 `--as` 成任意 SA |
+| `create serviceaccounts/token` | 可给任意 SA 签 token |
+| `create pods` + 任意 `serviceAccountName` | Pod 直接拿到该 SA 的 token |
+| `create pods/exec` | 可 exec 进任意 Pod（若该 Pod 挂有高权 token 则可窃取） |
+
+在本集群，前三条都能直接指向 `headlamp-root`，因此 **`edit` 等价于
+cluster-admin 的跳板**。实测：
+
+```bash
+# A. 签 token
+kubectl -n headlamp create token headlamp-root \
+  --as=system:serviceaccount:cicd:pipeline          # 成功
+
+# B. impersonate（用 pipeline 自己的 token）
+#    需只含 token 的临时 kubeconfig，否则本机客户端证书会覆盖 --token
+PIPE_TOKEN=$(kubectl -n cicd create token pipeline --duration=10m)
+kubectl --token="$PIPE_TOKEN" auth can-i get nodes \
+  --as=system:serviceaccount:headlamp:headlamp-root # yes
+
+# C. 建一个使用 headlamp-root SA 的 Pod（server dry-run 通过）
+kubectl -n headlamp run evil --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server
+```
+
+**不止 `edit`：其他能签 token 的实体**
+
+| 角色 | 实体 | 备注 |
+|---|---|---|
+| `rbd-csi-ceph-com-ctrlplugin-cr` | `SA ceph-csi-rbd/rbd-csi-ceph-com-ctrlplugin-sa` | 实测可签 `headlamp-root` |
+| `rbd-csi-ceph-com-nodeplugin-cr` | `SA ceph-csi-rbd/rbd-csi-ceph-com-nodeplugin-sa` | 实测可签 `headlamp-root` |
+| `system:kube-controller-manager` | `User system:kube-controller-manager` | 系统组件，受信 |
+
+> **坑**：`kubectl auth can-i create serviceaccounts/token` 对 CSI SA 返回
+> `no`，但实际签发成功。审计时不能只信 `can-i`。
+
+**修补建议（摘要，完整 YAML 见
+[13 号文档第七节](13-rbac-identity-binding-comparison.md#七谁拥有-edit-权限如何提权怎么修)）：**
+
+1. **把 pipeline 的 `edit` 降为 `cicd` 命名空间级 `RoleBinding`**。
+   本集群 PipelineRun/TaskRun 全部在 `cicd`，这样 pipeline 碰不到
+   `headlamp` 命名空间，提权链直接断掉。
+2. **自定义 ClusterRole**：去掉 `serviceaccounts/token`、
+   `impersonate serviceaccounts`、`pods/exec|attach|portforward|proxy` 写。
+3. **准入限制 Pod 的 SA**：用 ValidatingAdmissionPolicy 禁止在 `headlamp`
+   命名空间创建使用 `headlamp-root`/`headlamp-bigdev` 的 Pod。
+   **只做第 1、2 步不够**：只要能建 Pod 并指定 SA，仍可提权。
+4. **收敛 CSI 角色的 token 权限**：不需要就删，需要就限定到自己的 SA。
+
+**修补后验证：**
+
+```bash
+kubectl -n headlamp create token headlamp-root \
+  --as=system:serviceaccount:cicd:pipeline          # 应 403
+kubectl auth can-i impersonate serviceaccounts \
+  --as=system:serviceaccount:cicd:pipeline          # 应 no
+kubectl -n headlamp run x --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server                                  # 应被拒绝
+```
+
 ---
 
 ## 七、为什么权限是这样（总结规律）
@@ -1388,13 +1505,16 @@ kubectl get sa -A -o json | \
 | # | 发现 | 风险 | 建议 |
 |---|---|---|---|
 | 1 | ~~`admin-user` 死绑定到 cluster-admin~~ **已处理** | 低（SA 不存在），但若重建同名 SA 立即提权 | ✅ 已于 2026-11-26 删除 |
-| 2 | `cicd/pipeline` 拥有集群级 `edit`，含 Secret 写 | 高 | 评估能否改为命名空间级 Role；对流水线 Pod 加 PSA 限制 |
+| 2 | `cicd/pipeline` 拥有集群级 `edit`；`edit` 含 `impersonate serviceaccounts`、`create serviceaccounts/token`、`pods/exec` 写权限 | **极高**：实测可签 `headlamp-root` token、impersonate 它、或建 `headlamp-root` SA 的 Pod → cluster-admin | 优先降为 `cicd` 命名空间级 `RoleBinding`；再用自定义 ClusterRole 去掉提权规则；配合准入限制 Pod SA |
 | 3 | `gitlab-runner-manager` 命名空间内 `*` | 中 | 确认 Runner 命名空间隔离充分，Runner 令牌保护到位 |
 | 4 | 156/182 Pod 有效自动挂载 SA token（26 个有效不挂载） | 中 | 对不访问 API 的 Pod 显式 `automountServiceAccountToken: false`；注意 SA 级继承与显式投影 |
 | 5 | 多个 SA 具备集群级 Secret 读/写 | 中 | 按“最小必要”收敛；`headlamp-bigdev` 若不需要可去掉 Secret 读 |
 | 6 | 无遗留长期 token Secret | ✅ 良好 | 继续保持 bound token 机制，不要改回长期 Secret |
 | 7 | 大量业务 Pod 使用 `default` SA | 低 | 逐步为业务应用创建专用 SA，便于审计与授权 |
 | 8 | 存在空命名空间 `cilium-secrets`、缩容的 `open-webui` | 低 | 确认后清理，减少无用身份面 |
+| 9 | CSI 两个 SA 的 ClusterRole 含 `serviceaccounts/token` create，实测可签 `headlamp-root` token | **高** | 确认 CSI 是否需要；不需要就删规则，需要就限定到自己的 SA |
+| 10 | 任何能在 `headlamp` 命名空间建 Pod 的实体，都可指定 `serviceAccountName: headlamp-root` 提权；`headlamp-bigdev` 实测 dry-run 通过 | **高** | 用 ValidatingAdmissionPolicy 禁止 Pod 使用 access-only SA；并收回不必要的 `create pods` |
+| 11 | `kubectl auth can-i create serviceaccounts/token` 对 CSI SA 返回假阴性 | 低（审计方法） | 以实际签发或 `auth can-i --list` 为准，不要只信 `can-i` |
 
 ---
 
@@ -1434,4 +1554,40 @@ kubectl get pods -A -o json | jq -r '.items[] | select(.spec.volumes[]?.projecte
 
 # 10. 实测某个 Pod 里 token 文件是否存在
 kubectl -n <ns> exec <pod> -- ls /var/run/secrets/kubernetes.io/serviceaccount/
+
+# 11. 枚举绑定到 ClusterRole/edit 的实体
+kubectl get rolebinding,clusterrolebinding -A -o json | jq -r '
+  .items[] | select(.roleRef.kind=="ClusterRole" and .roleRef.name=="edit") |
+  "\(.kind) \(.metadata.namespace // "(cluster)")/\(.metadata.name) -> " +
+  ([.subjects[]? | "\(.kind):\(.namespace // "")/\(.name)"] | join(", "))'
+
+# 12. 正确检查 edit 的危险权限（exec 不是 RBAC 动词）
+kubectl auth can-i create pods/exec --as=system:serviceaccount:cicd:pipeline
+kubectl auth can-i impersonate serviceaccounts --as=system:serviceaccount:cicd:pipeline
+kubectl auth can-i create serviceaccounts/token --as=system:serviceaccount:cicd:pipeline
+
+# 13. 提权链 A：以 pipeline 身份签 headlamp-root token
+kubectl -n headlamp create token headlamp-root --duration=10m \
+  --as=system:serviceaccount:cicd:pipeline
+
+# 14. 提权链 B：用 pipeline 自己的 token impersonate
+#     （需只含 token 的临时 kubeconfig，避免客户端证书覆盖）
+PIPE_TOKEN=$(kubectl -n cicd create token pipeline --duration=10m)
+SRV=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
+CA=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+echo "$CA" | base64 -d > /tmp/k8s-ca.crt
+KUBECONFIG=/tmp/none kubectl --server="$SRV" --certificate-authority=/tmp/k8s-ca.crt \
+  --token="$PIPE_TOKEN" auth can-i get nodes \
+  --as=system:serviceaccount:headlamp:headlamp-root    # yes
+
+# 15. 提权链 C：建一个使用 headlamp-root SA 的 Pod（server dry-run）
+kubectl -n headlamp run evil --image=busybox:1.37 --restart=Never \
+  --as=system:serviceaccount:cicd:pipeline \
+  --overrides='{"spec":{"serviceAccountName":"headlamp-root"}}' \
+  --dry-run=server
+
+# 16. 找所有含 serviceaccounts/token create 的 ClusterRole
+kubectl get clusterrole -o json | jq -r '
+  .items[] | select(.rules[]? | ((.resources // []) | index("serviceaccounts/token")) and ((.verbs // []) | index("create"))) |
+  .metadata.name'
 ```
